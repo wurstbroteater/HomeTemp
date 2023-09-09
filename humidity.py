@@ -295,7 +295,7 @@ def main():
     schedule.every().day.at("06:00").do(create_and_backup_visualization)
 
     collect_and_save_to_db()
-    create_and_backup_visualization()
+    #create_and_backup_visualization()
     while True:
         schedule.run_pending()
         time.sleep(1)
