@@ -1,5 +1,6 @@
 from persist.persistence_logger import per_log as log
-from sqlalchemy import create_engine, text, select, insert, inspect, exc, Table, Column, MetaData, Integer, DECIMAL, TIMESTAMP
+from sqlalchemy import create_engine, text, select, insert, inspect, exc, Table, Column, MetaData, Integer, DECIMAL, \
+    TIMESTAMP
 from abc import ABC, abstractmethod
 import pandas as pd
 

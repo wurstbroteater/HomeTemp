@@ -67,7 +67,7 @@ class DWDFetcher(Fetcher):
 
         if not current_time:
             current_time = datetime(year=datetime.now().year, month=datetime.now().month, day=datetime.now().day,
-                    hour=datetime.now().hour, minute=0, second=0, microsecond=0, tzinfo=None, fold=0)
+                                    hour=datetime.now().hour, minute=0, second=0, microsecond=0, tzinfo=None, fold=0)
 
         # from milliseconds to seconds
         start_measurement_time_s = self.data["start"] / 1000
