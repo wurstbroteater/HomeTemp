@@ -59,6 +59,22 @@ class DWDFetcher(Fetcher):
         self.data = json_res[str(self.station_id)]["forecast1"]
         return self.data
 
+    def _get_index(self, current_time=None):
+        """
+        Calculate index for measurement based on current year, month, date and hour.
+        Remaining values will be ignored.
+        """
+
+        if not current_time:
+            current_time = datetime(year=datetime.now().year, month=datetime.now().month, day=datetime.now().day,
+                    hour=datetime.now().hour, minute=0, second=0, microsecond=0, tzinfo=None, fold=0)
+
+        # from milliseconds to seconds
+        start_measurement_time_s = self.data["start"] / 1000
+        m_time = datetime.utcfromtimestamp(start_measurement_time_s)
+        diff = current_time - m_time
+        return int(diff.total_seconds() / (self.data["timeStep"] / 1000))
+
     def clear_cached_data(self):
         self.data = None
 
@@ -80,23 +96,18 @@ class DWDFetcher(Fetcher):
 
         if len(temp_std) != len(temp_values):
             log.error(f"Error: Unable to validate DWD temperature data because temp values and std differ!")
-            return current_time, float('nan')
+            return current_time, float('nan'), float('nan')
 
-        # Calculate index of current temperature measurement
-        # from milliseconds to seconds
-        start_measurement_time_s = self.data["start"] / 1000
-        m_time = datetime.utcfromtimestamp(start_measurement_time_s)
-        diff = current_time - m_time
-        current_temp_forecast_index = int(diff.total_seconds() / (self.data["timeStep"] / 1000))
+        current_temp_forecast_index = self._get_index()
         if len(temp_values) < current_temp_forecast_index:
             log.error(
                 f"Error: Forecast index out of range, size: {len(temp_values)}, index: {current_temp_forecast_index}")
-            return current_time, float('nan')
+            return current_time, float('nan'), float('nan')
         elif temp_std[current_temp_forecast_index] == 0:
             log.error(f"Error: 0 tempStd for found temperature {temp_values[current_temp_forecast_index]}")
-            return current_time, float('nan')
+            return current_time, float('nan'), float('nan')
         else:
             temp = float(temp_values[current_temp_forecast_index]) / 10.0
-            log.info(
-                f"Found: {current_temp_forecast_index}, {current_time}, {temp}°C, dev: {self.data['temperatureStd'][current_temp_forecast_index]}")
-            return current_time, temp
+            dev = self.data['temperatureStd'][current_temp_forecast_index]
+            # log.info(f"Found: {current_temp_forecast_index}, {current_time}, {temp}°C, dev: {dev}")
+            return current_time, temp, dev

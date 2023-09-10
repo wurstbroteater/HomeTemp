@@ -1,5 +1,5 @@
 from persist.persistence_logger import per_log as log
-from sqlalchemy import create_engine, text, insert, inspect, exc, Table, Column, MetaData, Integer, DECIMAL, TIMESTAMP
+from sqlalchemy import create_engine, text, select, insert, inspect, exc, Table, Column, MetaData, Integer, DECIMAL, TIMESTAMP
 from abc import ABC, abstractmethod
 import pandas as pd
 
@@ -146,7 +146,8 @@ class DwDDataHandler(PostgresHandler):
         table_schema = Table(self.table, metadata,
                              Column('id', Integer, primary_key=True, autoincrement=True),
                              Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
-                             Column('temp', DECIMAL, nullable=False))
+                             Column('temp', DECIMAL, nullable=False),
+                             Column('temp_dev', DECIMAL, nullable=False))
         try:
             metadata.create_all(self.connection)
             log.info(f"Table '{self.table}' created successfully.")
@@ -154,13 +155,26 @@ class DwDDataHandler(PostgresHandler):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
 
-    def insert_dwd_data(self, timestamp, temp):
+    def row_exists_with_timestamp(self, timestamp_value):
+        try:
+            table = Table(self.table, MetaData(), autoload_with=self.connection)
+            with self.connection.connect() as con:
+                select_statement = select(table).where(table.c.timestamp == timestamp_value)
+                result = con.execute(select_statement)
+                return result.fetchone() is not None
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+            return False
+
+    def insert_dwd_data(self, timestamp, temp, temp_dev):
         try:
             table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
             with self.connection.begin() as con:
                 data_to_insert = {
                     'timestamp': timestamp,
                     'temp': temp,
+                    'temp_dev': temp_dev
                 }
                 insert_statement = insert(table).values(**data_to_insert)
                 con.execute(insert_statement)

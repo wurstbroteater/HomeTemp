@@ -1,7 +1,7 @@
 import logging
-import configparser
+import configparser, schedule, time
+from datetime import datetime
 from api.fetcher import DWDFetcher
-import schedule, time
 from persist.database import DwDDataHandler
 
 for handler in logging.root.handlers[:]:
@@ -24,7 +24,8 @@ def fetch_and_save():
     log.info(f"[DWD] Forecast for Ulm is: {c_time.strftime('%Y-%m-%d %H:%M:%S')} temp={c_temp}°C dev={dev}")
     handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
     handler.init_db_connection()
-    handler.insert_dwd_data(timestamp=c_time.strftime('%Y-%m-%d %H:%M:%S'), temp=c_temp, temp_dev=dev)
+    if not handler.row_exists_with_timestamp(c_time):
+        handler.insert_dwd_data(timestamp=c_time.strftime('%Y-%m-%d %H:%M:%S'), temp=c_temp, temp_dev=dev)
 
 
 def main():
