@@ -1,16 +1,17 @@
 import Adafruit_DHT, configparser, logging, schedule, smtplib, time
-from sqlalchemy import create_engine, text, insert, inspect, exc, Table, Column, MetaData, Integer, DECIMAL, TIMESTAMP
-from datetime import datetime, timedelta
-from gpiozero import CPUTemperature
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime, timedelta
+from gpiozero import CPUTemperature
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from persist.database import SensorDataHandler
 
+# only logs from this file will be written to console but all logs will be saved to file
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 logging.basicConfig(filename='measurement.log',
@@ -43,116 +44,6 @@ def get_sensor_data():
         return temperature, humidity, timestamp
     else:
         raise Exception("Failed to retrieve data from humidity sensor")
-
-
-# ------------------------------- POSTGRES ----------------------------------------------
-
-def _create_table(connection, table_name="sensor_data"):
-    metadata = MetaData()
-    table_schema = Table(table_name, metadata,
-                         Column('id', Integer, primary_key=True, autoincrement=True),
-                         Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
-                         Column('humidity', DECIMAL, nullable=False),
-                         Column('room_temp', DECIMAL, nullable=False),
-                         Column('cpu_temp', DECIMAL, nullable=False))
-    try:
-        metadata.create_all(connection)
-        log.info(f"Table '{table_name}' created successfully.")
-
-    except exc.SQLAlchemyError as e:
-        log.error("Problem with database " + str(e))
-
-
-def _remove_table(connection, table_name="sensor_data"):
-    try:
-        table = Table(table_name, MetaData(), autoload_with=connection)
-        with connection.begin() as con:
-            table.drop(con)
-            log.info(f"Table '{table_name}' removed successfully.")
-
-    except exc.SQLAlchemyError as e:
-        log.error("Problem with database " + str(e))
-
-
-def _get_table_size(connection, table_name="sensor_data"):
-    try:
-        with connection.connect() as con:
-            result = con.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
-            return int(result.scalar())
-
-    except exc.SQLAlchemyError as e:
-        log.error("Problem with database " + str(e))
-        return -1
-
-
-def _clear_table(connection, table_name="sensor_data"):
-    try:
-        table = Table(table_name, MetaData(), autoload_with=connection)
-        with connection.begin() as con:
-            con.execute(table.delete())
-            log.info(f"Table '{table_name}' cleared successfully.")
-
-    except exc.SQLAlchemyError as e:
-        log.error("Problem with database " + str(e))
-
-
-def _check_table_existence(connection, table_name="sensor_data"):
-    try:
-        return inspect(connection).has_table(table_name)
-
-    except exc.SQLAlchemyError as e:
-        log.error("Problem with database " + str(e))
-        return False
-
-
-def _init_db():
-    auth = config["db"]
-    db_url = f"postgresql://{auth['db_user']}:{auth['db_pw']}@{auth['db_host']}:{auth['db_port']}/{auth['db_name']}"
-    try:
-        return create_engine(db_url)
-    except exc.SQLAlchemyError as e:
-        log.error("Problem with database " + str(e))
-
-
-def init_db_connection(table_name="sensor_data"):
-    """
-    Establish the connection to postgres database and creates table it not existent.
-    """
-    try:
-        con = _init_db()
-        log.info("Connected to the database!")
-        if not _check_table_existence(con, table_name):
-            _create_table(con, table_name)
-        return con
-    except exc.SQLAlchemyError as e:
-        log.error("Problem with database " + str(e))
-
-
-def insert_measurements_into_db(connection, timestamp, humidity, room_temp, cpu_temp, table_name="sensor_data"):
-    try:
-        table = Table(table_name, MetaData(), autoload_with=connection, extend_existing=True)
-        with connection.begin() as con:
-            data_to_insert = {
-                'timestamp': timestamp,
-                'humidity': humidity,
-                'room_temp': room_temp,
-                'cpu_temp': cpu_temp
-            }
-            insert_statement = insert(table).values(**data_to_insert)
-            con.execute(insert_statement)
-
-    except exc.SQLAlchemyError as e:
-        log.error("Problem with database " + str(e))
-
-
-def read_data_into_dataframe(connection, table_name="sensor_data"):
-    try:
-        df = pd.read_sql(f"SELECT * FROM {table_name}", connection)
-        return df
-
-    except exc.SQLAlchemyError as e:
-        log.error("Problem with database " + str(e))
-        return None
 
 
 # ------------------------------- Data Distribution ----------------------------------------------
@@ -264,8 +155,10 @@ def draw_plots(df, show_heatmap=True):
 
 def create_and_backup_visualization():
     log.info("Creating Measurement Data Visualization")
-    con = init_db_connection()
-    df = read_data_into_dataframe(con)
+    auth = config["db"]
+    handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
+    handler.init_db_connection(check_table=False)
+    df = handler.read_data_into_dataframe()
     df = df.sort_values(by="timestamp")
     df['timestamp'] = df['timestamp'].map(lambda x: datetime.strptime(str(x).strip(), '%Y-%m-%d %H:%M:%S'))
     draw_plots(df, show_heatmap=False)
@@ -275,15 +168,16 @@ def create_and_backup_visualization():
 
 def collect_and_save_to_db():
     log.info("Start Measurement Data Collection")
-    con = init_db_connection()
+    auth = config["db"]
+    handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
+    handler.init_db_connection()
     # log.debug(_get_table_size(con))
     # _clear_table(con)
     cpu_temp = get_temperature()
     room_temp, humidity, timestamp = get_sensor_data()
     log.info(
         "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
-    insert_measurements_into_db(connection=con, timestamp=timestamp, humidity=humidity, room_temp=room_temp,
-                                cpu_temp=cpu_temp)
+    handler.insert_measurements_into_db( timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
     log.info("Done")
 
 
@@ -294,8 +188,8 @@ def main():
     schedule.every(10).minutes.do(collect_and_save_to_db)
     schedule.every().day.at("06:00").do(create_and_backup_visualization)
 
-    collect_and_save_to_db()
-    create_and_backup_visualization()
+    #collect_and_save_to_db()
+    #create_and_backup_visualization()
     while True:
         schedule.run_pending()
         time.sleep(1)
