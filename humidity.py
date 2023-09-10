@@ -177,7 +177,7 @@ def collect_and_save_to_db():
     room_temp, humidity, timestamp = get_sensor_data()
     log.info(
         "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
-    handler.insert_measurements_into_db( timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
+    handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
     log.info("Done")
 
 
@@ -188,8 +188,8 @@ def main():
     schedule.every(10).minutes.do(collect_and_save_to_db)
     schedule.every().day.at("06:00").do(create_and_backup_visualization)
 
-    #collect_and_save_to_db()
-    #create_and_backup_visualization()
+    # collect_and_save_to_db()
+    # create_and_backup_visualization()
     while True:
         schedule.run_pending()
         time.sleep(1)
