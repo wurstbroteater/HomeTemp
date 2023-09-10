@@ -1,9 +1,9 @@
-from persistence_logger import per_log as log
+from persist.persistence_logger import per_log as log
 from sqlalchemy import create_engine, text, insert, inspect, exc, Table, Column, MetaData, Integer, DECIMAL, TIMESTAMP
-from abc import ABC, abstractmethod
+from abc import ABC
 import pandas as pd
 
-class DatabaseHandler(ABC):
+class PostgresHandler(ABC):
     """
     Abstract method for default database Create/Delete/Sanitize methods and initialization of a postgres database.
     Insert methods should be implemented by the extending class because it might get to complex to provide a default.
@@ -15,45 +15,33 @@ class DatabaseHandler(ABC):
         self.user = user
         self.password = password
         self.table = table
-        self.connection = self._init_db()
+        self.connection = None
         super().__init__()
 
+
+    def init_db_connection(self, check_table=True):
+        """
+        Establish the connection to postgres database.
+        If check_table flag is set to True, it will also checko if the table in self.table exists
+        """
+        try:
+            if self.connection is None:
+                self.connection = self._init_db()
+            log.info("Connected to the database!")
+            if check_table and not self._check_table_existence():
+               self._create_table()
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+
+
     def _init_db(self):
-        db_url = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.table}"
+        db_url = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
         try:
             return create_engine(db_url)
         except exc.SQLAlchemyError as e:
             log.error("Problems while initialising database access: " + str(e))
 
-    
-    @abstractmethod
-    def _create_table(self):
-        pass
 
-    @abstractmethod
-    def _remove_table(self):
-       pass
-
-    @abstractmethod
-    def _clear_table(self):
-        pass
-
-    @abstractmethod
-    def _get_table_size(self):
-        return -1   
-      
-    @abstractmethod
-    def _check_table_existence(self):
-        return False
-
-
-class SensorDataHandler(DatabaseHandler):
-    """
-    Implementation of DatabaseHandler for table 'sensor_data'.
-    Assures table structure and creates
-    """
-
-    # ------ implementation of abstract methods ------
     def _create_table(self):
         metadata = MetaData()
         table_schema = Table(self.table, metadata,
@@ -112,21 +100,12 @@ class SensorDataHandler(DatabaseHandler):
             return False
 
 
-    # ------ implementation of additional and public methods ------
-    def init_db_connection(self):
-        """
-        Establish the connection to postgres database and creates table it not existent.
-        """
-        try:
-            con = self._init_db()
-            log.info("Connected to the database!")
-            if not self._check_table_existence():
-               self._create_table()
-            return con
-        except exc.SQLAlchemyError as e:
-            log.error("Problem with database " + str(e))
-
-
+class SensorDataHandler(PostgresHandler):
+    """
+    Implementation of DatabaseHandler for table 'sensor_data'.
+    Assures table structure and creates
+    """
+  
     def insert_measurements_into_db(self, timestamp, humidity, room_temp, cpu_temp):
         try:
             table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
