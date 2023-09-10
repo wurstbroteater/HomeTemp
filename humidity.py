@@ -1,4 +1,4 @@
-import Adafruit_DHT, configparser, logging, schedule, smtplib, time
+import Adafruit_DHT, configparser, logging, schedule, smtplib, time, threading
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -106,6 +106,10 @@ def create_and_backup_visualization():
     log.info("Done")
     send_visualization_email(df)
 
+def run_threaded(job_func):
+    job_thread = threading.Thread(target=job_func)
+    job_thread.start()
+
 
 def collect_and_save_to_db():
     log.info("Start Measurement Data Collection")
@@ -127,10 +131,12 @@ def main():
     log.addHandler(logging.StreamHandler())
     log.info("------------------- HomeTemp v0.2.1 -------------------")
     schedule.every(10).minutes.do(collect_and_save_to_db)
-    schedule.every().day.at("06:00").do(create_and_backup_visualization)
+    # run_threaded assumes that we never have overlapping usage of this method or its components
+    schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)
 
-    collect_and_save_to_db()
-    create_and_backup_visualization()
+    #collect_and_save_to_db()
+    #run_threaded(create_and_backup_visualization)
+    log.info("finished initialization")
     while True:
         schedule.run_pending()
         time.sleep(1)
