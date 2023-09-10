@@ -3,7 +3,6 @@ venv
 .idea
 __pycache__
 
-**/hometemp.ini
 fitness.csv
 plots
 **/*.log
