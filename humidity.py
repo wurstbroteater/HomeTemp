@@ -1,8 +1,4 @@
 import Adafruit_DHT, configparser, logging, schedule, smtplib, time, threading
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
 from datetime import datetime, timedelta
 from gpiozero import CPUTemperature
 from email.mime.multipart import MIMEMultipart
@@ -33,7 +29,7 @@ def get_temperature():
 def get_sensor_data():
     """
     Returns temperature and humidity data measures by AM2302 Sensor and the measure timestamp or raise exception 
-    if could not be retrieved
+    if the values could not be retrieved
     """
     DHT_SENSOR = Adafruit_DHT.AM2302
     DHT_PIN = 2
