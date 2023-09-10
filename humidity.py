@@ -106,6 +106,7 @@ def create_and_backup_visualization():
     log.info("Done")
     send_visualization_email(df)
 
+
 def run_threaded(job_func):
     job_thread = threading.Thread(target=job_func)
     job_thread.start()
@@ -134,8 +135,8 @@ def main():
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)
 
-    #collect_and_save_to_db()
-    #run_threaded(create_and_backup_visualization)
+    # collect_and_save_to_db()
+    # run_threaded(create_and_backup_visualization)
     log.info("finished initialization")
     while True:
         schedule.run_pending()

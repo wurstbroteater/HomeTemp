@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
+
 def draw_plots(df, with_save=True):
     sns.set_theme(style="darkgrid")  # sns.set(style="whitegrid")
     fig = plt.figure(figsize=(25, 12))
