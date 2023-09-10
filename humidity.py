@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from persist.database import SensorDataHandler
+from visualize.plots import draw_plots
 
 # only logs from this file will be written to console but all logs will be saved to file
 for handler in logging.root.handlers[:]:
@@ -91,66 +92,6 @@ def send_visualization_email(df):
     log.info("Done")
 
 
-# ------------------------------- Visualization ----------------------------------------------
-
-def draw_plots(df, show_heatmap=True):
-    subplots = 3 if show_heatmap else 2
-    sns.set_theme(style="darkgrid")  # sns.set(style="whitegrid")
-    fig = plt.figure(figsize=(25, 12))
-    gs = fig.add_gridspec(2, 2, height_ratios=[2, 2])  # 2 rows, 1 column
-
-    # Temperature Measurements
-    plt.subplot(gs[0])
-    sns.lineplot(label="Home", x="timestamp", y="room_temp", data=df)
-    plt.title("Temperature Over Time")
-    plt.xlabel("Time")
-    plt.ylabel("Temp (°C)")
-    plt.legend()
-    plt.xticks(rotation=45)
-    # plt.tight_layout()
-    # plt.show()
-
-    # Humidity Measurement
-    plt.subplot(gs[1])
-    sns.lineplot(x="timestamp", y="humidity", color='purple', data=df)
-    plt.title("Humidity Over Time")
-    plt.xlabel("Time")
-    plt.ylabel("Humidity (%)")
-    plt.xticks(rotation=45, ha='right')
-    plt.gca().xaxis.grid(True)
-    plt.gca().set_facecolor('#f5f5f5')
-    sns.despine(left=True, bottom=True)
-
-    df_last_24h = df[df["timestamp"] >= datetime.now() - timedelta(hours=25)]
-
-    # Temperature Measurements last 24 h
-    plt.subplot(gs[2])
-    sns.lineplot(label="Home", x="timestamp", y="room_temp", marker='o', markersize=6, data=df_last_24h)
-    plt.title("Temperature Last 24 Hours")
-    plt.xlabel("Time")
-    plt.ylabel("Temp (°C)")
-    plt.legend()
-    plt.xticks(rotation=45)
-
-    # Humidity Measurement last 24 h
-    plt.subplot(gs[3])
-    sns.lineplot(x="timestamp", y="humidity", marker='o', markersize=6, color='purple', data=df_last_24h)
-    plt.title("Humidity Last 24 Hours")
-    plt.xlabel("Time")
-    plt.ylabel("Humidity (%)")
-    plt.xticks(rotation=45, ha='right')
-    plt.gca().xaxis.grid(True)
-    plt.gca().set_facecolor('#f5f5f5')
-    sns.despine(left=True, bottom=True)
-
-    plt.tight_layout()
-    name = datetime.now().strftime("%d-%m-%Y")
-    plt.savefig(f"plots/{name}.pdf")
-    plt.show()
-    plt.close()
-    sns.reset_defaults()
-
-
 # ------------------------------- Main  ----------------------------------------------
 
 def create_and_backup_visualization():
@@ -161,7 +102,7 @@ def create_and_backup_visualization():
     df = handler.read_data_into_dataframe()
     df = df.sort_values(by="timestamp")
     df['timestamp'] = df['timestamp'].map(lambda x: datetime.strptime(str(x).strip(), '%Y-%m-%d %H:%M:%S'))
-    draw_plots(df, show_heatmap=False)
+    draw_plots(df)
     log.info("Done")
     send_visualization_email(df)
 
@@ -188,8 +129,8 @@ def main():
     schedule.every(10).minutes.do(collect_and_save_to_db)
     schedule.every().day.at("06:00").do(create_and_backup_visualization)
 
-    # collect_and_save_to_db()
-    # create_and_backup_visualization()
+    collect_and_save_to_db()
+    create_and_backup_visualization()
     while True:
         schedule.run_pending()
         time.sleep(1)
