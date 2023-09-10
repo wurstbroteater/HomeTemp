@@ -8,6 +8,7 @@ This idea is still growing prosperously.
 - Create data visualizations using seaborn and matplot
 - Ability to send emails with text and attached pdf file
 - Recover sensor data from log file and save to database 
+- Ability to fetch data from API endpoints
 
 
 While `humidity.py` is the entrypoint to start periodical data collection and distribution, `crunch_numbers.ipynb` is a playground for everything.

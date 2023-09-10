@@ -1,8 +1,12 @@
 import pandas as pd
 from api.fetcher import DWDFetcher
+import configparser
 
-ulm_station_code = '10838'
-fetcher = DWDFetcher("https://app-prod-ws.warnwetter.de/v30/stationOverviewExtended", f"stationIds={ulm_station_code}")
+config = configparser.ConfigParser()
+config.read("hometemp.ini")
+
+fetcher = DWDFetcher(config["dwd"]["station"])
+print(fetcher)
 c_time, c_temp = fetcher.get_dwd_data()
 print(f"DWD forecast temperature data for Ulm is: {c_time.strftime('%Y-%m-%d %H:%M:%S')} {c_temp}°C")
 dwd_data = fetcher.data
@@ -22,8 +26,6 @@ df_hum = pd.DataFrame({
     "sunshine": dwd_data["sunshine"],
     "surfacePressure": dwd_data["surfacePressure"],
 })
-# print(df_temp.describe())
+print(df_temp.describe())
 # print(df_hum.describe())
 # print(df_day.describe())
-
-print()

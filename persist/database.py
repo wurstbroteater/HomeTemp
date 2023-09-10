@@ -87,6 +87,15 @@ class PostgresHandler(ABC):
             log.error("Problem with database " + str(e))
             return False
 
+    def read_data_into_dataframe(self):
+        try:
+            df = pd.read_sql(f"SELECT * FROM {self.table}", self.connection)
+            return df
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+            return None
+
 
 class SensorDataHandler(PostgresHandler):
     """
@@ -125,11 +134,36 @@ class SensorDataHandler(PostgresHandler):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
 
-    def read_data_into_dataframe(self):
+
+class DwDDataHandler(PostgresHandler):
+    """
+    Implementation of PostgresHandler with table schema for data from Deutsche Wetterdienst (DWD).
+    In addition, it provides a method for inserting data into the table.
+    """
+
+    def _create_table(self):
+        metadata = MetaData()
+        table_schema = Table(self.table, metadata,
+                             Column('id', Integer, primary_key=True, autoincrement=True),
+                             Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
+                             Column('temp', DECIMAL, nullable=False))
         try:
-            df = pd.read_sql(f"SELECT * FROM {self.table}", self.connection)
-            return df
+            metadata.create_all(self.connection)
+            log.info(f"Table '{self.table}' created successfully.")
 
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
-            return None
+
+    def insert_dwd_data(self, timestamp, temp):
+        try:
+            table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
+            with self.connection.begin() as con:
+                data_to_insert = {
+                    'timestamp': timestamp,
+                    'temp': temp,
+                }
+                insert_statement = insert(table).values(**data_to_insert)
+                con.execute(insert_statement)
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
