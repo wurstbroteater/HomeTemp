@@ -3,7 +3,7 @@ import configparser
 from datetime import datetime
 
 config = configparser.ConfigParser()
-config.read('../hometemp.ini')
+config.read('hometemp.ini')
 auth = config["db"]
 
 handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data2')
@@ -19,4 +19,6 @@ print(handler._check_table_existence())
 print(handler._get_table_size())
 handler._remove_table()
 print(handler._check_table_existence())
+
+# should fail because table does not exists
 # print(handler._get_table_size())
