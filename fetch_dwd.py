@@ -1,11 +1,11 @@
-import configparser, logging
+import logging
+import configparser
 from api.fetcher import DWDFetcher
 import schedule, time
 from persist.database import DwDDataHandler
 
-config = configparser.ConfigParser()
-config.read("hometemp.ini")
-
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
 logging.basicConfig(filename='dwd_measurement.log',
                     encoding='utf-8',
                     level=logging.INFO)
@@ -13,15 +13,18 @@ logging.basicConfig(filename='dwd_measurement.log',
 log = logging.getLogger('dwdfetcher')
 log.addHandler(logging.StreamHandler())
 
+config = configparser.ConfigParser()
+config.read("hometemp.ini")
+
 
 def fetch_and_save():
     auth = config["db"]
     fetcher = DWDFetcher(config["dwd"]["station"])
-    c_time, c_temp = fetcher.get_dwd_data()
-    log.info(f"[DWD] Forecast for Ulm is: {c_time.strftime('%Y-%m-%d %H:%M:%S')} temp={c_temp}°C")
+    c_time, c_temp, dev = fetcher.get_dwd_data()
+    log.info(f"[DWD] Forecast for Ulm is: {c_time.strftime('%Y-%m-%d %H:%M:%S')} temp={c_temp}°C dev={dev}")
     handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
     handler.init_db_connection()
-    handler.insert_dwd_data(timestamp=c_time.strftime('%Y-%m-%d %H:%M:%S'), temp=c_temp)
+    handler.insert_dwd_data(timestamp=c_time.strftime('%Y-%m-%d %H:%M:%S'), temp=c_temp, temp_dev=dev)
 
 
 def main():
@@ -30,6 +33,7 @@ def main():
 
     log.info("finished initialization")
     fetch_and_save()
+
     while True:
         schedule.run_pending()
         time.sleep(1)
