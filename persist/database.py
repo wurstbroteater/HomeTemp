@@ -247,7 +247,7 @@ class GoogleDataHandler(PostgresHandler):
             log.error("Problem with database " + str(e))
             return False
 
-    def insert_google_data(self, timestamp, temp, humidity, precipitation):
+    def insert_google_data(self, timestamp, temp, humidity, precipitation, wind):
         try:
             table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
             with self.connection.begin() as con:
@@ -255,7 +255,8 @@ class GoogleDataHandler(PostgresHandler):
                     'timestamp': timestamp,
                     'temp': temp,
                     'humidity': humidity,
-                    'precipitation': precipitation
+                    'precipitation': precipitation,
+                    'wind': wind
                 }
                 insert_statement = insert(table).values(**data_to_insert)
                 con.execute(insert_statement)
