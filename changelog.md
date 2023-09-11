@@ -9,6 +9,7 @@
 - Added `default_hometemp.ini` for better overview of used local variables
 - Decreased the time delay in "every 10 minutes" jobs by using the method `run_threaded`
 - Added "tests" but only for toying around or minial usage examples
+- renamed `humidity.py` to `hometemp.py`
 
 ## 0.2.1
 

@@ -11,7 +11,7 @@ This idea is still growing prosperously.
 - Ability to fetch data from API endpoints
 
 
-While `humidity.py` is the entrypoint to start periodical data collection and distribution, `crunch_numbers.ipynb` is a playground for everything.
+While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `crunch_numbers.ipynb` is a playground for everything.
 
 ## Start Instructions
 The following sections provide information and tips for starting the related services and dependencies.

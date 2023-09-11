@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-from persist.database import SensorDataHandler
+from persist.database import DwDDataHandler, GoogleDataHandler, SensorDataHandler 
 from visualize.plots import draw_plots
 
 # only logs from this file will be written to console but all logs will be saved to file
@@ -93,12 +93,23 @@ def send_visualization_email(df):
 def create_and_backup_visualization():
     log.info("Creating Measurement Data Visualization")
     auth = config["db"]
-    handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
-    handler.init_db_connection(check_table=False)
-    df = handler.read_data_into_dataframe()
+    sensor_data_handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
+    sensor_data_handler.init_db_connection(check_table=False)
+    # sensor data
+    df = sensor_data_handler.read_data_into_dataframe()
     df = df.sort_values(by="timestamp")
     df['timestamp'] = df['timestamp'].map(lambda x: datetime.strptime(str(x).strip(), '%Y-%m-%d %H:%M:%S'))
-    draw_plots(df)
+    # Google weather data
+    google_handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
+    google_handler.init_db_connection(check_table=False)
+    google_df = google_handler.read_data_into_dataframe()
+    google_df = google_df.sort_values(by='id')
+    # DWD weather data
+    dwd_handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
+    dwd_handler.init_db_connection(check_table=False)
+    dwd_df = dwd_handler.read_data_into_dataframe()
+    dwd_df = dwd_df.sort_values(by='id')
+    draw_plots(df, google_df=google_df, dwd_df=dwd_df)
     log.info("Done")
     send_visualization_email(df)
 
@@ -126,13 +137,13 @@ def collect_and_save_to_db():
 def main():
     log = logging.getLogger('hometemp')
     log.addHandler(logging.StreamHandler())
-    log.info("------------------- HomeTemp v0.2.1 -------------------")
+    log.info("------------------- HomeTemp v0.3-DEV -------------------")
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)
 
-    # collect_and_save_to_db()
-    # run_threaded(create_and_backup_visualization)
+    collect_and_save_to_db()
+    run_threaded(create_and_backup_visualization)
     log.info("finished initialization")
     while True:
         schedule.run_pending()
