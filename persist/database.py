@@ -210,3 +210,56 @@ class DwDDataHandler(PostgresHandler):
 
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
+
+
+class GoogleDataHandler(PostgresHandler):
+    """
+    Implementation of PostgresHandler with table schema for data from Google Weather.
+    In addition, it provides a method for inserting data into the table.
+    """
+
+    def _create_table(self):
+        metadata = MetaData()
+        # humidity, precipitation are % values and wind is in km/h
+        table_schema = Table(self.table, metadata,
+                             Column('id', Integer, primary_key=True, autoincrement=True),
+                             Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
+                             Column('temp', DECIMAL, nullable=False),
+                             Column('humidity', DECIMAL, nullable=False),
+                             Column('precipitation', DECIMAL, nullable=False),
+                             Column('wind', DECIMAL, nullable=False))
+        try:
+            metadata.create_all(self.connection)
+            log.info(f"Table '{self.table}' created successfully.")
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+
+    def row_exists_with_timestamp(self, timestamp_value):
+        try:
+            table = Table(self.table, MetaData(), autoload_with=self.connection)
+            with self.connection.connect() as con:
+                select_statement = select(table).where(table.c.timestamp == timestamp_value)
+                result = con.execute(select_statement)
+                return result.fetchone() is not None
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+            return False
+
+    def insert_google_data(self, timestamp, temp, humidity, precipitation, wind):
+        try:
+            table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
+            with self.connection.begin() as con:
+                data_to_insert = {
+                    'timestamp': timestamp,
+                    'temp': temp,
+                    'humidity': humidity,
+                    'precipitation': precipitation,
+                    'wind': wind
+                }
+                insert_statement = insert(table).values(**data_to_insert)
+                con.execute(insert_statement)
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))

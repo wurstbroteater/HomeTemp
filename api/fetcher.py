@@ -2,9 +2,36 @@ import logging
 import requests
 import urllib.parse
 from datetime import datetime
+from bs4 import BeautifulSoup as bs
 
-log = logging.getLogger('api.fetcher')
+log = logging.getLogger("api.fetcher")
 import configparser
+
+
+class GoogleFetcher:
+    @staticmethod
+    def get_weather_data(location: str):
+        URL = "https://www.google.com/search?lr=lang_en&ie=UTF-8&q=weather" + location
+        USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
+        LANGUAGE = "en-US,en;q=0.5"
+        try:
+            session = requests.Session()
+            session.headers["User-Agent"] = USER_AGENT
+            session.headers["Accept-Language"] = LANGUAGE
+            session.headers["Content-Language"] = LANGUAGE
+            html = session.get(URL)
+            soup = bs(html.text, "html.parser")
+
+            result = {}
+            result["region"] = soup.find("div", attrs={"id": "wob_loc"}).text
+            result["temp_now"] = float(soup.find("span", attrs={"id": "wob_tm"}).text)
+            result["precipitation"] = float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%", ""))
+            result["humidity"] = float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", ""))
+            result["wind"] = float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))
+            return result
+        except ConnectionError as e:
+            log.error("Google Weather connection problem: " + str(e))
+            return None
 
 
 class Fetcher:
@@ -96,18 +123,18 @@ class DWDFetcher(Fetcher):
 
         if len(temp_std) != len(temp_values):
             log.error(f"Error: Unable to validate DWD temperature data because temp values and std differ!")
-            return current_time, float('nan'), float('nan')
+            return current_time, float("nan"), float("nan")
 
         current_temp_forecast_index = self._get_index()
         if len(temp_values) < current_temp_forecast_index:
             log.error(
                 f"Error: Forecast index out of range, size: {len(temp_values)}, index: {current_temp_forecast_index}")
-            return current_time, float('nan'), float('nan')
+            return current_time, float("nan"), float("nan")
         elif temp_std[current_temp_forecast_index] == 0:
             log.error(f"Error: 0 tempStd for found temperature {temp_values[current_temp_forecast_index]}")
-            return current_time, float('nan'), float('nan')
+            return current_time, float("nan"), float("nan")
         else:
             temp = float(temp_values[current_temp_forecast_index]) / 10.0
-            dev = self.data['temperatureStd'][current_temp_forecast_index]
+            dev = self.data["temperatureStd"][current_temp_forecast_index]
             # log.info(f"Found: {current_temp_forecast_index}, {current_time}, {temp}°C, dev: {dev}")
             return current_time, temp, dev
