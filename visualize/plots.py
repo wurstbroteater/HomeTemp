@@ -27,7 +27,7 @@ def draw_plots(df, dwd_df=None, google_df=None, with_save=True):
 
     # Humidity Measurement
     plt.subplot(gs[1])
-    sns.lineplot(x="timestamp", y="humidity", color='purple', data=df)
+    sns.lineplot(label="Home", x="timestamp", y="humidity", color='purple', data=df)
     if google_df is not None:
         sns.lineplot(label="Google Forecast", x="timestamp", y="humidity", data=google_df)
     plt.title("Humidity Over Time")
