@@ -7,9 +7,10 @@ from bs4 import BeautifulSoup as bs
 log = logging.getLogger("api.fetcher")
 import configparser
 
+
 class GoogleFetcher:
     @staticmethod
-    def get_weather_data(location:str):
+    def get_weather_data(location: str):
         URL = "https://www.google.com/search?lr=lang_en&ie=UTF-8&q=weather" + location
         USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
         LANGUAGE = "en-US,en;q=0.5"
@@ -24,13 +25,13 @@ class GoogleFetcher:
             result = {}
             result["region"] = soup.find("div", attrs={"id": "wob_loc"}).text
             result["temp_now"] = float(soup.find("span", attrs={"id": "wob_tm"}).text)
-            result["precipitation"] = float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%",""))
-            result["humidity"] = float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%",""))
-            result["wind"] = float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h",""))
+            result["precipitation"] = float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%", ""))
+            result["humidity"] = float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", ""))
+            result["wind"] = float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))
             return result
         except ConnectionError as e:
-              log.error("Google Weather connection problem: " + str(e))
-              return None
+            log.error("Google Weather connection problem: " + str(e))
+            return None
 
 
 class Fetcher:

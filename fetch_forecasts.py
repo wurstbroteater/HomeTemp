@@ -29,6 +29,7 @@ def dwd_fetch_and_save():
     else:
         handler.update_temp_by_timestamp(c_time.strftime('%Y-%m-%d %H:%M:%S'), c_temp, dev)
 
+
 def google_fetch_and_save():
     auth = config["db"]
     fetcher = GoogleFetcher()

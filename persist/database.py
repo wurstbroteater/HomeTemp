@@ -220,7 +220,7 @@ class GoogleDataHandler(PostgresHandler):
 
     def _create_table(self):
         metadata = MetaData()
-        #humidity, precipitation are % values and wind is in km/h
+        # humidity, precipitation are % values and wind is in km/h
         table_schema = Table(self.table, metadata,
                              Column('id', Integer, primary_key=True, autoincrement=True),
                              Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
