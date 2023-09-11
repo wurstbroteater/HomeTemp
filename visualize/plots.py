@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 
-def draw_plots(df, temp_outside=None, with_save=True):
+def draw_plots(df, dwd_df=None, google_df=None, with_save=True):
     sns.set_theme(style="darkgrid")  # sns.set(style="whitegrid")
     fig = plt.figure(figsize=(25, 12))
     gs = fig.add_gridspec(2, 2, height_ratios=[2, 2])  # 2 rows, 1 column
@@ -36,9 +36,10 @@ def draw_plots(df, temp_outside=None, with_save=True):
 
     # Temperature Measurements last 24 h
     plt.subplot(gs[2])
-    if temp_outside is not None:
-        sns.lineplot(label="DWD Forecast", x="timestamp", y="temp", color='orange', marker='o', markersize=6,
-                     data=temp_outside)
+    if dwd_df is not None:
+        sns.lineplot(label="DWD Forecast", x="timestamp", y="temp", marker='o', markersize=6, data=dwd_df)
+    if google_df is not None:
+        sns.lineplot(label="Google Forecast", x="timestamp", y="temp", marker='o', markersize=6, data=google_df)
     sns.lineplot(label="Home", x="timestamp", y="room_temp", marker='o', markersize=6, data=df_last_24h)
     plt.title("Temperature Last 24 Hours")
     plt.xlabel("Time")
