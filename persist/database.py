@@ -1,5 +1,6 @@
 from persist.persistence_logger import per_log as log
-from sqlalchemy import create_engine, text, select, update, insert, inspect, exc, Table, Column, MetaData, Integer, DECIMAL, \
+from sqlalchemy import create_engine, text, select, update, insert, inspect, exc, Table, Column, MetaData, Integer, \
+    DECIMAL, \
     TIMESTAMP
 from abc import ABC, abstractmethod
 import pandas as pd
@@ -183,8 +184,7 @@ class DwDDataHandler(PostgresHandler):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
 
-
-    def update_temp_by_timestamp(self,timestamp_to_check, new_temp_value, new_temp_dev):
+    def update_temp_by_timestamp(self, timestamp_to_check, new_temp_value, new_temp_dev):
         """
         Search row based on timestamp and update their temp and temp_dev value only if 
         the old and new temp values or not equal.
@@ -193,20 +193,20 @@ class DwDDataHandler(PostgresHandler):
             table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
             with self.connection.begin() as con:
                 select_statement = select(table.c.temp).where(table.c.timestamp == timestamp_to_check)
-                result = con.execute(select_statement) 
+                result = con.execute(select_statement)
                 # fetch the first rows temp value or None 
                 row = result.fetchone()
                 if row is not None:
                     if float(row[0]) != new_temp_value:
-                        con.execute(update(table).where(table.c.timestamp == timestamp_to_check).values(temp=new_temp_value, temp_dev=new_temp_dev))
-                        log.info(f"Row with timestamp {timestamp_to_check} updated with new temp value {new_temp_value}°C and dev {new_temp_dev}")
+                        con.execute(
+                            update(table).where(table.c.timestamp == timestamp_to_check).values(temp=new_temp_value,
+                                                                                                temp_dev=new_temp_dev))
+                        log.info(
+                            f"Row with timestamp {timestamp_to_check} updated with new temp value {new_temp_value}°C and dev {new_temp_dev}")
                     else:
                         log.info(f"Row with timestamp {timestamp_to_check} not updated; values are equal.")
                 else:
                     log.warn(f"No row with timestamp {timestamp_to_check} found in the table.")
-             
+
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
-
-
-
