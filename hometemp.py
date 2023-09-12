@@ -45,7 +45,7 @@ def get_sensor_data():
 
 # ------------------------------- Data Distribution ----------------------------------------------
 
-def send_visualization_email(df):
+def send_visualization_email(df, google_df, dwd_df):
     file_name = datetime.now().strftime("%d-%m-%Y")
     auth = config["distribution"]
 
@@ -53,10 +53,17 @@ def send_visualization_email(df):
     to_email = auth["to_email"]
     log.info(f"Sending Measurement Data Visualization to {from_email}")
 
-    subject = f"Measurement Data Report {file_name}"
-    message = str(df[["humidity", "room_temp", "cpu_temp"]].corr()) + "\n\n" + str(
-        df[["humidity", "room_temp", "cpu_temp"]].describe()).format("utf8") + "\n\n" + str(
-        df[["timestamp", "humidity", "room_temp", "cpu_temp"]].tail(6))
+    subject = f"HomeTemp Data Report {file_name}"
+    message = "------------- Sensor Data -------------\n"
+    message += str(df[["humidity", "room_temp", "cpu_temp"]].corr()) + "\n\n"
+    message += str(df[["humidity", "room_temp", "cpu_temp"]].describe()).format("utf8") + "\n\n"
+    message += str(df[["timestamp", "humidity", "room_temp", "cpu_temp"]].tail(6))
+    message += "\n\n------------- Google Data -------------\n"
+    message += str(google_df.describe()).format("utf8") + "\n\n"
+    message += str(google_df.tail(6))
+    message += "\n\n------------- DWD Data -------------\n"
+    message += str(dwd_df.describe()).format("utf8") + "\n\n"
+    message += str(dwd_df.tail(6))
 
     pdf_file_path = f"/home/eric/HomeTemp/plots/{file_name}.pdf"
     attachment = open(pdf_file_path, "rb")
@@ -113,7 +120,7 @@ def create_and_backup_visualization():
     dwd_df = dwd_df.sort_values(by="timestamp")
     draw_plots(df, google_df=google_df, dwd_df=dwd_df)
     log.info("Done")
-    send_visualization_email(df)
+    send_visualization_email(df, google_df=google_df, dwd_df=dwd_df)
 
 
 def run_threaded(job_func):
@@ -139,7 +146,7 @@ def collect_and_save_to_db():
 def main():
     log = logging.getLogger('hometemp')
     log.addHandler(logging.StreamHandler())
-    log.info("------------------- HomeTemp v0.3-DEV -------------------")
+    log.info(f"------------------- HomeTemp v{config['hometemp']['version']} -------------------")
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)

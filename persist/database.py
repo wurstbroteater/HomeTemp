@@ -38,7 +38,7 @@ class PostgresHandler(ABC):
         try:
             if self.connection is None:
                 self.connection = self._init_db()
-            log.info("Connected to the database!")
+            log.debug("Connected to the database!")
             if check_table and not self._check_table_existence():
                 self._create_table()
         except exc.SQLAlchemyError as e:
@@ -180,10 +180,10 @@ class DwDDataHandler(PostgresHandler):
                 }
                 insert_statement = insert(table).values(**data_to_insert)
                 con.execute(insert_statement)
+                log.info("DWD data inserted successfully.")
 
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
-
 
     def get_temp_for_timestamp(self, timestamp_to_check):
         """
@@ -207,9 +207,6 @@ class DwDDataHandler(PostgresHandler):
         
         return None
         
-
-
-
     def update_temp_by_timestamp(self, timestamp_to_check, new_temp_value, new_temp_dev):
         """
         Search row based on timestamp and update their temp and temp_dev value only if 
@@ -285,6 +282,7 @@ class GoogleDataHandler(PostgresHandler):
                 }
                 insert_statement = insert(table).values(**data_to_insert)
                 con.execute(insert_statement)
+                log.info("Google Weather data inserted successfully.")
 
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))

@@ -71,7 +71,8 @@ def google_fetch_and_save():
 
 
 def main():
-    log.info("------------------- Fetch DWD Measurements v0.2 -------------------")
+    # Todo: integrate into hometemp for final release
+    log.info("------------------- Fetch DWD Measurements -------------------")
     schedule.every(10).minutes.do(dwd_fetch_and_save)
     schedule.every(10).minutes.do(google_fetch_and_save)
 
