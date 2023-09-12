@@ -53,7 +53,7 @@ def send_visualization_email(df, google_df, dwd_df):
     to_email = auth["to_email"]
     log.info(f"Sending Measurement Data Visualization to {from_email}")
 
-    subject = f"HomeTemp Data Report {file_name}"
+    subject = f"HomeTemp v{config['hometemp']['version']} Data Report {file_name}"
     message = "------------- Sensor Data -------------\n"
     message += str(df[["humidity", "room_temp", "cpu_temp"]].corr()) + "\n\n"
     message += str(df[["humidity", "room_temp", "cpu_temp"]].describe()).format("utf8") + "\n\n"
