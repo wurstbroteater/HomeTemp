@@ -59,10 +59,10 @@ def send_visualization_email(df, google_df, dwd_df):
     message += str(df[["humidity", "room_temp", "cpu_temp"]].describe()).format("utf8") + "\n\n"
     message += str(df[["timestamp", "humidity", "room_temp", "cpu_temp"]].tail(6))
     message += "\n\n------------- Google Data -------------\n"
-    message += str(google_df.describe()).format("utf8") + "\n\n"
+    message += str(google_df.drop(['id', 'timestamp'],axis=1).describe()).format("utf8") + "\n\n"
     message += str(google_df.tail(6))
     message += "\n\n------------- DWD Data -------------\n"
-    message += str(dwd_df.describe()).format("utf8") + "\n\n"
+    message += str(dwd_df.drop(['id', 'timestamp'],axis=1).describe()).format("utf8") + "\n\n"
     message += str(dwd_df.tail(6))
 
     pdf_file_path = f"/home/eric/HomeTemp/plots/{file_name}.pdf"
