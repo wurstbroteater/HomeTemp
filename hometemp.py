@@ -103,12 +103,14 @@ def create_and_backup_visualization():
     google_handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
     google_handler.init_db_connection(check_table=False)
     google_df = google_handler.read_data_into_dataframe()
-    google_df = google_df.sort_values(by='id')
+    google_df['timestamp'] = google_df['timestamp'].map(lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
+    google_df = google_df.sort_values(by="timestamp")
     # DWD weather data
     dwd_handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
     dwd_handler.init_db_connection(check_table=False)
     dwd_df = dwd_handler.read_data_into_dataframe()
-    dwd_df = dwd_df.sort_values(by='id')
+    dwd_df['timestamp'] = dwd_df['timestamp'].map(lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
+    dwd_df = dwd_df.sort_values(by="timestamp")
     draw_plots(df, google_df=google_df, dwd_df=dwd_df)
     log.info("Done")
     send_visualization_email(df)
@@ -142,8 +144,8 @@ def main():
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)
 
-    collect_and_save_to_db()
-    run_threaded(create_and_backup_visualization)
+    #collect_and_save_to_db()
+    #run_threaded(create_and_backup_visualization)
     log.info("finished initialization")
     while True:
         schedule.run_pending()
