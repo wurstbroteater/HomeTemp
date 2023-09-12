@@ -1,4 +1,4 @@
-import Adafruit_DHT, configparser, logging, schedule, smtplib, time, threading
+import Adafruit_DHT, configparser, logging, re, schedule, smtplib, time, threading
 from datetime import datetime, timedelta
 from gpiozero import CPUTemperature
 from email.mime.multipart import MIMEMultipart
@@ -103,7 +103,7 @@ def create_and_backup_visualization():
     google_handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
     google_handler.init_db_connection(check_table=False)
     google_df = google_handler.read_data_into_dataframe()
-    google_df['timestamp'] = google_df['timestamp'].map(lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
+    google_df['timestamp'] = google_df['timestamp'].map(lambda x: datetime.strptime(re.sub('\..*', '', str(x).strip()), '%Y-%m-%d %H:%M:%S'))
     google_df = google_df.sort_values(by="timestamp")
     # DWD weather data
     dwd_handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
