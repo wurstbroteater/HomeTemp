@@ -184,32 +184,57 @@ class DwDDataHandler(PostgresHandler):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
 
-    def update_temp_by_timestamp(self, timestamp_to_check, new_temp_value, new_temp_dev):
+
+    def get_temp_for_timestamp(self, timestamp_to_check):
         """
-        Search row based on timestamp and update their temp and temp_dev value only if 
-        the old and new temp values or not equal.
+        For every timestamp there is exactly one temperature value. This method returns the
+        temperature value of a row identified by its timestamp or None.
         """
+
         try:
             table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
-            with self.connection.begin() as con:
+            with self.connection.connect() as con:
                 select_statement = select(table.c.temp).where(table.c.timestamp == timestamp_to_check)
                 result = con.execute(select_statement)
-                # fetch the first rows temp value or None 
                 row = result.fetchone()
                 if row is not None:
-                    if float(row[0]) != new_temp_value:
-                        con.execute(
-                            update(table).where(table.c.timestamp == timestamp_to_check).values(temp=new_temp_value,
-                                                                                                temp_dev=new_temp_dev))
-                        log.info(
-                            f"Row with timestamp {timestamp_to_check} updated with new temp value {new_temp_value}°C and dev {new_temp_dev}")
-                    else:
-                        log.info(f"Row with timestamp {timestamp_to_check} not updated; values are equal.")
+                    return float(row[0])           
                 else:
                     log.warn(f"No row with timestamp {timestamp_to_check} found in the table.")
 
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
+        
+        return None
+        
+
+
+
+    def update_temp_by_timestamp(self, timestamp_to_check, new_temp_value, new_temp_dev):
+        """
+        Search row based on timestamp and update their temp and temp_dev value only if 
+        the old and new temp values or not equal.
+
+        returns True if the value was updated otherwise False.
+        """
+        try:
+            table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
+            with self.connection.begin() as con:
+                old_temp_value = self.get_temp_for_timestamp(timestamp_to_check)
+                if old_temp_value is not None and old_temp_value != new_temp_value:
+                    con.execute(
+                        update(table).where(table.c.timestamp == timestamp_to_check).values(temp=new_temp_value,
+                                                                                            temp_dev=new_temp_dev))
+                    log.info(
+                        f"Row with timestamp {timestamp_to_check} updated with new temp value {new_temp_value}°C and dev {new_temp_dev}")
+                    return True
+                else:
+                    log.info(f"Row with timestamp {timestamp_to_check} not updated; values are equal.")
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+        
+        return False
 
 
 class GoogleDataHandler(PostgresHandler):

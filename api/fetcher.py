@@ -93,8 +93,11 @@ class DWDFetcher(Fetcher):
         """
 
         if not current_time:
-            current_time = datetime(year=datetime.now().year, month=datetime.now().month, day=datetime.now().day,
-                                    hour=datetime.now().hour, minute=0, second=0, microsecond=0, tzinfo=None, fold=0)
+            current_time = datetime.now()
+        if isinstance(current_time, str):
+            current_time = datetime.strptime(current_time, "%Y-%m-%d %H:%M:%S")
+            
+        current_time = datetime(year=current_time.year, month=current_time.month, day=current_time.day, hour=current_time.hour, minute=0, second=0, microsecond=0, tzinfo=None, fold=0)
 
         # from milliseconds to seconds
         start_measurement_time_s = self.data["start"] / 1000
