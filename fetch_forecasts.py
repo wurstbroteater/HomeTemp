@@ -24,12 +24,14 @@ def dwd_fetch_and_save():
     log.info(f"[DWD] Forecast for Ulm is: {c_time.strftime('%Y-%m-%d %H:%M:%S')} temp={c_temp}°C dev={dev}")
     handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
     handler.init_db_connection()
-    if not handler.row_exists_with_timestamp(c_time):
+    if not handler.row_exists_with_timestamp(c_time.strftime('%Y-%m-%d %H:%M:%S')):
         handler.insert_dwd_data(timestamp=c_time.strftime('%Y-%m-%d %H:%M:%S'), temp=c_temp, temp_dev=dev)
     else:
         update_detected = handler.update_temp_by_timestamp(c_time.strftime('%Y-%m-%d %H:%M:%S'), c_temp, dev)
+        log.info(f"[DWD] Temperature for timestamp already exists")
         # proccess DWD data update for all found temperatues found by timestamp
         if update_detected:
+            log.info("[DWD] Data update detected.")
             # skip updates for temperatures if not in range [-100, 100] °C sometimes measures with a temp value of 32767 and dev 0 occur.
             sanity_threshold = 100
             temp_values = fetcher.data["temperature"]
@@ -45,7 +47,7 @@ def dwd_fetch_and_save():
                     if old_temp != new_temp:
                         handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp, new_dev)
                 else:
-                    log.warning("Reached sanity threshold for temp updates at "+ timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
+                    log.warning("[DWD] Reached sanity threshold for temp updates at "+ timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
                     break
                 timestamp_to_update -= time_diff
 
@@ -55,7 +57,7 @@ def google_fetch_and_save():
     fetcher = GoogleFetcher()
     google_data = fetcher.get_weather_data(config["google"]["location"])
     if google_data is None:
-        log.error("Could not receive google data")
+        log.error("[Google] Could not receive google data")
     else:
         c_time = datetime.now()
         c_temp = google_data["temp_now"]
