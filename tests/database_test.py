@@ -7,6 +7,7 @@ config = configparser.ConfigParser()
 config.read('hometemp.ini')
 auth = config["db"]
 
+
 def foo():
     handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data2')
     handler.init_db_connection()
@@ -25,13 +26,14 @@ def foo():
     # should fail because table does not exists
     # print(handler._get_table_size())
 
+
 def process_data_updates():
     sanity_threshold = 100
     fetcher = DWDFetcher(config["dwd"]["station"])
     data = fetcher.get_dwd_data()
     handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
     handler.init_db_connection()
-    c_time = datetime.strptime('2023-09-12 17:00:00',"%Y-%m-%d %H:%M:%S")
+    c_time = datetime.strptime('2023-09-12 17:00:00', "%Y-%m-%d %H:%M:%S")
     temp_values = fetcher.data["temperature"]
     temp_std = fetcher.data["temperatureStd"]
     time_diff = timedelta(seconds=(fetcher.data["timeStep"] / 1000))
@@ -45,15 +47,13 @@ def process_data_updates():
             print(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S") + f" old/new: {old_temp}/{new_temp} {new_dev}")
             if old_temp != new_temp:
                 print("update!")
-                #handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp, new_dev)
+                # handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp, new_dev)
                 pass
         else:
-            print("Reached sanity threshold for temp updates at "+ timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
+            print("Reached sanity threshold for temp updates at " + timestamp_to_update.strftime(
+                "%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
             break
         timestamp_to_update -= time_diff
-               
-
-
 
 
 process_data_updates()

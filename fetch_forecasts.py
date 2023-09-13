@@ -29,7 +29,7 @@ def dwd_fetch_and_save():
     else:
         update_detected = handler.update_temp_by_timestamp(c_time.strftime('%Y-%m-%d %H:%M:%S'), c_temp, dev)
         log.info(f"[DWD] Temperature for timestamp already exists")
-        # proccess DWD data update for all found temperatues found by timestamp
+        # process DWD data update for all found temperatures found by timestamp
         if update_detected:
             log.info("[DWD] Data update detected.")
             # skip updates for temperatures if not in range [-100, 100] °C sometimes measures with a temp value of 32767 and dev 0 occur.
@@ -43,11 +43,14 @@ def dwd_fetch_and_save():
                 new_dev = temp_std[i]
                 if new_temp <= sanity_threshold and new_temp >= (sanity_threshold * -1):
                     old_temp = handler.get_temp_for_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"))
-                    log.info(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S") + f" old/new: {old_temp}/{new_temp} {new_dev}")
+                    log.info(timestamp_to_update.strftime(
+                        "%Y-%m-%d %H:%M:%S") + f" old/new: {old_temp}/{new_temp} {new_dev}")
                     if old_temp != new_temp:
-                        handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp, new_dev)
+                        handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp,
+                                                         new_dev)
                 else:
-                    log.warning("[DWD] Reached sanity threshold for temp updates at "+ timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
+                    log.warning("[DWD] Reached sanity threshold for temp updates at " + timestamp_to_update.strftime(
+                        "%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
                     break
                 timestamp_to_update -= time_diff
 
@@ -80,7 +83,7 @@ def main():
 
     log.info("finished initialization")
     dwd_fetch_and_save()
-    #google_fetch_and_save()
+    # google_fetch_and_save()
 
     while True:
         schedule.run_pending()

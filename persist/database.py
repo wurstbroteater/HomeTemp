@@ -198,15 +198,15 @@ class DwDDataHandler(PostgresHandler):
                 result = con.execute(select_statement)
                 row = result.fetchone()
                 if row is not None:
-                    return float(row[0])           
+                    return float(row[0])
                 else:
                     log.warn(f"No row with timestamp {timestamp_to_check} found in the table.")
 
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
-        
+
         return None
-        
+
     def update_temp_by_timestamp(self, timestamp_to_check, new_temp_value, new_temp_dev):
         """
         Search row based on timestamp and update their temp and temp_dev value only if 
@@ -230,7 +230,7 @@ class DwDDataHandler(PostgresHandler):
 
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
-        
+
         return False
 
 

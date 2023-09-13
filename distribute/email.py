@@ -9,6 +9,7 @@ from datetime import datetime
 config = configparser.ConfigParser()
 config.read('hometemp.ini')
 
+
 class EmailDistributor:
 
     @staticmethod
@@ -29,7 +30,7 @@ class EmailDistributor:
         except FileNotFoundError:
             log.warning(f"Not file to attach found in {pdf_file_path}")
             has_attachment = False
-        
+
         log.info(f"Sending Measurement Data Visualization to {from_email}")
 
         subject = f"HomeTemp v{config['hometemp']['version']} Data Report {file_name}"
@@ -38,10 +39,10 @@ class EmailDistributor:
         message += str(df[["humidity", "room_temp", "cpu_temp"]].describe()).format("utf8") + "\n\n"
         message += str(df[["timestamp", "humidity", "room_temp", "cpu_temp"]].tail(6))
         message += "\n\n------------- Google Data -------------\n"
-        message += str(google_df.drop(['id', 'timestamp'],axis=1).describe()).format("utf8") + "\n\n"
+        message += str(google_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
         message += str(google_df.tail(6))
         message += "\n\n------------- DWD Data -------------\n"
-        message += str(dwd_df.drop(['id', 'timestamp'],axis=1).describe()).format("utf8") + "\n\n"
+        message += str(dwd_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
         message += str(dwd_df.tail(6))
         if not has_attachment:
             message += "\n\n !!!!!!!!!!!!!!!!!!!!!!Warning: attachment not found!!!!!!!!!!!!!!!!!!!!!!\n\n"

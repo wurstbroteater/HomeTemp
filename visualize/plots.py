@@ -48,7 +48,8 @@ def draw_plots(df, dwd_df=None, google_df=None, with_save=True):
     if dwd_df is not None:
         sns.lineplot(label="DWD Forecast", x="timestamp", y="temp", marker='o', markersize=6, data=dwd_df_last_24h)
     if google_df is not None:
-        sns.lineplot(label="Google Forecast", x="timestamp", y="temp", marker='o', markersize=6, data=google_df_last_24h)
+        sns.lineplot(label="Google Forecast", x="timestamp", y="temp", marker='o', markersize=6,
+                     data=google_df_last_24h)
     plt.title("Temperature Last 24 Hours")
     plt.xlabel("Time")
     plt.ylabel("Temp (°C)")
@@ -59,7 +60,8 @@ def draw_plots(df, dwd_df=None, google_df=None, with_save=True):
     plt.subplot(gs[3])
     sns.lineplot(label="Home", x="timestamp", y="humidity", marker='o', markersize=6, color='purple', data=df_last_24h)
     if google_df is not None:
-        sns.lineplot(label="Google Forecast", x="timestamp", y="humidity", marker='o', markersize=6, data=google_df_last_24h)
+        sns.lineplot(label="Google Forecast", x="timestamp", y="humidity", marker='o', markersize=6,
+                     data=google_df_last_24h)
     plt.title("Humidity Last 24 Hours")
     plt.xlabel("Time")
     plt.ylabel("Humidity (%)")
