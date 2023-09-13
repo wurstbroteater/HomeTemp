@@ -37,7 +37,7 @@ def get_sensor_data():
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return temperature, humidity, timestamp
     else:
-        raise Exception("Failed to retrieve data from humidity sensor")
+        raise Exception("Failed to retrieve data from AM2302 sensor")
 
 
 # ------------------------------- Main  ----------------------------------------------
