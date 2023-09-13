@@ -1,6 +1,6 @@
 import Adafruit_DHT, configparser, logging, re, schedule, time, threading
 from datetime import datetime, timedelta
-from gpiozero import CPUTemperature#
+from gpiozero import CPUTemperature
 from distribute.email import EmailDistributor
 from persist.database import DwDDataHandler, GoogleDataHandler, SensorDataHandler 
 from visualize.plots import draw_plots
@@ -78,8 +78,6 @@ def collect_and_save_to_db():
     auth = config["db"]
     handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
     handler.init_db_connection()
-    # log.debug(_get_table_size(con))
-    # _clear_table(con)
     cpu_temp = get_temperature()
     room_temp, humidity, timestamp = get_sensor_data()
     log.info(
@@ -96,7 +94,7 @@ def main():
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)
 
-    collect_and_save_to_db()
+    #collect_and_save_to_db()
     #run_threaded(create_and_backup_visualization)
     log.info("finished initialization")
     while True:

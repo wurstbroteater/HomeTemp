@@ -10,7 +10,7 @@ config = configparser.ConfigParser()
 config.read('hometemp.ini')
 
 class EmailDistributor:
-    
+
     @staticmethod
     def send_visualization_email(df, google_df, dwd_df):
         """
@@ -72,4 +72,3 @@ class EmailDistributor:
         finally:
             if has_attachment:
                 attachment.close()
-        log.info("Done")
