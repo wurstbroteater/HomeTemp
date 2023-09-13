@@ -10,10 +10,10 @@ class PostgresHandler(ABC):
     """
     Abstract class for initializing the Postgres database. It provides methods for the initialization, removal of the
     table itself, or its content as well as checking for table existence or how many rows the table has.
-    It does not provide a default method for inserting data into the table.
+    It only provides a default method for inserting data into the table but not for removing or updating it.
 
     @Impl
-    _create_table needs to be implemented in EVERY extending class.
+    _create_table needs to be implemented in EVERY extending class because it is used by the provided methods.
     """
 
     def __init__(self, port, host, user, password, table):
@@ -88,6 +88,19 @@ class PostgresHandler(ABC):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
             return False
+        
+    def _insert_in_table(self, data_to_insert:dict):
+        try:
+            table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
+            with self.connection.begin() as con:
+                insert_statement = insert(table).values(**data_to_insert)
+                con.execute(insert_statement)
+                return True
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem while inserting data into table " + str(e))
+        
+        return False
 
     def read_data_into_dataframe(self):
         try:
@@ -121,20 +134,15 @@ class SensorDataHandler(PostgresHandler):
             log.error("Problem with database " + str(e))
 
     def insert_measurements_into_db(self, timestamp, humidity, room_temp, cpu_temp):
-        try:
-            table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
-            with self.connection.begin() as con:
-                data_to_insert = {
-                    'timestamp': timestamp,
-                    'humidity': humidity,
-                    'room_temp': room_temp,
-                    'cpu_temp': cpu_temp
-                }
-                insert_statement = insert(table).values(**data_to_insert)
-                con.execute(insert_statement)
+        insert_successful = self._insert_in_table({
+            'timestamp': timestamp,
+            'humidity': humidity,
+            'room_temp': room_temp,
+            'cpu_temp': cpu_temp
+        })
 
-        except exc.SQLAlchemyError as e:
-            log.error("Problem with database " + str(e))
+        if insert_successful:
+            log.info("Sensor data inserted successfully.")
 
 
 class DwDDataHandler(PostgresHandler):
@@ -170,20 +178,14 @@ class DwDDataHandler(PostgresHandler):
             return False
 
     def insert_dwd_data(self, timestamp, temp, temp_dev):
-        try:
-            table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
-            with self.connection.begin() as con:
-                data_to_insert = {
-                    'timestamp': timestamp,
-                    'temp': temp,
-                    'temp_dev': temp_dev
-                }
-                insert_statement = insert(table).values(**data_to_insert)
-                con.execute(insert_statement)
-                log.info("DWD data inserted successfully.")
+            was_successful = self._insert_in_table({
+                'timestamp': timestamp,
+                'temp': temp,
+                'temp_dev': temp_dev
+            })
 
-        except exc.SQLAlchemyError as e:
-            log.error("Problem with database " + str(e))
+            if was_successful:
+                log.info("DWD data inserted successfully.")
 
     def get_temp_for_timestamp(self, timestamp_to_check):
         """
@@ -270,19 +272,13 @@ class GoogleDataHandler(PostgresHandler):
             return False
 
     def insert_google_data(self, timestamp, temp, humidity, precipitation, wind):
-        try:
-            table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
-            with self.connection.begin() as con:
-                data_to_insert = {
-                    'timestamp': timestamp,
-                    'temp': temp,
-                    'humidity': humidity,
-                    'precipitation': precipitation,
-                    'wind': wind
-                }
-                insert_statement = insert(table).values(**data_to_insert)
-                con.execute(insert_statement)
-                log.info("Google Weather data inserted successfully.")
+        was_successful = self._insert_in_table({
+            'timestamp': timestamp,
+            'temp': temp,
+            'humidity': humidity,
+            'precipitation': precipitation,
+            'wind': wind
+        })
 
-        except exc.SQLAlchemyError as e:
-            log.error("Problem with database " + str(e))
+        if was_successful:
+            log.info("Google Weather data inserted successfully.")
