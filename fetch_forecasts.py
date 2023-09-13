@@ -83,7 +83,7 @@ def main():
 
     log.info("finished initialization")
     dwd_fetch_and_save()
-    # google_fetch_and_save()
+    google_fetch_and_save()
 
     while True:
         schedule.run_pending()
