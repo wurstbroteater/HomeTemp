@@ -1,11 +1,8 @@
-import Adafruit_DHT, configparser, logging, schedule, smtplib, time, threading
+import Adafruit_DHT, configparser, logging, re, schedule, time, threading
 from datetime import datetime, timedelta
 from gpiozero import CPUTemperature
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
-from persist.database import SensorDataHandler
+from distribute.email import EmailDistributor
+from persist.database import DwDDataHandler, GoogleDataHandler, SensorDataHandler
 from visualize.plots import draw_plots
 
 # only logs from this file will be written to console but all logs will be saved to file
@@ -43,64 +40,35 @@ def get_sensor_data():
         raise Exception("Failed to retrieve data from humidity sensor")
 
 
-# ------------------------------- Data Distribution ----------------------------------------------
-
-def send_visualization_email(df):
-    file_name = datetime.now().strftime("%d-%m-%Y")
-    auth = config["distribution"]
-
-    from_email = auth["from_email"]
-    to_email = auth["to_email"]
-    log.info(f"Sending Measurement Data Visualization to {from_email}")
-
-    subject = f"Measurement Data Report {file_name}"
-    message = str(df[["humidity", "room_temp", "cpu_temp"]].corr()) + "\n\n" + str(
-        df[["humidity", "room_temp", "cpu_temp"]].describe()).format("utf8") + "\n\n" + str(
-        df[["timestamp", "humidity", "room_temp", "cpu_temp"]].tail(6))
-
-    pdf_file_path = f"/home/eric/HomeTemp/plots/{file_name}.pdf"
-    attachment = open(pdf_file_path, "rb")
-
-    msg = MIMEMultipart()
-    msg["From"] = from_email
-    msg["To"] = to_email
-    msg["Subject"] = subject
-
-    msg.attach(MIMEText(message, "plain"))
-
-    part = MIMEBase("application", "octet-stream")
-    part.set_payload(attachment.read())
-    encoders.encode_base64(part)
-    part.add_header("Content-Disposition", f"attachment; filename= {file_name}.pdf")
-    msg.attach(part)
-
-    try:
-        server = smtplib.SMTP(auth["smtp_server"], auth["smtp_port"])
-        server.starttls()
-        server.login(auth["smtp_user"], auth["smtp_pw"])
-        server.sendmail(from_email, to_email, msg.as_string())
-        server.quit()
-        log.info("Email sent successfully.")
-    except Exception as e:
-        log.error(f"Error sending email: {str(e)}")
-    finally:
-        attachment.close()
-    log.info("Done")
-
-
 # ------------------------------- Main  ----------------------------------------------
 
 def create_and_backup_visualization():
     log.info("Creating Measurement Data Visualization")
     auth = config["db"]
-    handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
-    handler.init_db_connection(check_table=False)
-    df = handler.read_data_into_dataframe()
+    sensor_data_handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'],
+                                            'sensor_data')
+    sensor_data_handler.init_db_connection(check_table=False)
+    # sensor data
+    df = sensor_data_handler.read_data_into_dataframe()
     df = df.sort_values(by="timestamp")
     df['timestamp'] = df['timestamp'].map(lambda x: datetime.strptime(str(x).strip(), '%Y-%m-%d %H:%M:%S'))
-    draw_plots(df)
+    # Google weather data
+    google_handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
+    google_handler.init_db_connection(check_table=False)
+    google_df = google_handler.read_data_into_dataframe()
+    google_df['timestamp'] = google_df['timestamp'].map(
+        lambda x: datetime.strptime(re.sub('\..*', '', str(x).strip()), '%Y-%m-%d %H:%M:%S'))
+    google_df = google_df.sort_values(by="timestamp")
+    # DWD weather data
+    dwd_handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
+    dwd_handler.init_db_connection(check_table=False)
+    dwd_df = dwd_handler.read_data_into_dataframe()
+    dwd_df['timestamp'] = dwd_df['timestamp'].map(
+        lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
+    dwd_df = dwd_df.sort_values(by="timestamp")
+    draw_plots(df, google_df=google_df, dwd_df=dwd_df)
     log.info("Done")
-    send_visualization_email(df)
+    EmailDistributor.send_visualization_email(df, google_df=google_df, dwd_df=dwd_df)
 
 
 def run_threaded(job_func):
@@ -113,8 +81,6 @@ def collect_and_save_to_db():
     auth = config["db"]
     handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
     handler.init_db_connection()
-    # log.debug(_get_table_size(con))
-    # _clear_table(con)
     cpu_temp = get_temperature()
     room_temp, humidity, timestamp = get_sensor_data()
     log.info(
@@ -126,7 +92,7 @@ def collect_and_save_to_db():
 def main():
     log = logging.getLogger('hometemp')
     log.addHandler(logging.StreamHandler())
-    log.info("------------------- HomeTemp v0.2.1 -------------------")
+    log.info(f"------------------- HomeTemp v{config['hometemp']['version']} -------------------")
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)
