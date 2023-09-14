@@ -2,16 +2,17 @@
 
 ## 0.3
 
-- Refactored code to modules `api`, `persist` and `visualize`
+- Refactored code to modules `api`, `distribute`, `persist` and `visualize`
 - Updated `recover_from_logs.py`, `crunch_numbers.ipynb` and `humidity.py` to use new modules
 - Added data fetcher and database handler for **Deutsche Wetterdienst (DWD)** and **Google Weather**
 - Added `fetch_forecasts.py` for pulling data from various endpoints
 - Added `default_hometemp.ini` for better overview of used local variables
 - Decreased the time delay in "every 10 minutes" jobs by using the method `run_threaded`
 - Added "tests" but only for toying around or minial usage examples
-- renamed `humidity.py` to `hometemp.py`
-- Introduced version number 
-- Updated `hometemp.ini` 
+- Introduced module `util` and added `DockerManager` and `PostgresDockerManager`
+- Renamed `humidity.py` to `hometemp.py`
+- Introduced version number
+- Updated `hometemp.ini`
 
 ## 0.2.1
 
@@ -37,4 +38,5 @@
 
 ## 0.1
 
-initial idea
+Initial idea: Write script for periodically collecting room temperature and humidity and visulaize the data.
+In the end, this data should be retrievable from everywhere (not just in local network), i.e. in an app or website.
