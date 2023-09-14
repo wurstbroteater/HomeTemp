@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from gpiozero import CPUTemperature
 from distribute.email import EmailDistributor
 from persist.database import DwDDataHandler, GoogleDataHandler, SensorDataHandler
+from util.manager import PostgresDockerManager
 from visualize.plots import draw_plots
 
 # only logs from this file will be written to console but all logs will be saved to file
@@ -88,11 +89,32 @@ def collect_and_save_to_db():
     handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
     log.info("Done")
 
+def init_postgres_container():
+    log.info("Checking for existing database")
+    auth = config["db"]
+    docker_manager = PostgresDockerManager(auth["db_name"], auth["db_user"], auth["db_pw"])
+    container_name = auth["container_name"]
+    if docker_manager.container_exists(container_name):
+        log.info("Reusing existing database container")
+        return docker_manager.start_container(container_name)
+    else:
+        log.info("No database container found. Creating database container")
+        if docker_manager.pull_postgres_image():
+            docker_manager.create_postgres_container(container_name)
+            return docker_manager.start_container(container_name)
+    
+    return False
+
+
 
 def main():
     log = logging.getLogger('hometemp')
     log.addHandler(logging.StreamHandler())
     log.info(f"------------------- HomeTemp v{config['hometemp']['version']} -------------------")
+    if not init_postgres_container():
+        log.error("Postgres container startup error! Shutting down ...")
+        exit(1)
+
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)

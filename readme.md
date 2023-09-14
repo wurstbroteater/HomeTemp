@@ -1,14 +1,16 @@
-# Project: HomeTemp
+# Project: HomeTemp v0.3-DEV
 The original idea of this project was to automate the periodically measured temperature and humidity values in my apartment. 
 This idea is still growing prosperously.
 
 ## Current Features
 - Connection to postgres db
+- Initialize docker container for postgres db or reuse existing
 - CRUD operations for tables and columns
 - Create data visualizations using seaborn and matplot
 - Ability to send emails with text and attached pdf file
 - Recover sensor data from log file and save to database 
-- Ability to fetch data from API endpoints
+- Ability to fetch data from API endpoints (currently: Deutsche Wetterdiens and Google Weather)
+
 
 
 While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `crunch_numbers.ipynb` is a playground for everything.
@@ -24,7 +26,18 @@ However, this does not remove all warning messages, it just decreases their amou
 we didn't observ any issues. 
 
 ### Start Docker Container
+Images and containers should be pulled or created/reused automatically. However, for this to work, the user needs to be added to the docker group:
 ```
-docker run --name postgres-container -e POSTGRES_PASSWORD=<ENTER PASSWORD HERE> -d -p 5432:5432 postgres:latest
+sudo usermod -aG docker $USER
 ```
-after a restart,  use `docker ps -a` to get the container ID and then `docker start <containerID>` to start the old database
+Afterwards, a reboot is required otherwise the following error will occur:
+```
+docker.errors.DockerException: Error while fetching server API version: ('Connection aborted.', PermissionError(13, 'Permission denied'))
+```
+
+
+This step should be obsolete because the HomeTemp automatically does this. However, it is left for documentation.
+```
+docker run --name postgres-db -e POSTGRES_PASSWORD=<ENTER PASSWORD HERE> -d -p 5432:5432 postgres:latest
+```
+after a restart,  use `docker ps -a` to get the container ID and then `docker start <containerID>` to start the old database.

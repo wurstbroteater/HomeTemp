@@ -9,6 +9,7 @@
 - Added `default_hometemp.ini` for better overview of used local variables
 - Decreased the time delay in "every 10 minutes" jobs by using the method `run_threaded`
 - Added "tests" but only for toying around or minial usage examples
+- Introduced module `util` and added `DockerManager` and `PostgresDockerManager`
 - Renamed `humidity.py` to `hometemp.py`
 - Introduced version number 
 - Updated `hometemp.ini` 
