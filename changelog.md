@@ -11,8 +11,8 @@
 - Added "tests" but only for toying around or minial usage examples
 - Introduced module `util` and added `DockerManager` and `PostgresDockerManager`
 - Renamed `humidity.py` to `hometemp.py`
-- Introduced version number 
-- Updated `hometemp.ini` 
+- Introduced version number
+- Updated `hometemp.ini`
 
 ## 0.2.1
 
@@ -38,5 +38,5 @@
 
 ## 0.1
 
-Initial idea: Write script for periodically collecting room temperature and humidity and visulaize the data. 
+Initial idea: Write script for periodically collecting room temperature and humidity and visulaize the data.
 In the end, this data should be retrievable from everywhere (not just in local network), i.e. in an app or website.

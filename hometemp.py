@@ -89,6 +89,7 @@ def collect_and_save_to_db():
     handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
     log.info("Done")
 
+
 def init_postgres_container():
     log.info("Checking for existing database")
     auth = config["db"]
@@ -102,9 +103,8 @@ def init_postgres_container():
         if docker_manager.pull_postgres_image():
             docker_manager.create_postgres_container(container_name)
             return docker_manager.start_container(container_name)
-    
-    return False
 
+    return False
 
 
 def main():

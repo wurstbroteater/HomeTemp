@@ -1,10 +1,8 @@
 from util.manager import PostgresDockerManager
 import configparser
 
-config = configparser
 config = configparser.ConfigParser()
 config.read('hometemp.ini')
-
 
 if __name__ == "__main__":
     auth = config["db"]
@@ -13,9 +11,9 @@ if __name__ == "__main__":
     print(docker_manager.container_exists(container_name))
     print(docker_manager.is_container_running(container_name))
 
-    #print(docker_manager.start_container(container_name))
-    #if not docker_manager.container_exists(container_name):
+    # print(docker_manager.start_container(container_name))
+    # if not docker_manager.container_exists(container_name):
     #    if docker_manager.pull_postgres_image(postgres_image):
     #        docker_manager.create_postgres_container(container_name, postgres_image, postgres_environment)
-    #else:
+    # else:
     #    print(f"Container {container_name} already exists.")

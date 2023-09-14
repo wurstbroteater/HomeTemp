@@ -1,11 +1,11 @@
 import docker
 from util.utilities_logger import util_logger as log
 
-class DockerManager:
-    
-    def __init__(self):
-        self.client =  docker.from_env()
 
+class DockerManager:
+
+    def __init__(self):
+        self.client = docker.from_env()
 
     def container_exists(self, container_name):
         try:
@@ -13,7 +13,7 @@ class DockerManager:
             return True
         except docker.errors.NotFound:
             return False
-        
+
     def start_container(self, container_name):
         try:
             container = self.client.containers.get(container_name)
@@ -26,7 +26,7 @@ class DockerManager:
         except docker.errors.APIError as e:
             log.error(f"Error starting container {container_name}: {e}")
             return False
-        
+
     def is_container_running(self, container_name):
         try:
             container = self.client.containers.get(container_name)
@@ -47,23 +47,22 @@ class PostgresDockerManager(DockerManager):
 
     @staticmethod
     def _create_port_bindings(ports=None):
-            # Format: list(str("host_port:container_port"))
-            port_bindings = {}
-            if ports:
-                for port in ports:
-                    host_port, container_port = port.split(":")
-                    port_bindings[int(container_port)] = int(host_port)
-            else:
-                log.warning("Port bindings are empty!")
-            return port_bindings
+        # Format: list(str("host_port:container_port"))
+        port_bindings = {}
+        if ports:
+            for port in ports:
+                host_port, container_port = port.split(":")
+                port_bindings[int(container_port)] = int(host_port)
+        else:
+            log.warning("Port bindings are empty!")
+        return port_bindings
 
     def _create_environment_variables(self):
         return {
-        "POSTGRES_USER": self.user,
-        "POSTGRES_PASSWORD": self.password,
-        "POSTGRES_DB": self.db_name
+            "POSTGRES_USER": self.user,
+            "POSTGRES_PASSWORD": self.password,
+            "POSTGRES_DB": self.db_name
         }
-
 
     def pull_postgres_image(self):
         try:
@@ -88,4 +87,3 @@ class PostgresDockerManager(DockerManager):
                 log.error(f"Error creating container {container_name}: {e}")
         else:
             log.info(f"Container {container_name} already exists.")
-
