@@ -29,7 +29,7 @@ class GoogleFetcher:
             result["humidity"] = float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", ""))
             result["wind"] = float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))
             return result
-        except ConnectionError as e:
+        except requests.exceptions.ConnectionError as e:
             log.error("Google Weather connection problem: " + str(e))
             return None
 
@@ -53,18 +53,22 @@ class Fetcher:
         return self.endpoint + "?" + self.params if self.params else self.endpoint
 
     def _fetch_data(self):
-        response = requests.get(self.api_link)
-        if (code := response.status_code) == 200:
-            return self._handle_ok_status_code(response)
-        else:
-            self._handle_bad_status_code(code)
+        try:
+            response = requests.get(self.api_link)
+            if (code := response.status_code) == 200:
+                return self._handle_ok_status_code(response)
+            else:
+                return self._handle_bad_status_code(code)
+        except requests.exceptions.ConnectionError as e:
+            log.error("Creating the connection failed with error: {e}")
+            return None
 
     def _handle_ok_status_code(self, response):
         return response.json()
 
     def _handle_bad_status_code(self, code: int) -> int:
         log.error(f"Error: Failed to fetch weather data. Status code: {code}")
-        return code
+        return None
 
 
 class DWDFetcher(Fetcher):
@@ -116,6 +120,9 @@ class DWDFetcher(Fetcher):
         if self.data is None:
             log.info("Fetching new data")
             self.data = self._fetch_data()
+            if self.data is None:
+                # fetching data was not possible, abort
+                return None, None, None
 
         temp_values = self.data["temperature"]
         # observation: temperatureStd is 0 for unlikely temperatures such as 3241.6 °C
