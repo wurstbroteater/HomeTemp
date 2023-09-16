@@ -75,7 +75,7 @@ def create_and_backup_visualization():
     
     draw_plots(df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
     log.info("Done")
-    EmailDistributor.send_visualization_email(df, google_df=google_df, dwd_df=dwd_df)
+    EmailDistributor.send_visualization_email(df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
 
 
 def run_threaded(job_func):
@@ -121,7 +121,6 @@ def main():
         log.error("Postgres container startup error! Shutting down ...")
         exit(1)
         
-
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)
