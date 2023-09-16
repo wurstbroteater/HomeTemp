@@ -14,9 +14,11 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, with_save=Tru
     plt.subplot(gs[0])
     sns.lineplot(label="Home", x="timestamp", y="room_temp", data=df)
     if dwd_df is not None:
-        sns.lineplot(label="DWD Forecast", x="timestamp", y="temp", data=dwd_df)
+        sns.lineplot(label="DWD Forecast", x="timestamp", y="temp", alpha=0.6, data=dwd_df)
     if google_df is not None:
-        sns.lineplot(label="Google Forecast", x="timestamp", y="temp", data=google_df)
+        sns.lineplot(label="Google Forecast", x="timestamp", y="temp", alpha=0.6, data=google_df)
+    if wettercom_df is not None:
+        sns.lineplot(label="Wetter.com Forecast", x="timestamp", y="temp", alpha=0.6, data=wettercom_df)
     plt.title("Temperature Over Time")
     plt.xlabel("Time")
     plt.ylabel("Temp (°C)")
