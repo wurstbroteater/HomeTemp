@@ -2,7 +2,7 @@ import Adafruit_DHT, configparser, logging, re, schedule, time, threading
 from datetime import datetime, timedelta
 from gpiozero import CPUTemperature
 from distribute.email import EmailDistributor
-from persist.database import DwDDataHandler, GoogleDataHandler, SensorDataHandler
+from persist.database import DwDDataHandler, GoogleDataHandler, SensorDataHandler, WetterComHandler
 from util.manager import PostgresDockerManager
 from visualize.plots import draw_plots
 
@@ -67,7 +67,13 @@ def create_and_backup_visualization():
     dwd_df['timestamp'] = dwd_df['timestamp'].map(
         lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
     dwd_df = dwd_df.sort_values(by="timestamp")
-    draw_plots(df, google_df=google_df, dwd_df=dwd_df)
+    # Wetter.com data
+    wettercom_handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
+    wettercom_handler.init_db_connection()
+    wettercom_df = wettercom_handler.read_data_into_dataframe()
+    wettercom_df['timestamp'] = wettercom_df['timestamp'].map(lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
+    
+    draw_plots(df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
     log.info("Done")
     EmailDistributor.send_visualization_email(df, google_df=google_df, dwd_df=dwd_df)
 
@@ -114,6 +120,7 @@ def main():
     if not init_postgres_container():
         log.error("Postgres container startup error! Shutting down ...")
         exit(1)
+        
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
