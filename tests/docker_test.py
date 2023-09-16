@@ -4,6 +4,7 @@ import configparser
 config = configparser.ConfigParser()
 config.read('hometemp.ini')
 
+
 if __name__ == "__main__":
     auth = config["db"]
     docker_manager = PostgresDockerManager(auth["db_name"], auth["db_user"], auth["db_pw"])

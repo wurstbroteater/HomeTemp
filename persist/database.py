@@ -2,8 +2,10 @@ from persist.persistence_logger import per_log as log
 from sqlalchemy import create_engine, text, select, update, insert, inspect, exc, Table, Column, MetaData, Integer, \
     DECIMAL, \
     TIMESTAMP
+from sqlalchemy.exc import OperationalError
 from abc import ABC, abstractmethod
 import pandas as pd
+import time
 
 
 class PostgresHandler(ABC):
@@ -50,6 +52,7 @@ class PostgresHandler(ABC):
             return create_engine(db_url)
         except exc.SQLAlchemyError as e:
             log.error("Problems while initialising database access: " + str(e))
+            return None
 
     def _remove_table(self):
         try:
