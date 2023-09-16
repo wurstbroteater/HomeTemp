@@ -5,12 +5,45 @@ from datetime import datetime
 from bs4 import BeautifulSoup as bs
 
 log = logging.getLogger("api.fetcher")
-import configparser
 
+class WetterComFetcher:
+
+    @staticmethod
+    def get_data_static(url):
+        """
+        Fetches temperature data from Wetter.com link for a city/region
+        """
+        try:
+            response = requests.get(url)
+        except requests.exceptions.ConnectionError as e:
+            log.error("Wetter.com connection problem: " + str(e))
+            return None
+        
+        if response.status_code == 200:
+            soup = bs(response.text, 'html.parser')
+            temperature_element = soup.find('div', class_='delta rtw_temp')
+            if temperature_element:
+                temperature = int(temperature_element.text.strip().replace("°","").replace("C",""))
+                return temperature
+            else:
+                log.error("Temperature element not found on the page.")
+                return None
+        else:
+            log.error("Failed to retrieve weather data.")
+            return None
+
+    
 
 class GoogleFetcher:
+
     @staticmethod
     def get_weather_data(location: str):
+        """
+        Fetches data from Google Weather.
+
+        :location: e.g. "New York"
+        """
+    
         URL = "https://www.google.com/search?lr=lang_en&ie=UTF-8&q=weather" + location
         USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
         LANGUAGE = "en-US,en;q=0.5"

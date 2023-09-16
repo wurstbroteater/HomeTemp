@@ -31,7 +31,7 @@ class PostgresHandler(ABC):
 
     def init_db_connection(self, check_table=True):
         """
-        Establish the connection to the Postgres database.
+        Establishes the connection to the Postgres database.
         If the check_table flag is true, it checks if the table in 'self.table' exists in the database and
         if not, the table is created.
         """
@@ -148,7 +148,7 @@ class SensorDataHandler(PostgresHandler):
 class DwDDataHandler(PostgresHandler):
     """
     Implementation of PostgresHandler with table schema for data from Deutsche Wetterdienst (DWD).
-    In addition, it provides a method for inserting data into the table.
+    In addition, it provides a method for inserting and updating data into the table.
     """
 
     def _create_table(self):
@@ -282,3 +282,34 @@ class GoogleDataHandler(PostgresHandler):
 
         if was_successful:
             log.info("Google Weather data inserted successfully.")
+
+
+class WetterComHandler(PostgresHandler):
+    """
+    Implementation of PostgresHandler with table schema for data 
+    from a certain city link from wetter.com.
+    In addition, it provides a method for inserting data into the table.
+    """
+
+    def _create_table(self):
+        metadata = MetaData()
+        table_schema = Table(self.table, metadata,
+                             Column('id', Integer, primary_key=True, autoincrement=True),
+                             Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
+                             Column('temp', DECIMAL, nullable=False))
+        try:
+            metadata.create_all(self.connection)
+            log.info(f"Table '{self.table}' created successfully.")
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+
+    def insert_wettercom_data(self, timestamp, temp):
+        was_successful = self._insert_in_table({
+            'timestamp': timestamp,
+            'temp': temp
+        })
+
+        if was_successful:
+            log.info("Wetter.com data inserted successfully.")
+

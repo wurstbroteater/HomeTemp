@@ -1,8 +1,8 @@
 import logging
 import configparser, schedule, time
 from datetime import datetime, timedelta
-from api.fetcher import DWDFetcher, GoogleFetcher
-from persist.database import DwDDataHandler, GoogleDataHandler
+from api.fetcher import DWDFetcher, GoogleFetcher, WetterComFetcher
+from persist.database import DwDDataHandler, GoogleDataHandler, WetterComHandler
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -78,15 +78,30 @@ def google_fetch_and_save():
         handler.insert_google_data(timestamp=c_time, temp=c_temp, humidity=c_hum, precipitation=c_per, wind=c_wind)
 
 
+def wettercom_fetch_and_save():
+    wettercom_temp = WetterComFetcher().get_data_static(config["wettercom"]["url"][1:-1])
+    c_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if wettercom_temp is None:
+        log.error("[Wetter.com] Error while retrieving temperature")
+    else:
+        log.info(f"[Wetter.com] Temperature at {c_time} is {wettercom_temp}°C")
+        auth = config["db"]
+        handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
+        handler.init_db_connection()
+        handler.insert_wettercom_data(timestamp=c_time, temp=wettercom_temp)
+        
+
 def main():
     # Todo: integrate into hometemp for final release
     log.info("------------------- Fetch DWD Measurements -------------------")
     schedule.every(10).minutes.do(dwd_fetch_and_save)
     schedule.every(10).minutes.do(google_fetch_and_save)
+    schedule.every(10).minutes.do(wettercom_fetch_and_save)
 
     log.info("finished initialization")
     dwd_fetch_and_save()
     google_fetch_and_save()
+    wettercom_fetch_and_save()
 
     while True:
         schedule.run_pending()
