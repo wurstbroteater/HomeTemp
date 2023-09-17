@@ -96,7 +96,7 @@ def wettercom_fetch_and_save():
 
 def main():
     # Todo: integrate into hometemp for final release
-    log.info("------------------- Fetch DWD Measurements -------------------")
+    log.info(f"------------------- Fetch DWD Measurements v{config['hometemp']['version']} -------------------")
     schedule.every(10).minutes.do(dwd_fetch_and_save)
     schedule.every(10).minutes.do(google_fetch_and_save)
     schedule.every(10).minutes.do(run_threaded, wettercom_fetch_and_save)
