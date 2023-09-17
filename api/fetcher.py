@@ -12,11 +12,18 @@ from pyvirtualdisplay import Display
 log = logging.getLogger("api.fetcher")
 
 class WetterComFetcher:
+    """
+    Wetter.com dynamically updates the value for the current temperature.
+    Usually, it first displays a static temperature and then reloads it with a more recent (dynamic) value.
+
+    This class provides a method for catching the static value and 
+    another for catching the dynamic value.
+    """
 
     @staticmethod
     def get_data_static(url):
         """
-        Fetches temperature data from Wetter.com link for a city/region
+        Fetches the static temperature data from Wetter.com link for a city/region
         """
         try:
             response = requests.get(url)
@@ -39,6 +46,10 @@ class WetterComFetcher:
         
     @staticmethod
     def get_data_dynamic(url):
+        """
+
+        Fetches the dynamic temperature data from Wetter.com link for a city/region
+        """
         display = Display(visible=0, size=(1600, 1200))
         display.start()
         options = Options()
@@ -63,7 +74,7 @@ class GoogleFetcher:
     @staticmethod
     def get_weather_data(location: str):
         """
-        Fetches data from Google Weather.
+        Fetches data from Google Weather for a specific location.
 
         :location: e.g. "New York"
         """

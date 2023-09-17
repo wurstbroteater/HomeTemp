@@ -2,7 +2,7 @@
 
 The original idea of this project was to automate the periodically measured temperature and humidity values in my
 apartment.
-This idea is still growing prosperously.
+This idea is still growing prosperously and currently provides the following features:
 
 ## Current Features
 
