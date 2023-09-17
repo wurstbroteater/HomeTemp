@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.3-DEV
+# Project: HomeTemp v0.3
 
 The original idea of this project was to automate the periodically measured temperature and humidity values in my
 apartment.
@@ -18,11 +18,13 @@ While `hometemp.py` is the entrypoint to start periodical data collection and di
 playground for everything.
 
 ## Installation Instructions
+
 The following steps needs to be performed once to assure correct driver setup.
 
 ### Install Chromedriver
-Selenium is used to fetch data from endpoints which rely on javascript.
-On a raspberry pi, installl chromium driver with the following command and set permissions:
+
+Selenium is used to fetch data from endpoints which rely on Javascript.
+On a raspberry pi, install chromium driver with the following command and set permissions:
 
 ```
 sudo apt-get install chromium-chromedriver
