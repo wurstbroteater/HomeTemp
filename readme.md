@@ -17,6 +17,18 @@ This idea is still growing prosperously.
 While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `crunch_numbers.ipynb` is a
 playground for everything.
 
+## Installation Instructions
+The following steps needs to be performed once to assure correct driver setup.
+
+### Install Chromedriver
+Selenium is used to fetch data from endpoints which rely on javascript.
+On a raspberry pi, installl chromium driver with the following command and set permissions:
+
+```
+sudo apt-get install chromium-chromedriver
+sudo chmod -R 755 /usr/lib/chromium-browser 
+```
+
 ## Start Instructions
 
 The following sections provide information and tips for starting the related services and dependencies.

@@ -3,6 +3,11 @@ import requests
 import urllib.parse
 from datetime import datetime
 from bs4 import BeautifulSoup as bs
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from pyvirtualdisplay import Display
 
 log = logging.getLogger("api.fetcher")
 
@@ -31,6 +36,25 @@ class WetterComFetcher:
         else:
             log.error("Failed to retrieve weather data.")
             return None
+        
+    @staticmethod
+    def get_data_dynamic(url):
+        display = Display(visible=0, size=(1600, 1200))
+        display.start()
+        options = Options()
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        service = webdriver.ChromeService(executable_path = '/usr/lib/chromium-browser/chromedriver')
+        driver = webdriver.Chrome(service=service, options=options)
+        try:
+            driver.get(url)
+            found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
+            return int(found_temp.text.replace('°C', ''))
+
+        except Exception as e:
+            log.error(f"An error occurred while dynamically fetching temperature data: {str(e)}")
+            return None
+        finally:
+            driver.quit()
 
     
 

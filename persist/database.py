@@ -104,6 +104,16 @@ class PostgresHandler(ABC):
             log.error("Problem while inserting data into table " + str(e))
         
         return False
+    
+    def _rename_column(self, old_column_name, new_column_name):
+        try:
+            table = Table(self.table, MetaData(), autoload_with=self.connection)
+            with self.connection.begin() as con:
+                alter_sql = text(f'ALTER TABLE {self.table} RENAME COLUMN {old_column_name} TO {new_column_name}')
+                con.execute(alter_sql)
+                log.info(f"Successfully renamed column from '{old_column_name}' to '{new_column_name}'")
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
 
     def read_data_into_dataframe(self):
         try:
@@ -299,7 +309,8 @@ class WetterComHandler(PostgresHandler):
         table_schema = Table(self.table, metadata,
                              Column('id', Integer, primary_key=True, autoincrement=True),
                              Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
-                             Column('temp', DECIMAL, nullable=False))
+                             Column('temp_stat', DECIMAL, nullable=False),
+                             Column('temp_dyn', DECIMAL, nullable=True))
         try:
             metadata.create_all(self.connection)
             log.info(f"Table '{self.table}' created successfully.")
@@ -307,10 +318,11 @@ class WetterComHandler(PostgresHandler):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
 
-    def insert_wettercom_data(self, timestamp, temp):
+    def insert_wettercom_data(self, timestamp, temp_stat, temp_dyn):
         was_successful = self._insert_in_table({
             'timestamp': timestamp,
-            'temp': temp
+            'temp_stat': temp_stat,
+            'temp_dyn': temp_dyn
         })
 
         if was_successful:
