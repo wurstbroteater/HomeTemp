@@ -21,6 +21,10 @@ playground for everything.
 
 The following steps needs to be performed once to assure correct driver setup.
 
+### Configure Hometemp.ini
+
+At first, rename `default_hometemp.ini` to `hometemp.ini` and assign values to all variables.
+
 ### Install Chromedriver
 
 Selenium is used to fetch data from endpoints which rely on Javascript.
