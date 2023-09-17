@@ -5,21 +5,23 @@ from selenium.webdriver.chrome.options import Options
 from pyvirtualdisplay import Display
 from api.fetcher import WetterComFetcher
 import configparser, time
+
 config = configparser.ConfigParser()
 config.read('hometemp.ini')
+
 
 def get_data_dynamic(url):
     display = Display(visible=0, size=(1600, 1200))
     display.start()
     options = Options()
     options.add_argument('--disable-blink-features=AutomationControlled')
-    service = webdriver.ChromeService(executable_path = '/usr/lib/chromium-browser/chromedriver')
+    service = webdriver.ChromeService(executable_path='/usr/lib/chromium-browser/chromedriver')
     driver = webdriver.Chrome(service=service, options=options)
     try:
         driver.get(url)
-        #ids = driver.find_elements(By.XPATH, '//*[@id]')
-        #print(len(ids))
-        #for ii in ids:
+        # ids = driver.find_elements(By.XPATH, '//*[@id]')
+        # print(len(ids))
+        # for ii in ids:
         #    print('Tag: ' + ii.tag_name)
         #    try:
         #        print('ID: ' + ii.get_attribute('class'))     # element id as string
@@ -35,9 +37,10 @@ def get_data_dynamic(url):
     finally:
         driver.quit()
 
+
 if __name__ == "__main__":
     temp_fetch_stat = WetterComFetcher.get_data_static(config["wettercom"]["url"][1:-1])
     temp_fetch_dyn = get_data_dynamic(config["wettercom"]["url"][1:-1])
-    #temp_fetch_dyn = WetterComFetcher.get_data_dynamic(config["wettercom"]["url"][1:-1])
+    # temp_fetch_dyn = WetterComFetcher.get_data_dynamic(config["wettercom"]["url"][1:-1])
 
     print(f"stat vs dyn temp: {temp_fetch_stat} vs {temp_fetch_dyn}")

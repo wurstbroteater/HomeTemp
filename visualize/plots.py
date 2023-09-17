@@ -9,7 +9,7 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, with_save=Tru
     sns.set_theme(style="darkgrid")
     fig = plt.figure(figsize=(25, 12))
     gs = fig.add_gridspec(2, 2, height_ratios=[2, 2])
-    
+
     # Temperature Measurements
     plt.subplot(gs[0])
     sns.lineplot(label="Home", x="timestamp", y="room_temp", data=df)

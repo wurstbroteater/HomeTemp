@@ -50,11 +50,13 @@ def dwd_fetch_and_save():
                         log.info(timestamp_to_update.strftime(
                             "%Y-%m-%d %H:%M:%S") + f" old/new: {old_temp}/{new_temp} {new_dev}")
                         if old_temp != new_temp:
-                            handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp,
-                                                            new_dev)
+                            handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"),
+                                                             new_temp,
+                                                             new_dev)
                     else:
-                        log.warning("[DWD] Reached sanity threshold for temp updates at " + timestamp_to_update.strftime(
-                            "%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
+                        log.warning(
+                            "[DWD] Reached sanity threshold for temp updates at " + timestamp_to_update.strftime(
+                                "%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
                         break
                     timestamp_to_update -= time_diff
 
@@ -87,12 +89,13 @@ def wettercom_fetch_and_save():
     if wettercom_temp_static is None:
         log.error("[Wetter.com] Error while retrieving temperature")
     else:
-        log.info(f"[Wetter.com] Static vs Dynamic Temperature at {c_time} is {wettercom_temp_static}°C vs {wettercom_temp_dyn}°C")
+        log.info(
+            f"[Wetter.com] Static vs Dynamic Temperature at {c_time} is {wettercom_temp_static}°C vs {wettercom_temp_dyn}°C")
         auth = config["db"]
         handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
         handler.init_db_connection()
         handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
-        
+
 
 def main():
     # Todo: integrate into hometemp for final release

@@ -65,7 +65,7 @@ class EmailDistributor:
             msg.attach(part)
 
         try:
-            server = smtplib.SMTP(auth["smtp_server"], auth["smtp_port"])
+            server = smtplib.SMTP(auth["smtp_server"], int(auth["smtp_port"]))
             server.starttls()
             server.login(auth["smtp_user"], auth["smtp_pw"])
             server.sendmail(from_email, to_email, msg.as_string())

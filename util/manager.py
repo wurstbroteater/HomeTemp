@@ -1,8 +1,13 @@
 import docker
+from docker import errors as de
 from util.utilities_logger import util_logger as log
 
 
 class DockerManager:
+    """
+    Provides methods for primitive docker container handling.
+    This class should be extended for the purpose of specifying a certain image instance.
+    """
 
     def __init__(self):
         self.client = docker.from_env()
@@ -11,7 +16,7 @@ class DockerManager:
         try:
             self.client.containers.get(container_name)
             return True
-        except docker.errors.NotFound:
+        except de.NotFound:
             return False
 
     def start_container(self, container_name):
@@ -20,10 +25,10 @@ class DockerManager:
             container.start()
             log.info(f"Container {container_name} started successfully.")
             return True
-        except docker.errors.NotFound:
+        except de.NotFound:
             log.error(f"Container {container_name} not found.")
             return False
-        except docker.errors.APIError as e:
+        except de.APIError as e:
             log.error(f"Error starting container {container_name}: {e}")
             return False
 
@@ -31,11 +36,15 @@ class DockerManager:
         try:
             container = self.client.containers.get(container_name)
             return container.status == "running"
-        except docker.errors.NotFound:
+        except de.NotFound:
             return False
 
 
 class PostgresDockerManager(DockerManager):
+    """
+    Extends DockerManager for image postgres:latest and adds methods for postgres image pulling, environment variables,
+    port bindings and postgres container creation.
+    """
 
     def __init__(self, db_name, user, password, port_range=["5432:5432"]):
         self.image_name = "postgres:latest"
@@ -68,7 +77,7 @@ class PostgresDockerManager(DockerManager):
         try:
             self.client.images.pull(self.image_name)
             return True
-        except docker.errors.APIError as e:
+        except de.APIError as e:
             log.error(f"Error pulling image {self.image_name}: {e}")
             return False
 
@@ -83,7 +92,7 @@ class PostgresDockerManager(DockerManager):
                     ports=self.port_range
                 )
                 log.info(f"Container {container_name} created successfully.")
-            except docker.errors.APIError as e:
+            except de.APIError as e:
                 log.error(f"Error creating container {container_name}: {e}")
         else:
             log.info(f"Container {container_name} already exists.")

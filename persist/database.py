@@ -91,8 +91,8 @@ class PostgresHandler(ABC):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
             return False
-        
-    def _insert_in_table(self, data_to_insert:dict):
+
+    def _insert_in_table(self, data_to_insert: dict):
         try:
             table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
             with self.connection.begin() as con:
@@ -102,14 +102,14 @@ class PostgresHandler(ABC):
 
         except exc.SQLAlchemyError as e:
             log.error("Problem while inserting data into table " + str(e))
-        
+
         return False
-    
+
     def _rename_column(self, old_column_name, new_column_name):
         try:
             table = Table(self.table, MetaData(), autoload_with=self.connection)
             with self.connection.begin() as con:
-                alter_sql = text(f'ALTER TABLE {self.table} RENAME COLUMN {old_column_name} TO {new_column_name}')
+                alter_sql = text(f"ALTER TABLE {self.table} RENAME COLUMN {old_column_name} TO {new_column_name}")
                 con.execute(alter_sql)
                 log.info(f"Successfully renamed column from '{old_column_name}' to '{new_column_name}'")
         except exc.SQLAlchemyError as e:
@@ -191,14 +191,14 @@ class DwDDataHandler(PostgresHandler):
             return False
 
     def insert_dwd_data(self, timestamp, temp, temp_dev):
-            was_successful = self._insert_in_table({
-                'timestamp': timestamp,
-                'temp': temp,
-                'temp_dev': temp_dev
-            })
+        was_successful = self._insert_in_table({
+            'timestamp': timestamp,
+            'temp': temp,
+            'temp_dev': temp_dev
+        })
 
-            if was_successful:
-                log.info("DWD data inserted successfully.")
+        if was_successful:
+            log.info("DWD data inserted successfully.")
 
     def get_temp_for_timestamp(self, timestamp_to_check):
         """
@@ -327,4 +327,3 @@ class WetterComHandler(PostgresHandler):
 
         if was_successful:
             log.info("Wetter.com data inserted successfully.")
-
