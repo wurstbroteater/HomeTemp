@@ -19,6 +19,7 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, with_save=Tru
         sns.lineplot(label="Google Forecast", x="timestamp", y="temp", alpha=0.6, data=google_df)
     if wettercom_df is not None:
         sns.lineplot(label="Wetter.com Forecast", x="timestamp", y="temp_stat", alpha=0.6, data=wettercom_df)
+        sns.lineplot(label="Wetter.com Live", x="timestamp", y="temp_dyn", alpha=0.6, data=wettercom_df)
     plt.title("Temperature Over Time")
     plt.xlabel("Time")
     plt.ylabel("Temp (°C)")
