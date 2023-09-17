@@ -1,5 +1,7 @@
 # Project: HomeTemp
 
+## 0.4
+
 ## 0.3
 
 - Refactored code to modules `api`, `distribute`, `persist` and `visualize`
