@@ -55,6 +55,7 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, with_save=Tru
     if wettercom_df is not None:
         wettercom_df_last_24h = wettercom_df[wettercom_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
         sns.lineplot(label="Wetter.com Forecast", x="timestamp", y="temp_stat", marker='o', data=wettercom_df_last_24h)
+        sns.lineplot(label="Wetter.com Live", x="timestamp", y="temp_dyn", marker='s', data=wettercom_df_last_24h)
     plt.title("Temperature Last 24 Hours")
     plt.xlabel("Time")
     plt.ylabel("Temp (°C)")
