@@ -7,7 +7,7 @@ from hometemp import run_threaded
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
-logging.basicConfig(filename='dwd_measurement.log',
+logging.basicConfig(filename='fetching.log',
                     encoding='utf-8',
                     level=logging.INFO)
 
