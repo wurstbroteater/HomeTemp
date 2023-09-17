@@ -13,7 +13,7 @@ config.read('hometemp.ini')
 class EmailDistributor:
 
     @staticmethod
-    def send_visualization_email(df, google_df, dwd_df):
+    def send_visualization_email(df, google_df, dwd_df, wettercom_df):
         """
         Creates and sends an email with a description for each dataframe
         and attaches the pdf file created for the current day if the file is present.
@@ -44,6 +44,9 @@ class EmailDistributor:
         message += "\n\n------------- DWD Data -------------\n"
         message += str(dwd_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
         message += str(dwd_df.tail(6))
+        message += "\n\n------------- Wetter.com Data -------------\n"
+        message += str(wettercom_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
+        message += str(wettercom_df.tail(6))
         if not has_attachment:
             message += "\n\n !!!!!!!!!!!!!!!!!!!!!!Warning: attachment not found!!!!!!!!!!!!!!!!!!!!!!\n\n"
 
@@ -62,7 +65,7 @@ class EmailDistributor:
             msg.attach(part)
 
         try:
-            server = smtplib.SMTP(auth["smtp_server"], auth["smtp_port"])
+            server = smtplib.SMTP(auth["smtp_server"], int(auth["smtp_port"]))
             server.starttls()
             server.login(auth["smtp_user"], auth["smtp_pw"])
             server.sendmail(from_email, to_email, msg.as_string())

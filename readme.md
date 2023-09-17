@@ -1,8 +1,8 @@
-# Project: HomeTemp v0.3-DEV
+# Project: HomeTemp v0.3
 
 The original idea of this project was to automate the periodically measured temperature and humidity values in my
 apartment.
-This idea is still growing prosperously.
+This idea is still growing prosperously and currently provides the following features:
 
 ## Current Features
 
@@ -12,10 +12,24 @@ This idea is still growing prosperously.
 - Create data visualizations using seaborn and matplot
 - Ability to send emails with text and attached pdf file
 - Recover sensor data from log file and save to database
-- Ability to fetch data from API endpoints (currently: Deutsche Wetterdiens and Google Weather)
+- Ability to fetch data from API endpoints (currently: Wetter.com, Deutsche Wetterdienst (DWD) and Google Weather)
 
 While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `crunch_numbers.ipynb` is a
 playground for everything.
+
+## Installation Instructions
+
+The following steps needs to be performed once to assure correct driver setup.
+
+### Install Chromedriver
+
+Selenium is used to fetch data from endpoints which rely on Javascript.
+On a raspberry pi, install chromium driver with the following command and set permissions:
+
+```
+sudo apt-get install chromium-chromedriver
+sudo chmod -R 755 /usr/lib/chromium-browser 
+```
 
 ## Start Instructions
 

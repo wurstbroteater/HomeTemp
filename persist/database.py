@@ -2,8 +2,10 @@ from persist.persistence_logger import per_log as log
 from sqlalchemy import create_engine, text, select, update, insert, inspect, exc, Table, Column, MetaData, Integer, \
     DECIMAL, \
     TIMESTAMP
+from sqlalchemy.exc import OperationalError
 from abc import ABC, abstractmethod
 import pandas as pd
+import time
 
 
 class PostgresHandler(ABC):
@@ -31,7 +33,7 @@ class PostgresHandler(ABC):
 
     def init_db_connection(self, check_table=True):
         """
-        Establish the connection to the Postgres database.
+        Establishes the connection to the Postgres database.
         If the check_table flag is true, it checks if the table in 'self.table' exists in the database and
         if not, the table is created.
         """
@@ -50,6 +52,7 @@ class PostgresHandler(ABC):
             return create_engine(db_url)
         except exc.SQLAlchemyError as e:
             log.error("Problems while initialising database access: " + str(e))
+            return None
 
     def _remove_table(self):
         try:
@@ -88,8 +91,8 @@ class PostgresHandler(ABC):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
             return False
-        
-    def _insert_in_table(self, data_to_insert:dict):
+
+    def _insert_in_table(self, data_to_insert: dict):
         try:
             table = Table(self.table, MetaData(), autoload_with=self.connection, extend_existing=True)
             with self.connection.begin() as con:
@@ -99,8 +102,18 @@ class PostgresHandler(ABC):
 
         except exc.SQLAlchemyError as e:
             log.error("Problem while inserting data into table " + str(e))
-        
+
         return False
+
+    def _rename_column(self, old_column_name, new_column_name):
+        try:
+            table = Table(self.table, MetaData(), autoload_with=self.connection)
+            with self.connection.begin() as con:
+                alter_sql = text(f"ALTER TABLE {self.table} RENAME COLUMN {old_column_name} TO {new_column_name}")
+                con.execute(alter_sql)
+                log.info(f"Successfully renamed column from '{old_column_name}' to '{new_column_name}'")
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
 
     def read_data_into_dataframe(self):
         try:
@@ -148,7 +161,7 @@ class SensorDataHandler(PostgresHandler):
 class DwDDataHandler(PostgresHandler):
     """
     Implementation of PostgresHandler with table schema for data from Deutsche Wetterdienst (DWD).
-    In addition, it provides a method for inserting data into the table.
+    In addition, it provides a method for inserting and updating data into the table.
     """
 
     def _create_table(self):
@@ -178,14 +191,14 @@ class DwDDataHandler(PostgresHandler):
             return False
 
     def insert_dwd_data(self, timestamp, temp, temp_dev):
-            was_successful = self._insert_in_table({
-                'timestamp': timestamp,
-                'temp': temp,
-                'temp_dev': temp_dev
-            })
+        was_successful = self._insert_in_table({
+            'timestamp': timestamp,
+            'temp': temp,
+            'temp_dev': temp_dev
+        })
 
-            if was_successful:
-                log.info("DWD data inserted successfully.")
+        if was_successful:
+            log.info("DWD data inserted successfully.")
 
     def get_temp_for_timestamp(self, timestamp_to_check):
         """
@@ -282,3 +295,35 @@ class GoogleDataHandler(PostgresHandler):
 
         if was_successful:
             log.info("Google Weather data inserted successfully.")
+
+
+class WetterComHandler(PostgresHandler):
+    """
+    Implementation of PostgresHandler with table schema for data 
+    from a certain city link from wetter.com.
+    In addition, it provides a method for inserting data into the table.
+    """
+
+    def _create_table(self):
+        metadata = MetaData()
+        table_schema = Table(self.table, metadata,
+                             Column('id', Integer, primary_key=True, autoincrement=True),
+                             Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
+                             Column('temp_stat', DECIMAL, nullable=False),
+                             Column('temp_dyn', DECIMAL, nullable=True))
+        try:
+            metadata.create_all(self.connection)
+            log.info(f"Table '{self.table}' created successfully.")
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+
+    def insert_wettercom_data(self, timestamp, temp_stat, temp_dyn):
+        was_successful = self._insert_in_table({
+            'timestamp': timestamp,
+            'temp_stat': temp_stat,
+            'temp_dyn': temp_dyn
+        })
+
+        if was_successful:
+            log.info("Wetter.com data inserted successfully.")

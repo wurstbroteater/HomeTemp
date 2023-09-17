@@ -5,18 +5,21 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 
-def draw_plots(df, dwd_df=None, google_df=None, with_save=True):
-    sns.set_theme(style="darkgrid")  # sns.set(style="whitegrid")
+def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, with_save=True):
+    sns.set_theme(style="darkgrid")
     fig = plt.figure(figsize=(25, 12))
-    gs = fig.add_gridspec(2, 2, height_ratios=[2, 2])  # 2 rows, 1 column
+    gs = fig.add_gridspec(2, 2, height_ratios=[2, 2])
 
     # Temperature Measurements
     plt.subplot(gs[0])
     sns.lineplot(label="Home", x="timestamp", y="room_temp", data=df)
     if dwd_df is not None:
-        sns.lineplot(label="DWD Forecast", x="timestamp", y="temp", data=dwd_df)
+        sns.lineplot(label="DWD Forecast", x="timestamp", y="temp", alpha=0.6, data=dwd_df)
     if google_df is not None:
-        sns.lineplot(label="Google Forecast", x="timestamp", y="temp", data=google_df)
+        sns.lineplot(label="Google Forecast", x="timestamp", y="temp", alpha=0.6, data=google_df)
+    if wettercom_df is not None:
+        sns.lineplot(label="Wetter.com Forecast", x="timestamp", y="temp_stat", alpha=0.6, data=wettercom_df)
+        sns.lineplot(label="Wetter.com Live", x="timestamp", y="temp_dyn", alpha=0.6, data=wettercom_df)
     plt.title("Temperature Over Time")
     plt.xlabel("Time")
     plt.ylabel("Temp (°C)")
@@ -39,17 +42,21 @@ def draw_plots(df, dwd_df=None, google_df=None, with_save=True):
     sns.despine(left=True, bottom=True)
 
     df_last_24h = df[df["timestamp"] >= datetime.now() - timedelta(hours=25)]
-    google_df_last_24h = google_df[google_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
-    dwd_df_last_24h = dwd_df[dwd_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
 
     # Temperature Measurements last 24 h
     plt.subplot(gs[2])
     sns.lineplot(label="Home", x="timestamp", y="room_temp", marker='o', markersize=6, data=df_last_24h)
     if dwd_df is not None:
+        dwd_df_last_24h = dwd_df[dwd_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
         sns.lineplot(label="DWD Forecast", x="timestamp", y="temp", marker='o', markersize=6, data=dwd_df_last_24h)
     if google_df is not None:
+        google_df_last_24h = google_df[google_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
         sns.lineplot(label="Google Forecast", x="timestamp", y="temp", marker='o', markersize=6,
                      data=google_df_last_24h)
+    if wettercom_df is not None:
+        wettercom_df_last_24h = wettercom_df[wettercom_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
+        sns.lineplot(label="Wetter.com Forecast", x="timestamp", y="temp_stat", marker='o', data=wettercom_df_last_24h)
+        sns.lineplot(label="Wetter.com Live", x="timestamp", y="temp_dyn", marker='s', data=wettercom_df_last_24h)
     plt.title("Temperature Last 24 Hours")
     plt.xlabel("Time")
     plt.ylabel("Temp (°C)")

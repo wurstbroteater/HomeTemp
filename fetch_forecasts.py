@@ -1,12 +1,13 @@
 import logging
 import configparser, schedule, time
 from datetime import datetime, timedelta
-from api.fetcher import DWDFetcher, GoogleFetcher
-from persist.database import DwDDataHandler, GoogleDataHandler
+from api.fetcher import DWDFetcher, GoogleFetcher, WetterComFetcher
+from persist.database import DwDDataHandler, GoogleDataHandler, WetterComHandler
+from hometemp import run_threaded
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
-logging.basicConfig(filename='dwd_measurement.log',
+logging.basicConfig(filename='fetching.log',
                     encoding='utf-8',
                     level=logging.INFO)
 
@@ -49,11 +50,13 @@ def dwd_fetch_and_save():
                         log.info(timestamp_to_update.strftime(
                             "%Y-%m-%d %H:%M:%S") + f" old/new: {old_temp}/{new_temp} {new_dev}")
                         if old_temp != new_temp:
-                            handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp,
-                                                            new_dev)
+                            handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"),
+                                                             new_temp,
+                                                             new_dev)
                     else:
-                        log.warning("[DWD] Reached sanity threshold for temp updates at " + timestamp_to_update.strftime(
-                            "%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
+                        log.warning(
+                            "[DWD] Reached sanity threshold for temp updates at " + timestamp_to_update.strftime(
+                                "%Y-%m-%d %H:%M:%S") + f" new: {new_temp} {new_dev}")
                         break
                     timestamp_to_update -= time_diff
 
@@ -78,15 +81,33 @@ def google_fetch_and_save():
         handler.insert_google_data(timestamp=c_time, temp=c_temp, humidity=c_hum, precipitation=c_per, wind=c_wind)
 
 
+def wettercom_fetch_and_save():
+    # dyn is allowed to be null in database
+    wettercom_temp_dyn = WetterComFetcher.get_data_dynamic(config["wettercom"]["url"][1:-1])
+    wettercom_temp_static = WetterComFetcher().get_data_static(config["wettercom"]["url"][1:-1])
+    c_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if wettercom_temp_static is None:
+        log.error("[Wetter.com] Error while retrieving temperature")
+    else:
+        log.info(
+            f"[Wetter.com] Static vs Dynamic Temperature at {c_time} is {wettercom_temp_static}°C vs {wettercom_temp_dyn}°C")
+        auth = config["db"]
+        handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
+        handler.init_db_connection()
+        handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
+
+
 def main():
     # Todo: integrate into hometemp for final release
-    log.info("------------------- Fetch DWD Measurements -------------------")
+    log.info(f"------------------- Fetch DWD Measurements v{config['hometemp']['version']} -------------------")
     schedule.every(10).minutes.do(dwd_fetch_and_save)
     schedule.every(10).minutes.do(google_fetch_and_save)
+    schedule.every(10).minutes.do(run_threaded, wettercom_fetch_and_save)
 
     log.info("finished initialization")
     dwd_fetch_and_save()
     google_fetch_and_save()
+    run_threaded(wettercom_fetch_and_save)
 
     while True:
         schedule.run_pending()

@@ -4,7 +4,7 @@
 
 - Refactored code to modules `api`, `distribute`, `persist` and `visualize`
 - Updated `recover_from_logs.py`, `crunch_numbers.ipynb` and `humidity.py` to use new modules
-- Added data fetcher and database handler for **Deutsche Wetterdienst (DWD)** and **Google Weather**
+- Added data fetcher and database handler for **wetter.com**, **Deutsche Wetterdienst (DWD)** and **Google Weather**
 - Added `fetch_forecasts.py` for pulling data from various endpoints
 - Added `default_hometemp.ini` for better overview of used local variables
 - Decreased the time delay in "every 10 minutes" jobs by using the method `run_threaded`
