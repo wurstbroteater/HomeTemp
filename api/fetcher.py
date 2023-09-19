@@ -29,7 +29,7 @@ class WetterComFetcher:
         try:
             response = requests.get(url)
         except requests.exceptions.ConnectionError as e:
-            log.error("Wetter.com connection problem: " + str(e))
+            log.error(f"Wetter.com connection problem: " + str(e))
             return None
 
         if response.status_code == 200:
