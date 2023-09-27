@@ -95,7 +95,7 @@ class GoogleFetcher:
                     "precipitation": float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%", "")),
                     "humidity": float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", "")),
                     "wind": float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))}
-        except requests.exceptions.ConnectionError as e:
+        except (AttributeError, requests.exceptions.ConnectionError) as e:
             log.error("Google Weather connection problem: " + str(e))
             return None
 
