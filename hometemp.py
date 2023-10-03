@@ -2,7 +2,7 @@ import Adafruit_DHT, configparser, logging, re, schedule, time, threading
 from datetime import datetime, timedelta
 from gpiozero import CPUTemperature
 from distribute.email import EmailDistributor
-from persist.database import DwDDataHandler, GoogleDataHandler, PostgresHandler, SensorDataHandler, WetterComHandler
+from persist.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 from util.manager import PostgresDockerManager
 from visualize.plots import draw_plots
 
@@ -74,8 +74,13 @@ def create_and_backup_visualization():
     wettercom_df = wettercom_handler.read_data_into_dataframe()
     wettercom_df['timestamp'] = wettercom_df['timestamp'].map(
         lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
+    # Ulm.de data
+    ulmde_handler = UlmDeHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'ulmde_data')
+    ulmde_handler.init_db_connection()
+    ulmde_df = ulmde_handler.read_data_into_dataframe()
+    ulmde_df['timestamp'] = ulmde_df['timestamp'].map(lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
 
-    draw_plots(df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
+    draw_plots(df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df)
     log.info("Done")
     EmailDistributor.send_visualization_email(df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
 

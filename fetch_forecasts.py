@@ -1,8 +1,8 @@
 import logging
 import configparser, schedule, time
 from datetime import datetime, timedelta
-from api.fetcher import DWDFetcher, GoogleFetcher, WetterComFetcher
-from persist.database import DwDDataHandler, GoogleDataHandler, WetterComHandler
+from api.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
+from persist.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler
 from hometemp import run_threaded
 
 for handler in logging.root.handlers[:]:
@@ -97,14 +97,30 @@ def wettercom_fetch_and_save():
         handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
 
 
+def ulmde_fetch_and_save():
+    auth = config["db"]
+    ulm_temp = UlmDeFetcher.get_data()
+    if ulm_temp is None:
+        log.error("[Ulm] Could not receive google data")
+    else:
+        c_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        msg = f"[Ulm] Forecast is: {c_time} temp={ulm_temp}°C"
+        log.info(msg)
+        handler = UlmDeHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'ulmde_data')
+        handler.init_db_connection()
+        handler.insert_ulmde_data(timestamp=c_time, temp=ulm_temp)
+
+
 def main():
     # Todo: integrate into hometemp for final release
     log.info(f"------------------- Fetch DWD Measurements v{config['hometemp']['version']} -------------------")
+    schedule.every(10).minutes.do(ulmde_fetch_and_save)
     schedule.every(10).minutes.do(dwd_fetch_and_save)
     schedule.every(10).minutes.do(google_fetch_and_save)
     schedule.every(10).minutes.do(run_threaded, wettercom_fetch_and_save)
 
     log.info("finished initialization")
+    ulmde_fetch_and_save()
     dwd_fetch_and_save()
     google_fetch_and_save()
     run_threaded(wettercom_fetch_and_save)

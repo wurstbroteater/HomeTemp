@@ -334,3 +334,32 @@ class WetterComHandler(PostgresHandler):
 
         if was_successful:
             log.info("Wetter.com data inserted successfully.")
+
+
+class UlmDeHandler(PostgresHandler):
+    """
+    Implementation of PostgresHandler with table schema for ulmde_data.
+    In addition, it provides a method for inserting measurement data into the table.
+    """
+
+    def _create_table(self):
+        metadata = MetaData()
+        table_schema = Table(self.table, metadata,
+                             Column('id', Integer, primary_key=True, autoincrement=True),
+                             Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
+                             Column('temp', DECIMAL, nullable=True))
+        try:
+            metadata.create_all(self.connection)
+            log.info(f"Table '{self.table}' created successfully.")
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+
+    def insert_ulmde_data(self, timestamp, temp):
+        insert_successful = self._insert_in_table({
+            'timestamp': timestamp,
+            'temp': temp
+        })
+
+        if insert_successful:
+            log.info("Ulm.de data inserted successfully.")

@@ -11,6 +11,36 @@ from pyvirtualdisplay import Display
 
 log = logging.getLogger("api.fetcher")
 
+class UlmDeFetcher:
+
+    @staticmethod
+    def get_data():
+        """
+        Fetches the temperature data from ulm.de
+        """
+        try:
+            response = requests.get('https://www.ulm.de/')
+        except requests.exceptions.ConnectionError as e:
+            log.error(f"Ulm.de connection problem: " + str(e))
+            return None
+
+        if response.status_code == 200:
+            soup = bs(response.text, 'html.parser')
+            temperature_element = soup.find('p', class_='temp')
+            if temperature_element:
+                try:
+                    temperature = int(temperature_element.text.replace("°", "").replace("C", "").strip())
+                except ValueError as e:
+                    log.error(f"Ulm.de could not parse value {str(e)}")
+                    return None
+                return temperature
+            else:
+                log.error("Ulm.de: Temperature element not found on the page.")
+                return None
+        else:
+            log.error("Ulm.de: Failed to retrieve weather data.")
+            return None
+
 
 class WetterComFetcher:
     """
