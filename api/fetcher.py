@@ -57,6 +57,7 @@ class WetterComFetcher:
         options.add_argument('--disable-blink-features=AutomationControlled')
         service = webdriver.ChromeService(executable_path='/usr/lib/chromium-browser/chromedriver')
         driver = webdriver.Chrome(service=service, options=options)
+        driver.set_page_load_timeout(30) # 30 seconds timeout
         try:
             driver.get(url)
             found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
@@ -200,16 +201,16 @@ class DWDFetcher(Fetcher):
 
         if len(temp_std) != len(temp_values):
             log.error(f"Error: Unable to validate DWD temperature data because temp values and std differ!")
-            return current_time, float("nan"), float("nan")
+            return current_time, None, None
 
         current_temp_forecast_index = self._get_index()
         if len(temp_values) < current_temp_forecast_index:
             log.error(
                 f"Error: Forecast index out of range, size: {len(temp_values)}, index: {current_temp_forecast_index}")
-            return current_time, float("nan"), float("nan")
+            return current_time, None, None
         elif temp_std[current_temp_forecast_index] == 0:
             log.error(f"Error: 0 tempStd for found temperature {temp_values[current_temp_forecast_index]}")
-            return current_time, float("nan"), float("nan")
+            return current_time, None, None
         else:
             temp = float(temp_values[current_temp_forecast_index]) / 10.0
             dev = self.data["temperatureStd"][current_temp_forecast_index]

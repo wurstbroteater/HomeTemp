@@ -49,7 +49,14 @@ class PostgresHandler(ABC):
     def _init_db(self):
         db_url = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
         try:
-            return create_engine(db_url)
+            return create_engine(db_url,
+                    pool_pre_ping=True,
+                    connect_args={
+                        "keepalives": 1,
+                        "keepalives_idle": 30,
+                        "keepalives_interval": 10,
+                        "keepalives_count": 5,
+                    })
         except exc.SQLAlchemyError as e:
             log.error("Problems while initialising database access: " + str(e))
             return None
