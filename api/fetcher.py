@@ -19,8 +19,9 @@ class UlmDeFetcher:
         Fetches the temperature data from ulm.de
         """
         try:
-            response = requests.get('https://www.ulm.de/')
-        except requests.exceptions.ConnectionError as e:
+            # set connect and read timeout to 5 seconds
+            response = requests.get('https://www.ulm.de/', timeout=(5,5))
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Ulm.de connection problem: " + str(e))
             return None
 
@@ -57,8 +58,9 @@ class WetterComFetcher:
         Fetches the static temperature data from Wetter.com link for a city/region
         """
         try:
-            response = requests.get(url)
-        except requests.exceptions.ConnectionError as e:
+            # set connect and read timeout to 5 seconds
+            response = requests.get(url, timeout=(5,5))
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Wetter.com connection problem: " + str(e))
             return None
 
@@ -118,7 +120,8 @@ class GoogleFetcher:
             session.headers["User-Agent"] = user_agent
             session.headers["Accept-Language"] = language
             session.headers["Content-Language"] = language
-            html = session.get(url)
+            # set connect and read timeout to 5 seconds
+            html = session.get(url, timeout=(5,5))
             soup = bs(html.text, "html.parser")
 
             return {"region": soup.find("div", attrs={"id": "wob_loc"}).text,
@@ -126,7 +129,7 @@ class GoogleFetcher:
                     "precipitation": float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%", "")),
                     "humidity": float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", "")),
                     "wind": float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))}
-        except (AttributeError, requests.exceptions.ConnectionError) as e:
+        except (AttributeError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error("Google Weather connection problem: " + str(e))
             return None
 
@@ -142,6 +145,7 @@ class Fetcher:
         self.endpoint = endpoint
         self.params = None if not params else urllib.parse.urlencode(params)
         self.api_link = self._create_api_link()
+        self.timeouts = (30,5) # connect timeout 30s and read timeout 5s
 
     def __str__(self):
         return f"Fetcher[{self.api_link}]"
@@ -151,12 +155,12 @@ class Fetcher:
 
     def _fetch_data(self):
         try:
-            response = requests.get(self.api_link)
+            response = requests.get(self.api_link, timeout=self.timeouts)
             if (code := response.status_code) == 200:
                 return self._handle_ok_status_code(response)
             else:
                 return self._handle_bad_status_code(code)
-        except requests.exceptions.ConnectionError as e:
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error("Creating the connection failed with error: {e}")
             return None
 
