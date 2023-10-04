@@ -49,7 +49,9 @@ def dwd_fetch_and_save():
                         old_temp = handler.get_temp_for_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"))
                         log.info(timestamp_to_update.strftime(
                             "%Y-%m-%d %H:%M:%S") + f" old/new: {old_temp}/{new_temp} {new_dev}")
-                        if old_temp != new_temp:
+                        if old_temp is None:
+                            handler.insert_dwd_data(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp, new_dev)
+                        elif old_temp != new_temp:
                             handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"),
                                                              new_temp,
                                                              new_dev)
