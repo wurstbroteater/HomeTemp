@@ -68,14 +68,17 @@ class WetterComFetcher:
             soup = bs(response.text, 'html.parser')
             temperature_element = soup.find('div', class_='delta rtw_temp')
             if temperature_element:
-                temperature = int(temperature_element.text.strip().replace("°", "").replace("C", ""))
-                return temperature
+                try:
+                    temperature = int(temperature_element.text.strip().replace("°", "").replace("C", ""))
+                    return temperature
+                except ValueError as e:
+                    log.error(f"Wetter.com could not parse value {str(e)}")
             else:
                 log.error("Temperature element not found on the page.")
-                return None
         else:
             log.error("Failed to retrieve weather data.")
-            return None
+        
+        return None
 
     @staticmethod
     def get_data_dynamic(url):
@@ -89,7 +92,9 @@ class WetterComFetcher:
         options.add_argument('--disable-blink-features=AutomationControlled')
         service = webdriver.ChromeService(executable_path='/usr/lib/chromium-browser/chromedriver')
         driver = webdriver.Chrome(service=service, options=options)
-        driver.set_page_load_timeout(30) # 30 seconds timeout
+        timeout_s = 30
+        driver.set_page_load_timeout(timeout_s) 
+        driver.implicitly_wait(timeout_s)
         try:
             driver.get(url)
             found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
@@ -99,6 +104,7 @@ class WetterComFetcher:
             log.error(f"An error occurred while dynamically fetching temperature data: {str(e)}")
             return None
         finally:
+            display.stop()
             driver.quit()
 
 

@@ -5,7 +5,7 @@
 ## 0.3.1
 
 - Added data fetcher, database handler and visualization for **Ulm.de**
-- Fixed deadlocks causing whole Pi to be unresponsive (database recovery mode was triggered)
+- Fixed deadlocks causing whole Pi to be unresponsive (database recovery mode was triggered by to many pending connections)
 
 ## 0.3
 

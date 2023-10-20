@@ -85,18 +85,20 @@ def google_fetch_and_save():
 
 def wettercom_fetch_and_save():
     # dyn is allowed to be null in database
-    wettercom_temp_dyn = WetterComFetcher.get_data_dynamic(config["wettercom"]["url"][1:-1])
     wettercom_temp_static = WetterComFetcher().get_data_static(config["wettercom"]["url"][1:-1])
-    c_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if wettercom_temp_static is None:
-        log.error("[Wetter.com] Error while retrieving temperature")
-    else:
-        log.info(
-            f"[Wetter.com] Static vs Dynamic Temperature at {c_time} is {wettercom_temp_static}°C vs {wettercom_temp_dyn}°C")
-        auth = config["db"]
-        handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
-        handler.init_db_connection()
-        handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
+        log.error("[Wetter.com] Failed to fetch static temp data. Skipping!")
+        return
+    wettercom_temp_dyn = WetterComFetcher.get_data_dynamic(config["wettercom"]["url"][1:-1])
+    c_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if wettercom_temp_dyn is None:
+        log.warning("[Wetter.com] Failed to fetch dynamic temp data.")
+    log.info(
+        f"[Wetter.com] Static vs Dynamic Temperature at {c_time} is {wettercom_temp_static}°C vs {wettercom_temp_dyn}°C")
+    auth = config["db"]
+    handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
+    handler.init_db_connection()
+    handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
 
 
 def ulmde_fetch_and_save():
@@ -119,13 +121,13 @@ def main():
     schedule.every(10).minutes.do(ulmde_fetch_and_save)
     schedule.every(10).minutes.do(dwd_fetch_and_save)
     schedule.every(10).minutes.do(google_fetch_and_save)
-    schedule.every(10).minutes.do(run_threaded, wettercom_fetch_and_save)
+    schedule.every(10).minutes.do(wettercom_fetch_and_save)
 
     log.info("finished initialization")
     ulmde_fetch_and_save()
     dwd_fetch_and_save()
     google_fetch_and_save()
-    run_threaded(wettercom_fetch_and_save)
+    wettercom_fetch_and_save()
 
     while True:
         schedule.run_pending()
