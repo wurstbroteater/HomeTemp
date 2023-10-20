@@ -2,6 +2,8 @@
 
 ## 0.4
 
+## 0.3.2
+
 ## 0.3.1
 
 - Added data fetcher, database handler and visualization for **Ulm.de**
