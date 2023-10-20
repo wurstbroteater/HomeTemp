@@ -49,7 +49,14 @@ class PostgresHandler(ABC):
     def _init_db(self):
         db_url = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
         try:
-            return create_engine(db_url)
+            return create_engine(db_url,
+                    pool_pre_ping=True,
+                    connect_args={
+                        "keepalives": 1,
+                        "keepalives_idle": 30,
+                        "keepalives_interval": 10,
+                        "keepalives_count": 5,
+                    })
         except exc.SQLAlchemyError as e:
             log.error("Problems while initialising database access: " + str(e))
             return None
@@ -327,3 +334,32 @@ class WetterComHandler(PostgresHandler):
 
         if was_successful:
             log.info("Wetter.com data inserted successfully.")
+
+
+class UlmDeHandler(PostgresHandler):
+    """
+    Implementation of PostgresHandler with table schema for ulmde_data.
+    In addition, it provides a method for inserting measurement data into the table.
+    """
+
+    def _create_table(self):
+        metadata = MetaData()
+        table_schema = Table(self.table, metadata,
+                             Column('id', Integer, primary_key=True, autoincrement=True),
+                             Column('timestamp', TIMESTAMP(timezone=True), nullable=False),
+                             Column('temp', DECIMAL, nullable=True))
+        try:
+            metadata.create_all(self.connection)
+            log.info(f"Table '{self.table}' created successfully.")
+
+        except exc.SQLAlchemyError as e:
+            log.error("Problem with database " + str(e))
+
+    def insert_ulmde_data(self, timestamp, temp):
+        insert_successful = self._insert_in_table({
+            'timestamp': timestamp,
+            'temp': temp
+        })
+
+        if insert_successful:
+            log.info("Ulm.de data inserted successfully.")

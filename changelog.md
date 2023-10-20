@@ -1,5 +1,12 @@
 # Project: HomeTemp
 
+## 0.4
+
+## 0.3.1
+
+- Added data fetcher, database handler and visualization for **Ulm.de**
+- Fixed deadlocks causing whole Pi to be unresponsive (database recovery mode was triggered by to many pending connections)
+
 ## 0.3
 
 - Refactored code to modules `api`, `distribute`, `persist` and `visualize`

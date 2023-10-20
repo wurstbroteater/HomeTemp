@@ -11,6 +11,37 @@ from pyvirtualdisplay import Display
 
 log = logging.getLogger("api.fetcher")
 
+class UlmDeFetcher:
+
+    @staticmethod
+    def get_data():
+        """
+        Fetches the temperature data from ulm.de
+        """
+        try:
+            # set connect and read timeout to 5 seconds
+            response = requests.get('https://www.ulm.de/', timeout=(5,5))
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            log.error(f"Ulm.de connection problem: " + str(e))
+            return None
+
+        if response.status_code == 200:
+            soup = bs(response.text, 'html.parser')
+            temperature_element = soup.find('p', class_='temp')
+            if temperature_element:
+                try:
+                    temperature = int(temperature_element.text.replace("°", "").replace("C", "").strip())
+                except ValueError as e:
+                    log.error(f"Ulm.de could not parse value {str(e)}")
+                    return None
+                return temperature
+            else:
+                log.error("Ulm.de: Temperature element not found on the page.")
+                return None
+        else:
+            log.error("Ulm.de: Failed to retrieve weather data.")
+            return None
+
 
 class WetterComFetcher:
     """
@@ -27,23 +58,27 @@ class WetterComFetcher:
         Fetches the static temperature data from Wetter.com link for a city/region
         """
         try:
-            response = requests.get(url)
-        except requests.exceptions.ConnectionError as e:
-            log.error("Wetter.com connection problem: " + str(e))
+            # set connect and read timeout to 5 seconds
+            response = requests.get(url, timeout=(5,5))
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            log.error(f"Wetter.com connection problem: " + str(e))
             return None
 
         if response.status_code == 200:
             soup = bs(response.text, 'html.parser')
             temperature_element = soup.find('div', class_='delta rtw_temp')
             if temperature_element:
-                temperature = int(temperature_element.text.strip().replace("°", "").replace("C", ""))
-                return temperature
+                try:
+                    temperature = int(temperature_element.text.strip().replace("°", "").replace("C", ""))
+                    return temperature
+                except ValueError as e:
+                    log.error(f"Wetter.com could not parse value {str(e)}")
             else:
                 log.error("Temperature element not found on the page.")
-                return None
         else:
             log.error("Failed to retrieve weather data.")
-            return None
+        
+        return None
 
     @staticmethod
     def get_data_dynamic(url):
@@ -57,6 +92,9 @@ class WetterComFetcher:
         options.add_argument('--disable-blink-features=AutomationControlled')
         service = webdriver.ChromeService(executable_path='/usr/lib/chromium-browser/chromedriver')
         driver = webdriver.Chrome(service=service, options=options)
+        timeout_s = 30
+        driver.set_page_load_timeout(timeout_s) 
+        driver.implicitly_wait(timeout_s)
         try:
             driver.get(url)
             found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
@@ -66,6 +104,7 @@ class WetterComFetcher:
             log.error(f"An error occurred while dynamically fetching temperature data: {str(e)}")
             return None
         finally:
+            display.stop()
             driver.quit()
 
 
@@ -87,7 +126,8 @@ class GoogleFetcher:
             session.headers["User-Agent"] = user_agent
             session.headers["Accept-Language"] = language
             session.headers["Content-Language"] = language
-            html = session.get(url)
+            # set connect and read timeout to 5 seconds
+            html = session.get(url, timeout=(5,5))
             soup = bs(html.text, "html.parser")
 
             return {"region": soup.find("div", attrs={"id": "wob_loc"}).text,
@@ -95,7 +135,7 @@ class GoogleFetcher:
                     "precipitation": float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%", "")),
                     "humidity": float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", "")),
                     "wind": float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))}
-        except requests.exceptions.ConnectionError as e:
+        except (AttributeError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error("Google Weather connection problem: " + str(e))
             return None
 
@@ -111,6 +151,7 @@ class Fetcher:
         self.endpoint = endpoint
         self.params = None if not params else urllib.parse.urlencode(params)
         self.api_link = self._create_api_link()
+        self.timeouts = (30,5) # connect timeout 30s and read timeout 5s
 
     def __str__(self):
         return f"Fetcher[{self.api_link}]"
@@ -120,12 +161,12 @@ class Fetcher:
 
     def _fetch_data(self):
         try:
-            response = requests.get(self.api_link)
+            response = requests.get(self.api_link, timeout=self.timeouts)
             if (code := response.status_code) == 200:
                 return self._handle_ok_status_code(response)
             else:
                 return self._handle_bad_status_code(code)
-        except requests.exceptions.ConnectionError as e:
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error("Creating the connection failed with error: {e}")
             return None
 
@@ -200,16 +241,16 @@ class DWDFetcher(Fetcher):
 
         if len(temp_std) != len(temp_values):
             log.error(f"Error: Unable to validate DWD temperature data because temp values and std differ!")
-            return current_time, float("nan"), float("nan")
+            return current_time, None, None
 
         current_temp_forecast_index = self._get_index()
         if len(temp_values) < current_temp_forecast_index:
             log.error(
                 f"Error: Forecast index out of range, size: {len(temp_values)}, index: {current_temp_forecast_index}")
-            return current_time, float("nan"), float("nan")
+            return current_time, None, None
         elif temp_std[current_temp_forecast_index] == 0:
             log.error(f"Error: 0 tempStd for found temperature {temp_values[current_temp_forecast_index]}")
-            return current_time, float("nan"), float("nan")
+            return current_time, None, None
         else:
             temp = float(temp_values[current_temp_forecast_index]) / 10.0
             dev = self.data["temperatureStd"][current_temp_forecast_index]

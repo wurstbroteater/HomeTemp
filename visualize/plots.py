@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 
-def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, with_save=True):
+def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True):
     sns.set_theme(style="darkgrid")
     fig = plt.figure(figsize=(25, 12))
     gs = fig.add_gridspec(2, 2, height_ratios=[2, 2])
@@ -20,6 +20,8 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, with_save=Tru
     if wettercom_df is not None:
         sns.lineplot(label="Wetter.com Forecast", x="timestamp", y="temp_stat", alpha=0.6, data=wettercom_df)
         sns.lineplot(label="Wetter.com Live", x="timestamp", y="temp_dyn", alpha=0.6, data=wettercom_df)
+    if ulmde_df is not None:
+        sns.lineplot(label="Ulm.de Forecast", x="timestamp", y="temp", alpha=0.6, data=ulmde_df)
     plt.title("Temperature Over Time")
     plt.xlabel("Time")
     plt.ylabel("Temp (°C)")
@@ -57,6 +59,9 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, with_save=Tru
         wettercom_df_last_24h = wettercom_df[wettercom_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
         sns.lineplot(label="Wetter.com Forecast", x="timestamp", y="temp_stat", marker='o', data=wettercom_df_last_24h)
         sns.lineplot(label="Wetter.com Live", x="timestamp", y="temp_dyn", marker='s', data=wettercom_df_last_24h)
+    if ulmde_df is not None:
+        ulmde_df_last_24h = ulmde_df[ulmde_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
+        sns.lineplot(label="Ulm.de Forecast", x="timestamp", y="temp", alpha=0.6, marker='o', data=ulmde_df_last_24h)
     plt.title("Temperature Last 24 Hours")
     plt.xlabel("Time")
     plt.ylabel("Temp (°C)")
