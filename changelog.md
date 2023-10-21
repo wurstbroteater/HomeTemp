@@ -4,6 +4,8 @@
 
 ## 0.3.2
 
+- Remove Exception from get_sensor_data and use logging instead
+
 ## 0.3.1
 
 - Added data fetcher, database handler and visualization for **Ulm.de**
