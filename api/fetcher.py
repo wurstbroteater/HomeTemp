@@ -167,7 +167,7 @@ class Fetcher:
             else:
                 return self._handle_bad_status_code(code)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-            log.error("Creating the connection failed with error: {e}")
+            log.error(f"Creating the connection failed with error: {e}")
             return None
 
     def _handle_ok_status_code(self, response):
