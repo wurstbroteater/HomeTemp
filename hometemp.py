@@ -38,7 +38,8 @@ def get_sensor_data():
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return temperature, humidity, timestamp
     else:
-        raise Exception("Failed to retrieve data from AM2302 sensor")
+        log.error("Failed to retrieve data from AM2302 sensor")
+        return None, None, None
 
 
 # ------------------------------- Main  ----------------------------------------------
@@ -97,9 +98,10 @@ def collect_and_save_to_db():
     handler.init_db_connection()
     cpu_temp = get_temperature()
     room_temp, humidity, timestamp = get_sensor_data()
-    log.info(
-        "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
-    handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
+    if room_temp is not None and humidity is not None and timestamp is not None:
+        log.info(
+            "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
+        handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
     log.info("Done")
 
 

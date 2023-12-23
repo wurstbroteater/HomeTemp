@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.3.1
+# Project: HomeTemp v0.3.2-DEV
 
 The original idea of this project was to automate the periodically measured temperature and humidity values in my
 apartment. The room temperature and humidity is caputred by an AM2302 sensor, connected to a Raspberry Pi 4 Model B.

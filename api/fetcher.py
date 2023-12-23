@@ -7,6 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import WebDriverException
 from pyvirtualdisplay import Display
 
 log = logging.getLogger("api.fetcher")
@@ -100,7 +101,7 @@ class WetterComFetcher:
             found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
             return int(found_temp.text.replace('°C', ''))
 
-        except Exception as e:
+        except (WebDriverException, Exception) as e:
             log.error(f"An error occurred while dynamically fetching temperature data: {str(e)}")
             return None
         finally:
@@ -135,7 +136,7 @@ class GoogleFetcher:
                     "precipitation": float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%", "")),
                     "humidity": float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", "")),
                     "wind": float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))}
-        except (AttributeError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (WebDriverException, AttributeError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error("Google Weather connection problem: " + str(e))
             return None
 
@@ -167,7 +168,7 @@ class Fetcher:
             else:
                 return self._handle_bad_status_code(code)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-            log.error("Creating the connection failed with error: {e}")
+            log.error(f"Creating the connection failed with error: {e}")
             return None
 
     def _handle_ok_status_code(self, response):
