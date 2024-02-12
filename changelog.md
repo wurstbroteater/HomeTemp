@@ -4,7 +4,7 @@
 
 ## 0.3.2
 
-- Remove Exception from get_sensor_data and use logging instead
+- Replaced throwing exceptions in `get_sensor_data` and use logging instead
 - Fixed incorrect error printing in base fetcher
 - Increased error robustness of `api` module
 
