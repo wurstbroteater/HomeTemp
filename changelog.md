@@ -2,6 +2,8 @@
 
 ## 0.4
 
+## 0.3.3
+
 ## 0.3.2
 
 - Replaced throwing exceptions in `get_sensor_data` and use logging instead
