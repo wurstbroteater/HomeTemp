@@ -3,6 +3,8 @@
 ## 0.4
 
 ## 0.3.3
+- Added URI-save whitespace in `GoogleFetcher`
+- Updated `readme.md`
 
 ## 0.3.2
 

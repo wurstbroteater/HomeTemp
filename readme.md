@@ -4,6 +4,12 @@ The original idea of this project was to automate the periodically measured temp
 apartment. The room temperature and humidity is caputred by an AM2302 sensor, connected to a Raspberry Pi 4 Model B.
 This idea is still growing prosperously and currently provides the following features:
 
+## Requirments
+
+- Everyhing in `requirements.txt` for pip
+- Docker
+- pigpiod
+
 ## Current Features
 
 - Connection to postgres db

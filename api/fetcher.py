@@ -119,7 +119,7 @@ class GoogleFetcher:
         :location: e.g. "New York"
         """
 
-        url = "https://www.google.com/search?lr=lang_en&ie=UTF-8&q=weather" + location
+        url = "https://www.google.com/search?lr=lang_en&ie=UTF-8&q=weather%20" + location
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
         language = "en-US,en;q=0.5"
         try:
