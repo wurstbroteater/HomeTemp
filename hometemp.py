@@ -167,7 +167,7 @@ def main():
     schedule.every(1).minutes.do(run_threaded, run_received_commands)
     log.info("finished initialization")
 
-    #collect_and_save_to_db()
+    collect_and_save_to_db()
     create_visualization_timed()
     time.sleep(1)
     run_received_commands()
