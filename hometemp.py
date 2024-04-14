@@ -2,6 +2,7 @@ import Adafruit_DHT, configparser, logging, re, schedule, time, threading
 from datetime import datetime, timedelta
 from gpiozero import CPUTemperature
 from distribute.email import EmailDistributor
+from distribute.command import CommandService
 from persist.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 from util.manager import PostgresDockerManager
 from visualize.plots import draw_plots
@@ -15,6 +16,8 @@ logging.basicConfig(filename='measurement.log',
 config = configparser.ConfigParser()
 config.read('hometemp.ini')
 log = logging.getLogger('hometemp')
+
+command_service = None
 
 
 # ------------------------------- Raspberry Pi Temps ----------------------------------------------
@@ -42,10 +45,7 @@ def get_sensor_data():
         return None, None, None
 
 
-# ------------------------------- Main  ----------------------------------------------
-
-def create_and_backup_visualization():
-    log.info("Creating Measurement Data Visualization")
+def _get__visualization_data():
     auth = config["db"]
     sensor_data_handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'],
                                             'sensor_data')
@@ -81,10 +81,33 @@ def create_and_backup_visualization():
     ulmde_df = ulmde_handler.read_data_into_dataframe()
     ulmde_df['timestamp'] = ulmde_df['timestamp'].map(lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
 
-    draw_plots(df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df)
-    log.info("Done")
-    EmailDistributor.send_visualization_email(df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
+    return (df, google_df, dwd_df, wettercom_df, ulmde_df)
 
+def _create_visualization_commanded(commander):
+    log.info("Command: Creating Measurement Data Visualization")
+    sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
+    name = datetime.now().strftime("%d-%m-%Y")
+
+    save_path = f"plots/commanded/{name}.pdf"
+    draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df, save_path=save_path)
+    log.info("Done")
+    EmailDistributor.send_visualization_email(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
+
+
+# ------------------------------- Main  ----------------------------------------------
+
+def create_visualization_timed():
+    log.info("Timed: Creating Measurement Data Visualization")
+    sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
+    draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df)
+    log.info("Done")
+    EmailDistributor.send_visualization_email(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
+
+def run_received_commands():
+    valid_commands = command_service.get_received_command_requestes()
+    for commander, command in valid_commands:
+        print(f"Received call from '{commander}' to execute '{command}'")
+        command.function(commander)
 
 def run_threaded(job_func):
     job_thread = threading.Thread(target=job_func)
@@ -131,13 +154,24 @@ def main():
         exit(1)
         # after restart, database needs some time to start
     time.sleep(1)
+
+    global command_service
+    command_service = CommandService()
+    cmd_name = 'plot'
+    cmd_params = []
+    command_service.add_command_syntax((cmd_name, cmd_params, _create_visualization_commanded))
+
+
+
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
-    schedule.every().day.at("06:00").do(run_threaded, create_and_backup_visualization)
+    schedule.every().day.at("06:00").do(run_threaded, create_visualization_timed)
+    schedule.every(1).minutes.do(run_threaded, run_received_commands)
     log.info("finished initialization")
 
     collect_and_save_to_db()
-    run_threaded(create_and_backup_visualization)
+    run_threaded(create_visualization_timed)
+    run_received_commands()
     while True:
         schedule.run_pending()
         time.sleep(1)

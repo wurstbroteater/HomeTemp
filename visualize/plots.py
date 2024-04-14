@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 
-def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True):
+def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True, save_path=None):
     sns.set_theme(style="darkgrid")
     fig = plt.figure(figsize=(25, 12))
     gs = fig.add_gridspec(2, 2, height_ratios=[2, 2])
@@ -85,7 +85,10 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None
     plt.tight_layout()
     if with_save:
         name = datetime.now().strftime("%d-%m-%Y")
-        loc = f"plots/{name}.pdf"
+        if save_path is not None:
+            loc = f"plots/{name}.pdf"
+        else:
+            loc = save_path
         plt.savefig(loc)
         log.info(f"Saved plots to {loc}")
     plt.show()

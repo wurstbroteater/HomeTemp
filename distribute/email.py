@@ -5,6 +5,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 from distribute.dis_logger import dis_log as log
 from datetime import datetime
+import os
 
 config = configparser.ConfigParser()
 config.read('hometemp.ini')
@@ -13,17 +14,26 @@ config.read('hometemp.ini')
 class EmailDistributor:
 
     @staticmethod
-    def send_visualization_email(df, google_df, dwd_df, wettercom_df):
+    def send_visualization_email(df, google_df, dwd_df, wettercom_df,path_to_pdf=None, receiver=None):
         """
         Creates and sends an email with a description for each dataframe
         and attaches the pdf file created for the current day if the file is present.
         """
-        file_name = datetime.now().strftime("%d-%m-%Y")
+        if path_to_pdf is None:
+            file_name = datetime.now().strftime("%d-%m-%Y")
+            pdf_file_path = f"/home/eric/HomeTemp/plots/{file_name}.pdf"
+        else:
+            file_name =  os.path.basename(path_to_pdf)
+            pdf_file_path = path_to_pdf
         auth = config["distribution"]
 
         from_email = auth["from_email"]
-        to_email = auth["to_email"]
-        pdf_file_path = f"/home/eric/HomeTemp/plots/{file_name}.pdf"
+        
+        if receiver is None:
+            to_email = auth["to_email"]
+        else: 
+            to_email = receiver
+
         has_attachment = True
         try:
             attachment = open(pdf_file_path, "rb")
