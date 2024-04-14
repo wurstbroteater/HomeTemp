@@ -106,7 +106,7 @@ def create_visualization_timed():
 def run_received_commands():
     valid_commands = command_service.get_received_command_requestes()
     for commander, command in valid_commands:
-        print(f"Received call from '{commander}' to execute '{command}'")
+        log.info(f"Received call from '{commander}' to execute '{command}'")
         command.function(commander)
 
 def run_threaded(job_func):
@@ -161,8 +161,6 @@ def main():
     cmd_params = []
     command_service.add_command_syntax((cmd_name, cmd_params, _create_visualization_commanded))
 
-
-
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_visualization_timed)
@@ -170,8 +168,9 @@ def main():
     log.info("finished initialization")
 
     collect_and_save_to_db()
-    run_threaded(create_visualization_timed)
+    create_visualization_timed()
     run_received_commands()
+    log.info("entering main loop")
     while True:
         schedule.run_pending()
         time.sleep(1)

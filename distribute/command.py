@@ -25,14 +25,10 @@ class Command:
         """
         if not isinstance(other, Command):
             return False
-        return self.id == other.id and self.params == other.params #and self.function == other.function
+        return self.id == other.id and self.params == other.params
     
     def __hash__(self):
         return hash((self.id, self.params, self.function))
-    
-    def execute(self):
-        # Placeholder for execution logic
-        log.error(f"Executing command {self.id} with parameters {self.params}")
 
 
 class CommandService:
@@ -149,16 +145,16 @@ class CommandService:
         command_tokens = self._validate_header_prefix(header)
         command = None
         if command_tokens is None:
-            log.error(f"Commander '{commander}' passed invalid command '{header}'")
+            log.warning(f"Commander '{commander}' passed invalid command '{header}'")
         elif len(command_tokens) == 0:
-            log.error(f"Commander '{commander}' only passed valid prefix but no command")
+            log.warning(f"Commander '{commander}' only passed valid prefix but no command")
         else:
             received_cmd_id = command_tokens[0]
             command = self._get_command_by_id(received_cmd_id)
             if command is None:
-                log.error(f"Commander '{commander}' sent unknown command id '{received_cmd_id}'")
+                log.warning(f"Commander '{commander}' sent unknown command id '{received_cmd_id}'")
             else:
-                log.error(f"Commander '{commander}' requested command id '{received_cmd_id}'")
+                log.info(f"Commander '{commander}' requested command id '{received_cmd_id}'")
         return command
 
     # ------- end command parsing -------              

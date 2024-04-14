@@ -85,7 +85,7 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None
     plt.tight_layout()
     if with_save:
         name = datetime.now().strftime("%d-%m-%Y")
-        if save_path is not None:
+        if save_path is None:
             loc = f"plots/{name}.pdf"
         else:
             loc = save_path
