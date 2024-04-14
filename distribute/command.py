@@ -150,9 +150,6 @@ class CommandService:
         """
         parse received tokens and returns command if found
         """
-        #log.error("Commander: ", commander)
-        #log.error("Command: ", header)
-        #log.error("Body: ", body)
         command_tokens = self._validate_header_prefix(header)
         command = None
         if command_tokens is None:

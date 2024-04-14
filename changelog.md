@@ -2,7 +2,11 @@
 
 ## 0.4
 
+- Added ability to add and receive commands for HomeTemp commanding from external
+
+
 ## 0.3.3
+
 - Added URI-save whitespace in `GoogleFetcher`
 - Updated `readme.md`
 

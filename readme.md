@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.3.3-DEV
+# Project: HomeTemp v0.4-DEV
 
 The original idea of this project was to automate the periodically measured temperature and humidity values in my
 apartment. The room temperature and humidity is caputred by an AM2302 sensor, connected to a Raspberry Pi 4 Model B.
@@ -19,6 +19,7 @@ This idea is still growing prosperously and currently provides the following fea
 - Sending emails containing statistic data as text and visualizations as pdf
 - Recovering sensor data from log file
 - Data fetching from various API endpoints/websites (currently: Deutsche Wetterdienst (DWD) and Google Weather, Ulm.de and Wetter.com)
+- Commanding via email
 
 While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `crunch_numbers.ipynb` is a
 playground for everything.
