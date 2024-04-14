@@ -46,6 +46,9 @@ class CommandService:
         # default supported commands
         # supported commands needs to be added via add_command method before executing get_received_command_requestes
         self.valid_commands = []
+
+
+    def _login(self):
         try:
             self.mail = imaplib.IMAP4_SSL(self.server, self.port)
             self.mail.login(self.email_address, self.password)
@@ -60,6 +63,7 @@ class CommandService:
             log.error(f"Error while closing: {str(e)}")
 
     def _get_emails(self):
+        self._login()
         try:
             self.mail.select('inbox')
             result, data = self.mail.search(None, 'ALL')
@@ -73,6 +77,8 @@ class CommandService:
                         yield email_id, msg
         except Exception as e:
             log.error(f"Error occurred while fetching emails: {str(e)}")
+        finally:
+            self._close()
 
     def _send_email(self, to_address, subject, body):
             try:
@@ -98,11 +104,12 @@ class CommandService:
         """
         found_commands = []
         try:
-            for email_id, msg in self._get_emails():
+            received_emails = self._get_emails()
+            for email_id, msg in received_emails:
                 sender = str(parseaddr(msg['From'])[1])
                 header = msg['Subject']
                 body = msg.get_payload()
-                data_report = r'HomeTemp .*v\d*\.\d*\.\d*[-DEV]*.*[Data Report]*'
+                data_report = r'HomeTemp .*v\d*\.[\.*\d*]*.*[-DEV]*.*[Data Report]*'
                 # exclude data reports
                 if not re.match(data_report, header) and sender in self.allowed_commanders:
                     found_commands.append((sender, header, body))
@@ -172,6 +179,5 @@ class CommandService:
             command = self._parse_received_command(commander, header, body)
             if command is not None:
                 valid_commands.append((commander, command))
-        self._close()
         return valid_commands
 
