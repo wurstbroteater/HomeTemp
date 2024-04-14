@@ -34,6 +34,7 @@ class Command:
 class CommandService:
 
     def __init__(self):
+        self.connected = False
         self.email_address = config["distribution"]["from_email"]
         self.password = config["distribution"]["smtp_pw"]
         self.server =  config["distribution"]["imap_server"]
@@ -52,6 +53,7 @@ class CommandService:
         try:
             self.mail = imaplib.IMAP4_SSL(self.server, self.port)
             self.mail.login(self.email_address, self.password)
+            self.connected = True
         except Exception as e:
             log.error(f"Failed to connect to the mail server: {str(e)}")
             raise
@@ -59,11 +61,14 @@ class CommandService:
     def _close(self):
         try:
             self.mail.logout()
+            self.connected = False
         except Exception as e:
             log.error(f"Error while closing: {str(e)}")
 
     def _get_emails(self):
-        self._login()
+        if not self.connected:
+            log.error("Cannot receive emails because no connection was etablished")
+            return
         try:
             self.mail.select('inbox')
             result, data = self.mail.search(None, 'ALL')
@@ -77,8 +82,7 @@ class CommandService:
                         yield email_id, msg
         except Exception as e:
             log.error(f"Error occurred while fetching emails: {str(e)}")
-        finally:
-            self._close()
+ 
 
     def _send_email(self, to_address, subject, body):
             try:
@@ -172,8 +176,13 @@ class CommandService:
         if len(cmd_syntax) == 3:
             self.valid_commands.append(Command(id=cmd_syntax[0], params=cmd_syntax[1], function=cmd_syntax[2]))
 
+
     def get_received_command_requestes(self):
+        if not self.connected:
+            self._login()
         commands = self._get_and_delete_email_with_command(delete_mail=True)
+        if self.connected :
+            self._close()
         valid_commands = []
         for commander, header, body in commands:
             command = self._parse_received_command(commander, header, body)

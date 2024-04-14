@@ -86,8 +86,8 @@ def _get__visualization_data():
 def _create_visualization_commanded(commander):
     log.info("Command: Creating Measurement Data Visualization")
     sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
+    
     name = datetime.now().strftime("%d-%m-%Y")
-
     save_path = f"plots/commanded/{name}.pdf"
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df, save_path=save_path)
     log.info("Done")
@@ -167,8 +167,9 @@ def main():
     schedule.every(1).minutes.do(run_threaded, run_received_commands)
     log.info("finished initialization")
 
-    collect_and_save_to_db()
+    #collect_and_save_to_db()
     create_visualization_timed()
+    time.sleep(1)
     run_received_commands()
     log.info("entering main loop")
     while True:
