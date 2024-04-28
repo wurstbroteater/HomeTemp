@@ -1,6 +1,8 @@
-import configparser, email, imaplib, re
-from distribute.dis_logger import dis_log as log
+import configparser
+from typing import List, Optional, Tuple
 from email.utils import parseaddr
+from distribute.dis_logger import dis_log as log
+from distribute.email import EmailDistributor
 
 
 config = configparser.ConfigParser()
@@ -8,16 +10,17 @@ config.read('hometemp.ini')
 
 class Command:
 
-    def __init__(self, id, params, function):
+    def __init__(self, id, params, function, function_params):
         self.id = id
         self.params = params
         self.function = function
+        self.function_params = function_params
     
     def __str__(self):
-        return f"Command[id: {self.id}, parameters: {self.params}, function: {self.function}]"
+        return f"Command[id: {self.id}, parameters: {self.params}, function: {self.function}, function_params: {self.function_params}]"
     
     def __repr__(self):
-        return f"Command({self.id}, {self.params}, {self.function})"
+        return f"Command({self.id}, {self.params}, {self.function}, {self.function_params})"
     
     def __eq__(self, other):
         """
@@ -28,101 +31,81 @@ class Command:
         return self.id == other.id and self.params == other.params
     
     def __hash__(self):
-        return hash((self.id, self.params, self.function))
+        return hash((self.id, self.params, self.function, self.function_params))
 
+
+class CommandRequest:
+
+    def __init__(self, email_id:str, commander:str, command: Command):
+        self.email_id = email_id
+        self.commander = commander
+        self.command = command
+    
 
 class CommandService:
 
     def __init__(self):
-        self.connected = False
-        self.email_address = config["distribution"]["from_email"]
-        self.password = config["distribution"]["smtp_pw"]
-        self.server =  config["distribution"]["imap_server"]
-        self.port =  int(config["distribution"]["imap_port"])
         self.allowed_commanders = eval(config["distribution"]["allowed_commanders"])
+        self.parser = CommandParser()
+        self.email_service = EmailDistributor()
 
+    def _get_emails_with_valid_prefix(self):
+        found_email_with_command = []
+
+        for email_id, received_message in self.email_service.get_emails(which_emails='UNSEEN'):
+            sender = str(parseaddr(received_message['From'])[1])
+            subject = received_message['Subject']
+            body = received_message.get_payload()
+            for valid_prefix in self.parser.valid_command_prefixes:
+                if valid_prefix in subject:
+                    found_email_with_command.append((email_id, sender, subject, body))
+                    break
+        return found_email_with_command
+    
+    def _parse_emails_with_command(self, emails_with_command) -> List[CommandRequest]:
+        requests = []
+        for email_id, commander, subject, body in emails_with_command:
+            received_command = self.parser.parse_received_command(commander=commander,header=subject, body=body)
+            if received_command is not None:
+                requests.append(CommandRequest(email_id=email_id, commander=commander, command=received_command))
+        return requests
+    
+    def add_new_command(self, cmd_syntax:str):
+        if len(cmd_syntax) == 4:
+            self.parser.add_command_syntax(Command(id=cmd_syntax[0], params=cmd_syntax[1], function=cmd_syntax[2], function_params=cmd_syntax[3]))
+        else:
+            log.warning("Tried to add command with invalid syntax!")
+
+    def receive_and_execute_commands(self):
+        emails_with_command = self._get_emails_with_valid_prefix()
+        command_requests = self._parse_emails_with_command(emails_with_command)
+        
+        for command_request in command_requests:
+            self.email_service.delete_email_by_id(command_request.email_id)
+            command = command_request.command
+            log.info(f"Received call from '{command_request.commander}' to execute '{command}'")
+            function_params = {}
+            for param_key in command.function_params:
+                if param_key == 'commander':
+                    function_params[param_key] = command_request.commander
+                # Add more command parameters here
+            try:
+                command.function(**function_params)
+            except Exception as e:
+                log.warning(f"Error while executing command function: {str(e)}")
+
+
+    
+class CommandParser:
+
+    def __init__(self):
         # for command validation
         # always treat prefix as case insensitiv
         self.valid_command_prefixes = ['HomeTempCommand'.lower(), 'HomeTempCmd'.lower(), 'HTcmd'.lower()]
         # default supported commands
         # supported commands needs to be added via add_command method before executing get_received_command_requestes
+        # TODO: should be Set
         self.valid_commands = []
-
-
-    def _login(self):
-        try:
-            self.mail = imaplib.IMAP4_SSL(self.server, self.port)
-            self.mail.login(self.email_address, self.password)
-            self.connected = True
-        except Exception as e:
-            log.error(f"Failed to connect to the mail server: {str(e)}")
-            raise
-
-    def _close(self):
-        try:
-            self.mail.logout()
-            self.connected = False
-        except Exception as e:
-            log.error(f"Error while closing: {str(e)}")
-
-    def _get_emails(self):
-        if not self.connected:
-            log.error("Cannot receive emails because no connection was etablished")
-            return
-        try:
-            self.mail.select('inbox')
-            result, data = self.mail.search(None, 'ALL')
-            if result == 'OK':
-                email_ids = data[0].split()
-                for email_id in email_ids:
-                    result, email_data = self.mail.fetch(email_id, '(RFC822)')
-                    if result == 'OK':
-                        raw_email = email_data[0][1]
-                        msg = email.message_from_bytes(raw_email)
-                        yield email_id, msg
-        except Exception as e:
-            log.error(f"Error occurred while fetching emails: {str(e)}")
- 
-
-    def _send_email(self, to_address, subject, body):
-            try:
-                # Code to send email
-                pass
-            except Exception as e:
-                log.error(f"Error occurred while sending email: {str(e)}")
-
-    
-    def _delete_email(self, email_id):
-            try:
-                self.mail.store(email_id, '+FLAGS', '\\Deleted')
-                self.mail.expunge()
-            except Exception as e:
-                log.error(f"Error occurred while deleting email: {str(e)}")
-
-    def _get_and_delete_email_with_command(self, delete_mail=True):
-        """
-        Iterals over all emails and returns a list containing all found
-        plain commander, command header and command body.
-        :param delete_mail: (default True) Wether found email with command should be deleted
-        :return: list of tuples. Each tuple conains commander, header and body
-        """
-        found_commands = []
-        try:
-            received_emails = self._get_emails()
-            for email_id, msg in received_emails:
-                sender = str(parseaddr(msg['From'])[1])
-                header = msg['Subject']
-                body = msg.get_payload()
-                data_report = r'HomeTemp .*v\d*\.[\.*\d*]*.*[-DEV]*.*[Data Report]*'
-                # exclude data reports
-                if not re.match(data_report, header) and sender in self.allowed_commanders:
-                    found_commands.append((sender, header, body))
-                    if delete_mail:
-                        self._delete_email(email_id=email_id)
-        except Exception as e:
-            log.error(f"Error occurred while processing emails: {str(e)}")
-        finally:
-            return found_commands
 
     # ------- start command parsing -------  
      
@@ -134,7 +117,7 @@ class CommandService:
         else:
             return None
         
-    def _get_command_by_id(self, id):
+    def _get_command_by_id(self, id:str) -> Optional[Command]:
         """
         currently only validates the command id but not the parameters or function
         """
@@ -145,8 +128,11 @@ class CommandService:
                 break
         return command
     
-        
-    def _parse_received_command(self, commander, header, body):
+    # ------- end command parsing -------              
+
+    # ------- start public methods ------- 
+    
+    def parse_received_command(self, commander, header, body) -> Optional[Command]:
         """
         parse received tokens and returns command if found
         """
@@ -165,25 +151,11 @@ class CommandService:
                 log.info(f"Commander '{commander}' requested command id '{received_cmd_id}'")
         return command
 
-    # ------- end command parsing -------              
 
-    # ------- start public methods ------- 
+    def add_command_syntax(self, command:Command) -> None:
+        if command not in self.valid_commands:
+            self.valid_commands.append(command)
+        else:
+            log.warning(f"Tried to add a command that is already known: {str(command)}")
 
-    def add_command_syntax(self, cmd_syntax):
-        if len(cmd_syntax) == 3:
-            self.valid_commands.append(Command(id=cmd_syntax[0], params=cmd_syntax[1], function=cmd_syntax[2]))
-
-
-    def get_received_command_requestes(self):
-        if not self.connected:
-            self._login()
-        commands = self._get_and_delete_email_with_command(delete_mail=True)
-        if self.connected :
-            self._close()
-        valid_commands = []
-        for commander, header, body in commands:
-            command = self._parse_received_command(commander, header, body)
-            if command is not None:
-                valid_commands.append((commander, command))
-        return valid_commands
 

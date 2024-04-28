@@ -91,7 +91,7 @@ def _create_visualization_commanded(commander):
     save_path = f"plots/commanded/{name}.pdf"
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df, save_path=save_path)
     log.info("Done")
-    EmailDistributor.send_visualization_email(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
+    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
 
 
 # ------------------------------- Main  ----------------------------------------------
@@ -101,13 +101,11 @@ def create_visualization_timed():
     sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df)
     log.info("Done")
-    EmailDistributor.send_visualization_email(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
+    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
 
 def run_received_commands():
-    valid_commands = command_service.get_received_command_requestes()
-    for commander, command in valid_commands:
-        log.info(f"Received call from '{commander}' to execute '{command}'")
-        command.function(commander)
+    log.info("Checking for commands")
+    command_service.receive_and_execute_commands()
 
 def run_threaded(job_func):
     job_thread = threading.Thread(target=job_func)
@@ -158,13 +156,13 @@ def main():
     global command_service
     command_service = CommandService()
     cmd_name = 'plot'
-    cmd_params = []
-    command_service.add_command_syntax((cmd_name, cmd_params, _create_visualization_commanded))
+    function_params = ['commander']
+    command_service.add_new_command((cmd_name, [], _create_visualization_commanded, function_params))
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
     schedule.every().day.at("06:00").do(run_threaded, create_visualization_timed)
-    schedule.every(1).minutes.do(run_threaded, run_received_commands)
+    schedule.every(10).minutes.do(run_threaded, run_received_commands)
     log.info("finished initialization")
 
     collect_and_save_to_db()

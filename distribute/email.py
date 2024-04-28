@@ -1,8 +1,10 @@
-import configparser, smtplib
+import configparser, smtplib, imaplib
+from typing import List, Optional, Tuple
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
-from email import encoders
+from email import encoders, message_from_bytes
+from email.message import Message
 from distribute.dis_logger import dis_log as log
 from datetime import datetime
 import os
@@ -13,37 +15,147 @@ config.read('hometemp.ini')
 
 class EmailDistributor:
 
-    @staticmethod
-    def send_visualization_email(df, google_df, dwd_df, wettercom_df,path_to_pdf=None, receiver=None):
+    def __init__(self):
+        self.config = config["distribution"]
+
+
+    def _get_imap_connection(self) -> Optional[imaplib.IMAP4_SSL]:
+        """
+        has to be closed after usage!!!
+        """
+        imap_server = self.config["imap_server"]
+        imap_port = int(self.config["imap_port"])
+        imap_user = self.config["imap_user"]
+        imap_pw = self.config["imap_pw"]
+        server = None
+        try:
+            server = imaplib.IMAP4_SSL(imap_server, imap_port)
+            server.login(imap_user, imap_pw)
+        except Exception as e:
+            log.error(f"Error while connecting to {imap_server}:{imap_port} : {str(e)}")
+        
+        return server
+
+
+    def get_emails(self, which_emails='UNSEEN') -> Optional[List[Tuple[str, Message]]]:
+        """
+        which emails possibilities: 'ALL' 'UNSEEN'
+        """
+        server = self._get_imap_connection()
+        if server is None:
+            return None
+        
+        # list of tuples containing the email id and message
+        received_emails = []
+        try:
+            server.select('inbox')
+            result, data = server.search(None, which_emails)
+            if result == 'OK':
+                email_ids = data[0].split()
+                for email_id in email_ids:
+                    result, email_data = server.fetch(email_id, '(RFC822)')
+                    if result == 'OK':
+                        raw_email = email_data[0][1]
+                        msg = message_from_bytes(raw_email)
+                        received_emails.append((email_id, msg))
+        except Exception as e:
+            log.error(f"Error occurred while fetching emails: {str(e)}")
+        finally:
+            server.close()
+            server.logout()
+        
+        return received_emails
+    
+
+    def delete_email_by_id(self, email_id: str) -> bool:
+        server = self._get_imap_connection() 
+        was_successful = False 
+        if server is None:
+            return was_successful
+        
+        try:
+            server.select('inbox')
+            server.store(email_id, '+FLAGS', '\\Deleted')
+            server.expunge()
+            log.info("Email deleted successfully.")
+            was_successful = True
+        except Exception as e:
+            log.error(f"Error occurred while deleting email: {str(e)}")
+        finally:
+            server.close()
+            server.logout()
+
+        return was_successful
+
+
+    def send_email(self, from_email: str, to_email: str, message: MIMEMultipart) -> bool:
+        smtp_server = self.config["smtp_server"]
+        smtp_port = int(self.config["smtp_port"])
+        smtp_user = self.config["smtp_user"]
+        smtp_pw = self.config["smtp_pw"]
+
+        try:
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(smtp_user, smtp_pw)
+            server.sendmail(from_email, to_email, message.as_string())
+            server.quit()
+            log.info("Email sent successfully.")
+            return True
+        except Exception as e:
+            log.error(f"Error sending email: {str(e)}")
+
+        return False
+    
+
+    def create_message(self, subject: str, content: str, attachment_paths = []) -> MIMEMultipart:
+        """
+        from and to email have to be added by the receiving logic.
+        """
+        message = MIMEMultipart()
+        message["Subject"] = subject
+
+        message.attach(MIMEText(content, "plain"))
+
+        for attachment_path in attachment_paths:
+            try:
+                attachment = open(attachment_path, "rb")
+                attachment_content = attachment.read()
+                attachment.close()
+                
+                file_name = os.path.basename(attachment_path)
+
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment_content)
+                encoders.encode_base64(part)
+                part.add_header("Content-Disposition", f"attachment; filename= {file_name}")
+                message.attach(part)
+
+            except FileNotFoundError:
+                log.warning(f"No file to attach found in {attachment_path}")
+                continue
+
+        return message
+    
+ 
+    def send_visualization_email(self, df, google_df, dwd_df, ulmde_df, wettercom_df, path_to_pdf=None, receiver=None):
         """
         Creates and sends an email with a description for each dataframe
         and attaches the pdf file created for the current day if the file is present.
         """
+        today = datetime.now().strftime("%d-%m-%Y")
         if path_to_pdf is None:
-            file_name = datetime.now().strftime("%d-%m-%Y")
-            pdf_file_path = f"/home/eric/HomeTemp/plots/{file_name}.pdf"
+            file_name = today + ".pdf"
+            path_to_pdf = f"/home/eric/HomeTemp/plots/{file_name}"
         else:
             file_name =  os.path.basename(path_to_pdf)
-            pdf_file_path = path_to_pdf
-        auth = config["distribution"]
 
-        from_email = auth["from_email"]
-        
-        if receiver is None:
-            to_email = auth["to_email"]
-        else: 
-            to_email = receiver
+        from_email = self.config["from_email"]
+        receiver = receiver if receiver is not None else self.config["to_email"]
 
-        has_attachment = True
-        try:
-            attachment = open(pdf_file_path, "rb")
-        except FileNotFoundError:
-            log.warning(f"Not file to attach found in {pdf_file_path}")
-            has_attachment = False
+        log.info(f"Sending Measurement Data Visualization to {receiver}")
 
-        log.info(f"Sending Measurement Data Visualization to {from_email}")
-
-        subject = f"HomeTemp v{config['hometemp']['version']} Data Report {file_name}"
+        subject = f"HomeTemp v{config['hometemp']['version']} Data Report {today}"
         message = "------------- Sensor Data -------------\n"
         message += str(df[["humidity", "room_temp", "cpu_temp"]].corr()) + "\n\n"
         message += str(df[["humidity", "room_temp", "cpu_temp"]].describe()).format("utf8") + "\n\n"
@@ -57,32 +169,13 @@ class EmailDistributor:
         message += "\n\n------------- Wetter.com Data -------------\n"
         message += str(wettercom_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
         message += str(wettercom_df.tail(6))
-        if not has_attachment:
-            message += "\n\n !!!!!!!!!!!!!!!!!!!!!!Warning: attachment not found!!!!!!!!!!!!!!!!!!!!!!\n\n"
+        message += "\n\n------------- Ulm.de Data -------------\n"
+        message += str(ulmde_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
+        message += str(ulmde_df.tail(6))
 
-        msg = MIMEMultipart()
+        msg = self.create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
         msg["From"] = from_email
-        msg["To"] = to_email
-        msg["Subject"] = subject
+        msg["To"] = receiver
 
-        msg.attach(MIMEText(message, "plain"))
+        _ = self.send_email(from_email=from_email, to_email=receiver, message=msg)
 
-        if has_attachment:
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(attachment.read())
-            encoders.encode_base64(part)
-            part.add_header("Content-Disposition", f"attachment; filename= {file_name}.pdf")
-            msg.attach(part)
-
-        try:
-            server = smtplib.SMTP(auth["smtp_server"], int(auth["smtp_port"]))
-            server.starttls()
-            server.login(auth["smtp_user"], auth["smtp_pw"])
-            server.sendmail(from_email, to_email, msg.as_string())
-            server.quit()
-            log.info("Email sent successfully.")
-        except Exception as e:
-            log.error(f"Error sending email: {str(e)}")
-        finally:
-            if has_attachment:
-                attachment.close()
