@@ -83,6 +83,9 @@ def _get__visualization_data():
 
     return (df, google_df, dwd_df, wettercom_df, ulmde_df)
 
+
+# ------------------------------- Main  ----------------------------------------------
+
 def _create_visualization_commanded(commander):
     log.info("Command: Creating Measurement Data Visualization")
     sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
@@ -90,22 +93,20 @@ def _create_visualization_commanded(commander):
     name = datetime.now().strftime("%d-%m-%Y")
     save_path = f"plots/commanded/{name}.pdf"
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df, save_path=save_path)
-    log.info("Done")
+    log.info("Command: Done")
     EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
-
-
-# ------------------------------- Main  ----------------------------------------------
 
 def create_visualization_timed():
     log.info("Timed: Creating Measurement Data Visualization")
     sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df)
-    log.info("Done")
+    log.info("Timed: Done")
     EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
 
 def run_received_commands():
     log.info("Checking for commands")
     command_service.receive_and_execute_commands()
+    log.info("Done")
 
 def run_threaded(job_func):
     job_thread = threading.Thread(target=job_func)
