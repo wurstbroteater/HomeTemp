@@ -56,8 +56,9 @@ class CommandService:
             sender = str(parseaddr(received_message['From'])[1])
             subject = received_message['Subject']
             body = received_message.get_payload()
+            print(sender, subject)
             for valid_prefix in self.parser.valid_command_prefixes:
-                if valid_prefix in subject:
+                if valid_prefix in str(subject).lower():
                     found_email_with_command.append((email_id, sender, subject, body))
                     break
         return found_email_with_command
