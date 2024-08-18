@@ -43,13 +43,13 @@ def get_sensor_data():
         except RuntimeError as error:
             # Errors happen fairly often, DHT's are hard to read, just keep going
             log.error(f"RuntimeError while reading sensor data: {error.args[0]}")
+            tries += 1
             time.sleep(2.0)
             continue
         except Exception as error:
-            dhtDevice.exit()
-            log.error(f"Failed to retrieve data from AM2302 sensor")
+            DHT_SENSOR.exit()
+            log.error(f"Failed to retrieve data from AM2302 sensor: {error}")
             break
-        tries += 1
 
     return None, None, None
 
