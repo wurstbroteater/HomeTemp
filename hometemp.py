@@ -1,4 +1,4 @@
-import Adafruit_DHT, configparser, logging, re, schedule, time, threading
+import adafruit_dht, board, configparser, logging, re, schedule, time, threading
 from datetime import datetime, timedelta
 from gpiozero import CPUTemperature
 from distribute.email import EmailDistributor
@@ -32,17 +32,26 @@ def get_sensor_data():
     Returns temperature and humidity data measures by AM2302 Sensor and the measure timestamp or raise exception 
     if the values could not be retrieved
     """
-    DHT_SENSOR = Adafruit_DHT.AM2302
-    DHT_PIN = 2
-    humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN)
+    DHT_SENSOR = adafruit_dht.DHT22(board.D2)
+    max_tries = 10
+    tries = 0
+    while tries < max_tries:
+        try:
+            # postgres expects timestamp ins ISO 8601 format
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            return DHT_SENSOR.temperature, DHT_SENSOR.humidity, timestamp
+        except RuntimeError as error:
+            # Errors happen fairly often, DHT's are hard to read, just keep going
+            log.error(f"RuntimeError while reading sensor data: {error.args[0]}")
+            time.sleep(2.0)
+            continue
+        except Exception as error:
+            dhtDevice.exit()
+            log.error(f"Failed to retrieve data from AM2302 sensor")
+            break
+        tries += 1
 
-    if humidity is not None and temperature is not None:
-        # postgres expects timestamp ins ISO 8601 format
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return temperature, humidity, timestamp
-    else:
-        log.error("Failed to retrieve data from AM2302 sensor")
-        return None, None, None
+    return None, None, None
 
 
 def _get__visualization_data():

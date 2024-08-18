@@ -3,11 +3,12 @@
 ## 0.4
 
 This version adds the ability to create, receive and execute commands from external.
+
 - Updated `EmailDistributor` to support CRUD for emails
 - Added `Command`, `CommandRequest`, `CommandParser` and `CommandService` to enable commanding
 - Added `command_test.py` as (test) demo for commanding
 - Restructured and added new fields in `default_hometemp.ini/distribution`
-
+- Replaced deprecated dependency `Adafruit-DHT` with new `adafruit-circuitpython-dht`
 - Updated readme.md
 
 

@@ -6,9 +6,10 @@ This idea is still growing prosperously and currently provides the following fea
 
 ## Requirements
 
-- Everyhing in `requirements.txt` for pip
 - Docker
-- pigpiod
+- libpq-dev
+- xvfb
+- Everyhing in `requirements.txt` for pip
 
 ## Current Features
 
@@ -28,6 +29,19 @@ playground for everything.
 
 The following steps needs to be performed once to assure correct driver setup.
 
+### Install Dependencies
+
+Use this code snippet to install the required dependencies. Either use pip install with module name or use the requirements file.
+
+```bash
+sudo apt-get install libpq-dev xvfb
+#sudo apt-get install libgpiod2 
+## Module names
+pip install adafruit-circuitpython-dht RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4
+# or
+#pip install -r requirements.txt
+```
+
 ### Configure Hometemp.ini
 
 At first, rename `default_hometemp.ini` to `hometemp.ini` and assign values to all variables.
@@ -45,17 +59,6 @@ sudo chmod -R 755 /usr/lib/chromium-browser
 ## Start Instructions
 
 The following sections provide information and tips for starting the related services and dependencies.
-
-### Start pigpio Deamon
-
-For retrieving the temperatue values, we (indirectly) use `gpiozero` to communicate with GPIO pins (e.g., on the
-raspberry pi).
-This packages displays warnings when its used for the first time after start. To decrease the warning messages, we can
-start the deamon with:
-`sudo pigpiod`
-However, this does not remove all warning messages, it just decreases their amount and in terms of accuricy or
-reliability of data retrieval,
-we didn't observ any issues.
 
 ### Start Docker Container
 
@@ -80,3 +83,16 @@ docker run --name postgres-db -e POSTGRES_PASSWORD=<ENTER PASSWORD HERE> -d -p 5
 
 after a restart, use `docker ps -a` to get the container ID and then `docker start <containerID>` to start the old
 database.
+
+## Update/Restore Instructions
+
+Use the following commands to import and export database:
+```bash
+# Export
+docker exec -t postgres-db sh -c 'PGPASSWORD=<DB_PASSWORD> pg_dump -U <DB_USER> <DB_NAME>' > backup.sql
+
+# Import
+# start container
+docker cp backup.sql postgres-db:/backup.sql
+docker exec -i postgres-db sh -c 'PGPASSWORD=<DB_PASSWORD> psql -U <DB_USER> -d <DB_NAME>' < backup.sql
+```
