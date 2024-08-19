@@ -9,7 +9,7 @@ This idea is still growing prosperously and currently provides the following fea
 - Docker
 - libpq-dev
 - xvfb
-- Everyhing in `requirements.txt` for pip
+- Everything in `requirements.txt` for pip
 
 ## Current Features
 
@@ -33,9 +33,8 @@ The following steps needs to be performed once to assure correct driver setup.
 
 Use this code snippet to install the required dependencies. Either use pip install with module name or use the requirements file.
 
-```shell
+```sh
 sudo apt-get install libpq-dev xvfb
-#sudo apt-get install libgpiod2 
 ## Module names
 pip install adafruit-circuitpython-dht RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4
 # or
@@ -51,7 +50,7 @@ At first, rename `default_hometemp.ini` to `hometemp.ini` and assign values to a
 Selenium is used to fetch data from endpoints which rely on Javascript.
 On a raspberry pi, install chromium driver with the following command and set permissions:
 
-```
+```sh
 sudo apt-get install chromium-chromedriver
 sudo chmod -R 755 /usr/lib/chromium-browser 
 ```
@@ -65,7 +64,7 @@ The following sections provide information and tips for starting the related ser
 Images and containers should be pulled or created/reused automatically. However, for this to work, the user needs to be
 added to the docker group:
 
-```
+```sh
 sudo usermod -aG docker $USER
 ```
 
@@ -77,7 +76,7 @@ docker.errors.DockerException: Error while fetching server API version: ('Connec
 
 This step should be obsolete because the HomeTemp automatically does this. However, it is left for documentation.
 
-```
+```sh
 docker run --name postgres-db -e POSTGRES_PASSWORD=<ENTER PASSWORD HERE> -d -p 5432:5432 postgres:latest
 ```
 
@@ -87,7 +86,7 @@ database.
 ## Update/Restore Instructions
 
 Use the following commands to import and export database:
-```shell
+```sh
 # Export
 docker exec -t postgres-db sh -c 'PGPASSWORD=<DB_PASSWORD> pg_dump -U <DB_USER> <DB_NAME>' > backup.sql
 
