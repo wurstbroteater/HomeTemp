@@ -31,7 +31,8 @@ The following steps needs to be performed once to assure correct driver setup.
 
 ### Install Dependencies
 
-Use this code snippet to install the required dependencies. Either use pip install with module name or use the requirements file.
+Use this code snippet to install the required dependencies. Either use pip install with module name or use the
+requirements file.
 
 ```sh
 sudo apt-get install libpq-dev xvfb
@@ -86,6 +87,7 @@ database.
 ## Update/Restore Instructions
 
 Use the following commands to import and export database:
+
 ```sh
 # Export
 docker exec -t postgres-db sh -c 'PGPASSWORD=<DB_PASSWORD> pg_dump -U <DB_USER> <DB_NAME>' > backup.sql

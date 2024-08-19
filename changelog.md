@@ -11,7 +11,6 @@ This version adds the ability to create, receive and execute commands from exter
 - Replaced deprecated dependency `Adafruit-DHT` with new `adafruit-circuitpython-dht`
 - Updated readme.md
 
-
 ## 0.3.3
 
 - Added URI-save whitespace in `GoogleFetcher`
@@ -26,7 +25,8 @@ This version adds the ability to create, receive and execute commands from exter
 ## 0.3.1
 
 - Added data fetcher, database handler and visualization for **Ulm.de**
-- Fixed deadlocks causing whole Pi to be unresponsive (database recovery mode was triggered by to many pending connections)
+- Fixed deadlocks causing whole Pi to be unresponsive (database recovery mode was triggered by to many pending
+  connections)
 
 ## 0.3
 
@@ -66,5 +66,5 @@ This version adds the ability to create, receive and execute commands from exter
 
 ## 0.1
 
-Initial idea: Write script for periodically collecting room temperature and humidity and visulaize the data.
+Initial idea: Write script for periodically collecting room temperature and humidity and visualize the data.
 In the end, this data should be retrievable from everywhere (not just in local network), i.e. in an app or website.
