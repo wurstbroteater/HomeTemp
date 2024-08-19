@@ -76,7 +76,8 @@ Afterwards, a reboot is required otherwise the following error will occur:
 docker.errors.DockerException: Error while fetching server API version: ('Connection aborted.', PermissionError(13, 'Permission denied'))
 ```
 
-This step should be obsolete because the HomeTemp automatically does this. However, it is left for documentation.
+It is also possible to start the a container via the following command. HomeTemp will use this container if the name of the container
+matches the the name specified in `hometemp.ini`.
 
 ```sh
 docker run --name postgres-db -e POSTGRES_PASSWORD=<ENTER PASSWORD HERE> -d -p 5432:5432 postgres:latest
