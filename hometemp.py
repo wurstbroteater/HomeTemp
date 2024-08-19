@@ -29,13 +29,16 @@ def get_temperature():
 
 def get_sensor_data():
     """
-    Returns temperature and humidity data measures by AM2302 Sensor and the measure timestamp or raise exception 
-    if the values could not be retrieved
+    Returns temperature and humidity data measures by AM2302 Sensor and the measurement timestamp.
     """
     DHT_SENSOR = adafruit_dht.DHT22(board.D2)
     max_tries = 10
     tries = 0
     while tries < max_tries:
+        if tries >= max_tries:
+            log.error(f"Failed to retrieve data from AM2302 sensor: Maximum retries reached.")
+            break 
+
         try:
             # postgres expects timestamp ins ISO 8601 format
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -48,9 +51,10 @@ def get_sensor_data():
             else:
                 return temp, hum, timestamp
         except RuntimeError as error:
-            # Errors happen fairly often, DHT's are hard to read, just keep going
-            log.error(f"RuntimeError while reading sensor data: {error.args[0]}")
+            # Errors happen fairly often, DHT's are hard to read.
+            # Here, RuntimeError usually suggests to retry it.
             tries += 1
+            log.warning(f"({tries} / {max_tries}) RuntimeError while reading sensor data: {error.args[0]}")
             time.sleep(2.0)
             continue
         except Exception as error:
