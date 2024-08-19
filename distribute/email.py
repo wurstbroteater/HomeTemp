@@ -146,7 +146,8 @@ class EmailDistributor:
         today = datetime.now().strftime("%d-%m-%Y")
         if path_to_pdf is None:
             file_name = today + ".pdf"
-            path_to_pdf = f"/home/eric/HomeTemp/plots/{file_name}"
+            # TODO: change hardcoded link
+            path_to_pdf = f"/home/ericl/HomeTemp/plots/{file_name}"
         else:
             file_name =  os.path.basename(path_to_pdf)
 

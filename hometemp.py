@@ -39,7 +39,14 @@ def get_sensor_data():
         try:
             # postgres expects timestamp ins ISO 8601 format
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            return DHT_SENSOR.temperature, DHT_SENSOR.humidity, timestamp
+            temp = DHT_SENSOR.temperature
+            hum = DHT_SENSOR.humidity
+            DHT_SENSOR.exit()
+            if temp is None or hum is None: 
+                log.error(f"Retrieved none values from AM2302 sensor")
+                break  
+            else:
+                return temp, hum, timestamp
         except RuntimeError as error:
             # Errors happen fairly often, DHT's are hard to read, just keep going
             log.error(f"RuntimeError while reading sensor data: {error.args[0]}")
