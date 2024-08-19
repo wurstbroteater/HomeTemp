@@ -19,10 +19,11 @@ This idea is still growing prosperously and currently provides the following fea
 - Creating data visualizations using seaborn and matplot
 - Sending emails containing statistic data as text and visualizations as pdf
 - Recovering sensor data from log file
-- Data fetching from various API endpoints/websites (currently: Deutsche Wetterdienst (DWD) and Google Weather, Ulm.de and Wetter.com)
+- Data fetching from various API endpoints/websites
 - Commanding via email
 
-While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `crunch_numbers.ipynb` is a
+While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `fetch_forecasts.py` is used to fetch data
+from endpoints, currently: Deutsche Wetterdienst (DWD) and Google Weather, Ulm.de and Wetter.com. `crunch_numbers.ipynb` is a
 playground for everything.
 
 ## Installation Instructions
