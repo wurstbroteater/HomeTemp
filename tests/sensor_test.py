@@ -1,6 +1,8 @@
-import time
-import sys
+import configparser, sys,time
 from sensors.dht import DHT, DHTResult
+
+config = configparser.ConfigParser()
+config.read('hometemp.ini')
 
         
 # Parse command line parameters
@@ -23,7 +25,8 @@ else:
 
 
 # read data
-DHT_SENSOR = DHT(17, True)
+#DHT_SENSOR = DHT(int(config["hometemp"]["sensor_pin"]), False)
+DHT_SENSOR = DHT(int(pin), isDht11)
 max_tries = 15
 tries = 0
 while True:

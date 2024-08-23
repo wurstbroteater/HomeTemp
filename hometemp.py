@@ -28,14 +28,13 @@ def get_temperature():
     return float(cpu.temperature)
 
 
-def get_sensor_data():
+def get_sensor_data(used_pin):
     """
     Returns temperature and humidity data measures by AM2302 Sensor and the measurement timestamp.
     """
-    used_pin = 17
     max_tries = 15
     tries = 0
-    DHT_SENSOR = DHT(used_pin, True)
+    DHT_SENSOR = DHT(used_pin, False)
     while True:
         if tries >= max_tries:
             log.error(f"Failed to retrieve data from AM2302 sensor: Maximum retries reached.")
@@ -56,7 +55,6 @@ def get_sensor_data():
                 # postgres expects timestamp ins ISO 8601 format
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 return result.temperature, result.humidity, timestamp
-            
 
 
 def _get__visualization_data():
@@ -67,7 +65,7 @@ def _get__visualization_data():
     # sensor data
     df = sensor_data_handler.read_data_into_dataframe()
     df = df.sort_values(by="timestamp")
-    df['timestamp'] = df['timestamp'].map(lambda x: datetime.strptime(str(x).strip(), '%Y-%m-%d %H:%M:%S'))
+    df['timestamp'] = df['timestamp'].map(lambda x: datetime.strptime(str(x).replace("+00:00","").strip(), '%Y-%m-%d %H:%M:%S'))
     # Google weather data
     google_handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
     google_handler.init_db_connection(check_table=False)
@@ -133,7 +131,7 @@ def collect_and_save_to_db():
     handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
     handler.init_db_connection()
     cpu_temp = get_temperature()
-    room_temp, humidity, timestamp = get_sensor_data()
+    room_temp, humidity, timestamp = get_sensor_data(int(config["hometemp"]["sensor_pin"]))
     if room_temp is not None and humidity is not None and timestamp is not None:
         log.info(
             "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
