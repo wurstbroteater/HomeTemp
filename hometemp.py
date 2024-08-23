@@ -1,4 +1,4 @@
-import adafruit_dht, board, configparser, logging, re, schedule, time, threading
+import configparser, logging, re, schedule, time, threading
 from datetime import datetime, timedelta
 from gpiozero import CPUTemperature
 from distribute.email import EmailDistributor
@@ -6,6 +6,7 @@ from distribute.command import CommandService
 from persist.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 from util.manager import PostgresDockerManager
 from visualize.plots import draw_plots
+from sensors.dht import DHT, DHTResult
 
 # only logs from this file will be written to console but all logs will be saved to file
 for handler in logging.root.handlers[:]:
@@ -31,38 +32,31 @@ def get_sensor_data():
     """
     Returns temperature and humidity data measures by AM2302 Sensor and the measurement timestamp.
     """
-    DHT_SENSOR = adafruit_dht.DHT22(board.D2)
-    max_tries = 10
+    used_pin = 17
+    max_tries = 15
     tries = 0
-    while tries < max_tries:
+    DHT_SENSOR = DHT(used_pin, True)
+    while True:
         if tries >= max_tries:
             log.error(f"Failed to retrieve data from AM2302 sensor: Maximum retries reached.")
-            break 
-
-        try:
-            # postgres expects timestamp ins ISO 8601 format
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            temp = DHT_SENSOR.temperature
-            hum = DHT_SENSOR.humidity
-            DHT_SENSOR.exit()
-            if temp is None or hum is None: 
-                log.error(f"Retrieved none values from AM2302 sensor")
-                break  
-            else:
-                return temp, hum, timestamp
-        except RuntimeError as error:
-            # Errors happen fairly often, DHT's are hard to read.
-            # Here, RuntimeError usually suggests to retry it.
-            tries += 1
-            log.warning(f"({tries}/{max_tries}) RuntimeError while reading sensor data: {error.args[0]}")
-            time.sleep(2.0)
-            continue
-        except Exception as error:
-            DHT_SENSOR.exit()
-            log.error(f"Failed to retrieve data from AM2302 sensor: {error}")
             break
-
-    return None, None, None
+        else:
+            time.sleep(2)
+            result = DHT_SENSOR.read()
+            if result.error_code == DHTResult.ERR_NOT_FOUND:
+                tries += 1
+                log.warning(f"({tries}/{max_tries}) Sensor could not be found. Using correct pin?")
+                # maybe exit here but invastige when this error occurs (should never)
+                continue
+            elif not result.is_valid():
+                tries += 1
+                log.warning(f"({tries}/{max_tries}) Sensor data invalid")
+                continue
+            elif result.is_valid() and result.error_code == DHTResult.ERR_NO_ERROR:
+                # postgres expects timestamp ins ISO 8601 format
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                return result.temperature, result.humidity, timestamp
+            
 
 
 def _get__visualization_data():
