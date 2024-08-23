@@ -34,7 +34,7 @@ def get_sensor_data(used_pin):
     """
     max_tries = 15
     tries = 0
-    DHT_SENSOR = DHT(used_pin, False)
+    DHT_SENSOR = DHT(used_pin, True)
     while True:
         if tries >= max_tries:
             log.error(f"Failed to retrieve data from AM2302 sensor: Maximum retries reached.")
@@ -174,14 +174,14 @@ def main():
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # run_threaded assumes that we never have overlapping usage of this method or its components
-    schedule.every().day.at("06:00").do(run_threaded, create_visualization_timed)
-    schedule.every(10).minutes.do(run_threaded, run_received_commands)
+    #schedule.every().day.at("06:00").do(run_threaded, create_visualization_timed)
+    #schedule.every(10).minutes.do(run_threaded, run_received_commands)
     log.info("finished initialization")
 
     collect_and_save_to_db()
-    create_visualization_timed()
+    #create_visualization_timed()
     time.sleep(1)
-    run_received_commands()
+    #run_received_commands()
     log.info("entering main loop")
     while True:
         schedule.run_pending()
