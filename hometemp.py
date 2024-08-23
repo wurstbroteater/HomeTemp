@@ -54,7 +54,7 @@ def get_sensor_data():
             # Errors happen fairly often, DHT's are hard to read.
             # Here, RuntimeError usually suggests to retry it.
             tries += 1
-            log.warning(f"({tries} / {max_tries}) RuntimeError while reading sensor data: {error.args[0]}")
+            log.warning(f"({tries}/{max_tries}) RuntimeError while reading sensor data: {error.args[0]}")
             time.sleep(2.0)
             continue
         except Exception as error:
