@@ -6,4 +6,5 @@ __pycache__
 **/hometemp.ini
 fitness.csv
 plots
+pictures
 **/*.log
