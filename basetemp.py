@@ -56,6 +56,8 @@ def get_sensor_data(used_pin):
                 # postgres expects timestamp ins ISO 8601 format
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 return result.temperature, result.humidity, timestamp
+    
+    return None, None, None
 
 
 def _get__visualization_data():
