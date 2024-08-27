@@ -1,8 +1,8 @@
 # Project: HomeTemp v0.4-BaseTemp
 
-The original idea of this project was to automate the periodically measured temperature and humidity values in my
-apartment. The room temperature and humidity is caputred by an AM2302 sensor, connected to a Raspberry Pi 4 Model B.
-This idea is still growing prosperously and currently provides the following features:
+This fork of HomeTemp aka. `BaseTemp` periodically measures and saves temperature and humidity values in my
+basement. The temperature and humidity is caputred by an DHT11 sensor, connected to a Raspberry Pi 4 Model B
+via an extended board.
 
 ## Requirements
 
@@ -21,10 +21,7 @@ This idea is still growing prosperously and currently provides the following fea
 - Recovering sensor data from log file
 - Data fetching from various API endpoints/websites
 - Commanding via email
-
-While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `fetch_forecasts.py` is used to fetch data
-from endpoints, currently: Deutsche Wetterdienst (DWD) and Google Weather, Ulm.de and Wetter.com. `crunch_numbers.ipynb` is a
-playground for everything.
+- **BaseTemp**: Take pictures via camera module
 
 ## Installation Instructions
 
