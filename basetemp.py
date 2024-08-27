@@ -31,14 +31,14 @@ def get_temperature():
 
 def get_sensor_data(used_pin):
     """
-    Returns temperature and humidity data measures by AM2302 Sensor and the measurement timestamp.
+    Returns temperature and humidity data measures by DHT11 Sensor and the measurement timestamp.
     """
     max_tries = 20
     tries = 0
     DHT_SENSOR = DHT(used_pin, True)
     while True:
         if tries >= max_tries:
-            log.error(f"Failed to retrieve data from AM2302 sensor: Maximum retries reached.")
+            log.error(f"Failed to retrieve data from DHT11 sensor: Maximum retries reached.")
             break
         else:
             time.sleep(2)
@@ -75,7 +75,7 @@ def _get__visualization_data():
 
 # ------------------------------- Main  ----------------------------------------------
 
-def take_picture_commanded():
+def take_picture():
     log.info("Command: Taking picture")
     rpi_cam = RpiCamController()
     name = f'pictures/{datetime.now().strftime("%Y-%m-%d-%H:%M:%S")}'
@@ -159,6 +159,10 @@ def main():
     #command_service.add_new_command((cmd_name, [], _create_visualization_commanded, function_params))
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
+    schedule.every().day.at("08:00").do(run_threaded, take_picture)
+    schedule.every().day.at("12:00").do(run_threaded, take_picture)
+    schedule.every().day.at("15:00").do(run_threaded, take_picture)
+    schedule.every().day.at("18:30").do(run_threaded, take_picture)
     # run_threaded assumes that we never have overlapping usage of this method or its components
     #schedule.every().day.at("06:00").do(run_threaded, create_visualization_timed)
     #schedule.every(10).minutes.do(run_threaded, run_received_commands)
@@ -167,7 +171,7 @@ def main():
     collect_and_save_to_db()
     #create_visualization_timed()
     time.sleep(1)
-    take_picture_commanded()
+    take_picture()
     #run_received_commands()
     log.info("entering main loop")
     while True:
