@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.4-DEV
+# Project: HomeTemp v0.4-BaseTemp
 
 The original idea of this project was to automate the periodically measured temperature and humidity values in my
 apartment. The room temperature and humidity is caputred by an AM2302 sensor, connected to a Raspberry Pi 4 Model B.
@@ -29,6 +29,10 @@ playground for everything.
 ## Installation Instructions
 
 The following steps needs to be performed once to assure correct driver setup.
+For venv use,
+```shell
+python -m venv --system-site-packages <PATH_TO_VENV>
+```
 
 ### Install Dependencies
 

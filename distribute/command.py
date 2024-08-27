@@ -101,7 +101,7 @@ class CommandParser:
     def __init__(self):
         # for command validation
         # always treat prefix as case insensitiv
-        self.valid_command_prefixes = ['HomeTempCommand'.lower(), 'HomeTempCmd'.lower(), 'HTcmd'.lower()]
+        self.valid_command_prefixes = ['BaseTempCommand'.lower(), 'BaseTempCmd'.lower(), 'BTcmd'.lower()]
         # default supported commands
         # supported commands needs to be added via add_command method before executing get_received_command_requestes
         # TODO: should be Set
