@@ -33,7 +33,7 @@ def get_sensor_data(used_pin):
     """
     Returns temperature and humidity data measures by AM2302 Sensor and the measurement timestamp.
     """
-    max_tries = 15
+    max_tries = 20
     tries = 0
     DHT_SENSOR = DHT(used_pin, True)
     while True:
