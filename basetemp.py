@@ -75,15 +75,32 @@ def _get__visualization_data():
 
 # ------------------------------- Main  ----------------------------------------------
 
-def take_picture():
-    log.info("Command: Taking picture")
+def _take_picture(name, encoding = "png"):
     rpi_cam = RpiCamController()
-    name = f'pictures/{datetime.now().strftime("%Y-%m-%d-%H:%M:%S")}'
     # file name is set in capture_image to filepath.encoding which is png on default
-    if rpi_cam.capture_image(file_path=name, rotation=90):
-         log.info("Command: Taking picture done")
+    return rpi_cam.capture_image(file_path=name, encoding=encoding, rotation=90)
+
+def take_picture_timed():
+    log.info("Timed: Taking picture")
+    name = f'pictures/{datetime.now().strftime("%Y-%m-%d-%H:%M:%S")}'
+    if _take_picture(name):
+        log.info("Timed: Taking picture done")
+    else:
+        log.info("Timed: Taking picture was not successful")  
+   
+def _take_picture_commanded(commander):
+    log.info("Command: Taking picture")
+    name = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
+    encoding = "png"
+    save_path = f"pictures/commanded/{name}"
+    if _take_picture(save_path, encoding=encoding):
+        log.info("Command: Taking picture done")
+        sensor_data = _get__visualization_data()
+        EmailDistributor().send_picture_email(picture_path=f"{save_path}.{encoding}", df=sensor_data, receiver=commander)
+        log.info("Command: Done")
     else:
         log.info("Command: Taking picture was not successful")  
+    
 
 def _create_visualization_commanded(commander):
     log.info("Command: Creating Measurement Data Visualization")
@@ -101,6 +118,7 @@ def create_visualization_timed():
     draw_plots(df=sensor_data)
     log.info("Timed: Done")
     EmailDistributor().send_visualization_email(df=sensor_data)
+
 
 def run_received_commands():
     log.info("Checking for commands")
@@ -124,6 +142,11 @@ def collect_and_save_to_db():
             "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
     log.info("Done")
+    # heat warning
+    max_heat = 34.5
+    if room_temp > max_heat:
+       log.info(f"Sending heat warning because room temp is above {max_heat}°C")
+       EmailDistributor().send_heat_warning_email(room_temp)
 
 
 def init_postgres_container():
@@ -155,25 +178,25 @@ def main():
 
     global command_service
     command_service = CommandService()
-    #cmd_name = 'plot'
-    #function_params = ['commander']
-    #command_service.add_new_command((cmd_name, [], _create_visualization_commanded, function_params))
+    cmd_name = 'pic'
+    function_params = ['commander']
+    command_service.add_new_command((cmd_name, [], _take_picture_commanded, function_params))
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
-    schedule.every().day.at("08:00").do(run_threaded, take_picture)
-    schedule.every().day.at("12:00").do(run_threaded, take_picture)
-    schedule.every().day.at("15:00").do(run_threaded, take_picture)
-    schedule.every().day.at("18:30").do(run_threaded, take_picture)
+    schedule.every().day.at("08:00").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("12:00").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("15:00").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("18:30").do(run_threaded, take_picture_timed)
     # run_threaded assumes that we never have overlapping usage of this method or its components
     #schedule.every().day.at("06:00").do(run_threaded, create_visualization_timed)
-    #schedule.every(10).minutes.do(run_threaded, run_received_commands)
+    schedule.every(17).minutes.do(run_threaded, run_received_commands)
     log.info("finished initialization")
 
     collect_and_save_to_db()
     #create_visualization_timed()
     time.sleep(1)
-    take_picture()
-    #run_received_commands()
+    take_picture_timed()
+    run_received_commands()
     log.info("entering main loop")
     while True:
         schedule.run_pending()

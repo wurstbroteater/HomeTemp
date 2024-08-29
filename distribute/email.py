@@ -138,7 +138,7 @@ class EmailDistributor:
         return message
     
  
-    def send_visualization_email(self, df, google_df, dwd_df, ulmde_df, wettercom_df, path_to_pdf=None, receiver=None):
+    def send_visualization_email(self, df, path_to_pdf=None, receiver=None):
         """
         Creates and sends an email with a description for each dataframe
         and attaches the pdf file created for the current day if the file is present.
@@ -156,27 +156,43 @@ class EmailDistributor:
 
         log.info(f"Sending Measurement Data Visualization to {receiver}")
 
-        subject = f"HomeTemp v{config['hometemp']['version']} Data Report {today}"
-        message = "------------- Sensor Data -------------\n"
-        message += str(df[["humidity", "room_temp", "cpu_temp"]].corr()) + "\n\n"
-        message += str(df[["humidity", "room_temp", "cpu_temp"]].describe()).format("utf8") + "\n\n"
-        message += str(df[["timestamp", "humidity", "room_temp", "cpu_temp"]].tail(6))
-        message += "\n\n------------- Google Data -------------\n"
-        message += str(google_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
-        message += str(google_df.tail(6))
-        message += "\n\n------------- DWD Data -------------\n"
-        message += str(dwd_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
-        message += str(dwd_df.tail(6))
-        message += "\n\n------------- Wetter.com Data -------------\n"
-        message += str(wettercom_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
-        message += str(wettercom_df.tail(6))
-        message += "\n\n------------- Ulm.de Data -------------\n"
-        message += str(ulmde_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
-        message += str(ulmde_df.tail(6))
+        subject = f"BaseTemp v{config['hometemp']['version']} Data Report {today}"
+        message = create_sensor_data_messag(df)
 
         msg = self.create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
         msg["From"] = from_email
         msg["To"] = receiver
 
         _ = self.send_email(from_email=from_email, to_email=receiver, message=msg)
+
+    def send_picture_email(self, picture_path, df, receiver):
+        today = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
+        log.info(f"Sending picture to {receiver}")
+        subject = f"BaseTemp v{config['hometemp']['version']} Live Picture of {today}"
+        message = create_sensor_data_messag(df)
+
+        from_email = self.config["from_email"]
+        msg = self.create_message(subject=subject, content=message, attachment_paths=[picture_path])
+        msg["From"] = from_email
+        msg["To"] = receiver
+
+        _ = self.send_email(from_email=from_email, to_email=receiver, message=msg)
+
+    def send_heat_warning_email(self,current_temp):
+        msg = self.create_message(subject=f"BaseTemp v{config['hometemp']['version']} HEAT WARNING OF {current_temp}°C", 
+                                  content="Its the heat of the moment")
+        from_email = self.config["from_email"]
+        receiver = self.config["to_email"]
+        msg["From"] = from_email
+        msg["To"] = receiver
+        _ = self.send_email(from_email=from_email, to_email=receiver, message=msg)
+        
+
+def create_sensor_data_messag(df):
+    message = "------------- Sensor Data -------------\n"
+    message += str(df[["humidity", "room_temp", "cpu_temp"]].corr()) + "\n\n"
+    message += str(df[["humidity", "room_temp", "cpu_temp"]].describe()).format("utf8") + "\n\n"
+    message += str(df[["timestamp", "humidity", "room_temp", "cpu_temp"]].tail(6))
+    return message
+    
 
