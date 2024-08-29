@@ -39,7 +39,7 @@ requirements file.
 ```sh
 sudo apt-get install libpq-dev xvfb
 ## Module names
-pip install rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4 jupyter_client jupyter_core
+pip install pillow rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4 jupyter_client jupyter_core
 # or
 #pip install -r requirements.txt
 ```

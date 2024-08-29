@@ -1,4 +1,6 @@
 from sensors.sensor_logger import sen_log as log
+# pip install pillow
+from PIL import Image
 import subprocess
 
 class RpiCamController:
@@ -52,16 +54,31 @@ class RpiCamController:
                 'returncode': result.returncode,
                 'error': result.stderr.decode()
             }
+        
+    def _rotate_image(self, image_path: str, rotation:int) -> bool:
+        image = Image.open(image_path)
+        # 'expand' to resize for the whole image
+        rotated_image = image.rotate(rotation, expand=True) 
+        rotated_image.save(image_path)
+        return True
 
-    def capture_image(self, filename: str = "test", encoding: str = "png") -> bool:
-
+    def capture_image(self, file_path: str = "test", encoding: str = "png", rotation: int = 0) -> bool:
+        """
+        file_path must be the path to the image without endcoding, e.g., /path/to/image and set endcoding to "png"
+        results in internal usage of /path/to/image.png
+        """
+        if rotation < 0 or rotation > 360:
+            log.error(f"Unsupported image rotation {rotation} found. Supported range is [0, 360]")
         if encoding not in self.supported_image_endcodings:
-            print(f"Unsupported image encoding {encoding} found. Supported are {self.supported_image_endcodings}")
+            log.error(f"Unsupported image encoding {encoding} found. Supported are {self.supported_image_endcodings}")
             return False
+        file_name = f"{file_path}.{encoding}"
         command = ['rpicam-still',
                    '--encoding', encoding,
-                   '--output', f"{filename}.{encoding}"]
-        return self._run_command(command, on_success=lambda _: True, on_failure=lambda error_msg: (log.error(f"Error while capturing picture: {error_msg}"), False)[1])
+                   '--output',  file_name]
+        return self._run_command(command,
+                                  on_success=lambda _: self._rotate_image(file_name, rotation),
+                                  on_failure=lambda error_msg: (log.error(f"Error while capturing picture: {error_msg}"), False)[1])
 
     def get_version(self) -> str:
         command = ['rpicam-hello', '--version']

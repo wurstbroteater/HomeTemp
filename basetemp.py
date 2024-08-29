@@ -79,7 +79,8 @@ def take_picture():
     log.info("Command: Taking picture")
     rpi_cam = RpiCamController()
     name = f'pictures/{datetime.now().strftime("%Y-%m-%d-%H:%M:%S")}'
-    if rpi_cam.capture_image(filename=name):
+    # file name is set in capture_image to filepath.encoding which is png on default
+    if rpi_cam.capture_image(file_path=name, rotation=90):
          log.info("Command: Taking picture done")
     else:
         log.info("Command: Taking picture was not successful")  
