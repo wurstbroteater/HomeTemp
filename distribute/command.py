@@ -51,8 +51,9 @@ class CommandService:
 
     def _get_emails_with_valid_prefix(self):
         found_email_with_command = []
-
-        for email_id, received_message in self.email_service.get_emails(which_emails='UNSEEN'):
+        # TODO: Problem when there are more than one hometemp instances, then UNSEEN might not work
+        # because the other instances won't reset the email to UNSEEN
+        for email_id, received_message in self.email_service.get_emails(which_emails='ALL'):
             sender = str(parseaddr(received_message['From'])[1])
             subject = received_message['Subject']
             body = received_message.get_payload()

@@ -195,10 +195,10 @@ def main():
     
     log.info("finished initialization")
 
-    collect_and_save_to_db()
+    #collect_and_save_to_db()
     #create_visualization_timed()
     time.sleep(1)
-    take_picture_timed()
+    #take_picture_timed()
     run_received_commands()
     log.info("entering main loop")
     while True:
