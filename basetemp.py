@@ -141,12 +141,13 @@ def collect_and_save_to_db():
         log.info(
             "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
+        # heat warning
+        max_heat = 34.5
+        if room_temp > max_heat:
+            log.warning(f"Sending heat warning because room temp is above {max_heat}°C")
+            EmailDistributor().send_heat_warning_email(room_temp)
+
     log.info("Done")
-    # heat warning
-    max_heat = 34.5
-    if room_temp > max_heat:
-       log.info(f"Sending heat warning because room temp is above {max_heat}°C")
-       EmailDistributor().send_heat_warning_email(room_temp)
 
 
 def init_postgres_container():
