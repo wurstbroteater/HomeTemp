@@ -179,18 +179,20 @@ def main():
 
     global command_service
     command_service = CommandService()
-    cmd_name = 'pic'
-    function_params = ['commander']
-    command_service.add_new_command((cmd_name, [], _take_picture_commanded, function_params))
+    picutre_cmd_name = 'pic'
+    picutre_fun_params = ['commander']
+    command_service.add_new_command((picutre_cmd_name, [], _take_picture_commanded, picutre_fun_params))
+    vis_cmd_name = 'plot'
+    vis_fun_params = ['commander']
+    command_service.add_new_command((vis_cmd_name, [], _create_visualization_commanded, vis_fun_params))
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
     schedule.every().day.at("08:00").do(run_threaded, take_picture_timed)
     schedule.every().day.at("12:00").do(run_threaded, take_picture_timed)
     schedule.every().day.at("15:00").do(run_threaded, take_picture_timed)
     schedule.every().day.at("18:30").do(run_threaded, take_picture_timed)
-    # run_threaded assumes that we never have overlapping usage of this method or its components
-    #schedule.every().day.at("06:00").do(run_threaded, create_visualization_timed)
     schedule.every(17).minutes.do(run_threaded, run_received_commands)
+    
     log.info("finished initialization")
 
     collect_and_save_to_db()
