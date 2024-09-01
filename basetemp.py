@@ -137,7 +137,7 @@ def collect_and_save_to_db():
     handler.init_db_connection()
     cpu_temp = get_temperature()
     room_temp, humidity, timestamp = get_sensor_data(int(config["hometemp"]["sensor_pin"]))
-    if room_temp is not None and humidity is not None and timestamp is not None:
+    if room_temp is not None or humidity is not None or timestamp is not None:
         log.info(
             "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
