@@ -2,7 +2,7 @@
 
 This fork of HomeTemp aka. `BaseTemp` periodically measures and saves temperature and humidity values in my
 basement. The temperature and humidity is caputred by an DHT11 sensor, connected to a Raspberry Pi 4 Model B
-via an extended board.
+via an extended board. It also takes pictures with via a camera module and is able to send via commanding.
 
 ## Requirements
 
