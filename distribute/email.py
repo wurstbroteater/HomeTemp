@@ -147,7 +147,7 @@ class EmailDistributor:
         if path_to_pdf is None:
             file_name = today + ".pdf"
             # TODO: change hardcoded link
-            path_to_pdf = f"/home/ericl/HomeTemp/plots/{file_name}"
+            path_to_pdf = f"/home/ericl/BaseTemp/plots/{file_name}"
         else:
             file_name =  os.path.basename(path_to_pdf)
 
