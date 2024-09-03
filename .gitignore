@@ -5,7 +5,7 @@ __pycache__
 
 **/hometemp.ini
 **/basetemp.ini
-.png
+**/*.png
 plots
 pictures
 **/*.log
