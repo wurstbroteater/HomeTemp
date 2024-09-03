@@ -4,7 +4,8 @@ venv
 __pycache__
 
 **/hometemp.ini
-fitness.csv
+**/basetemp.ini
+.png
 plots
 pictures
 **/*.log
