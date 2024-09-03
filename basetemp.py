@@ -142,7 +142,7 @@ def collect_and_save_to_db():
             "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
         # heat warning
-        max_heat = 34.5
+        max_heat = 28.5
         if room_temp > max_heat:
             log.warning(f"Sending heat warning because room temp is above {max_heat}°C")
             EmailDistributor().send_heat_warning_email(room_temp)
@@ -188,10 +188,11 @@ def main():
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
     schedule.every().day.at("06:07").do(run_threaded, create_visualization_timed)
-    schedule.every().day.at("08:00").do(run_threaded, take_picture_timed)
+    # TODO: remove 12:00 as it was only for testing if timing things work
     schedule.every().day.at("12:00").do(run_threaded, take_picture_timed)
-    schedule.every().day.at("15:00").do(run_threaded, take_picture_timed)
-    schedule.every().day.at("18:30").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("19:00").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("03:00").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("10:30").do(run_threaded, take_picture_timed)
     schedule.every(17).minutes.do(run_threaded, run_received_commands)
     
     log.info("finished initialization")
