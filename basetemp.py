@@ -188,8 +188,6 @@ def main():
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
     schedule.every().day.at("06:07").do(run_threaded, create_visualization_timed)
-    # TODO: remove 12:00 as it was only for testing if timing things work
-    schedule.every().day.at("12:00").do(run_threaded, take_picture_timed)
     schedule.every().day.at("19:00").do(run_threaded, take_picture_timed)
     schedule.every().day.at("03:00").do(run_threaded, take_picture_timed)
     schedule.every().day.at("10:30").do(run_threaded, take_picture_timed)
