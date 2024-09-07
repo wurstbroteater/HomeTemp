@@ -2,8 +2,11 @@
 venv
 .idea
 __pycache__
+.ipynb_checkpoints
 
 **/hometemp.ini
-fitness.csv
+**/basetemp.ini
+**/*.png
 plots
+pictures
 **/*.log

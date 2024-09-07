@@ -52,8 +52,9 @@ class CommandService:
 
     def _get_emails_with_valid_prefix(self):
         found_email_with_command = []
-
-        for email_id, received_message in self.email_service.get_emails(which_emails='UNSEEN'):
+        # TODO: Problem when there are more than one hometemp instances, then UNSEEN might not work
+        # because the other instances won't reset the email to UNSEEN
+        for email_id, received_message in self.email_service.get_emails(which_emails='ALL'):
             sender = str(parseaddr(received_message['From'])[1])
             subject = received_message['Subject']
             body = received_message.get_payload()
@@ -102,7 +103,7 @@ class CommandParser:
     def __init__(self):
         # for command validation
         # always treat prefix as case insensitiv
-        self.valid_command_prefixes = ['HomeTempCommand'.lower(), 'HomeTempCmd'.lower(), 'HTcmd'.lower()]
+        self.valid_command_prefixes = ['BaseTempCommand'.lower(), 'BaseTempCmd'.lower(), 'BTcmd'.lower()]
         # default supported commands
         # supported commands needs to be added via add_command method before executing get_received_command_requestes
         # TODO: should be Set

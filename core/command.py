@@ -3,9 +3,9 @@ from core.core_configuration import distribution_config
 from email.utils import parseaddr
 from typing import List, Optional
 from core.distribute import EmailDistributor
+from core.core_configuration import hometemp_config
 
 log = get_logger(__name__)
-
 
 
 
@@ -57,7 +57,7 @@ class CommandService:
     def _get_emails_with_valid_prefix(self):
         found_email_with_command = []
 
-        for email_id, received_message in self.email_service.get_emails(which_emails='UNSEEN'):
+        for email_id, received_message in self.email_service.get_emails(which_emails='ALL'):
             sender = str(parseaddr(received_message['From'])[1])
             subject = received_message['Subject']
             body = received_message.get_payload()
@@ -106,7 +106,7 @@ class CommandParser:
     def __init__(self):
         # for command validation
         # always treat prefix as case-insensitive
-        self.valid_command_prefixes = ['HomeTempCommand'.lower(), 'HomeTempCmd'.lower(), 'HTcmd'.lower()]
+        self.valid_command_prefixes = list(map(lambda p: str(p).lower() ,eval(hometemp_config()['valid_command_prefix'])))
         # default supported commands
         # supported commands needs to be added via add_command method before executing get_received_command_requestes
         # TODO: should be Set

@@ -1,30 +1,21 @@
-import configparser
-import logging
+from core.core_log import setup_logging, get_logger
+from core.core_configuration import load_config, database_config, hometemp_config
 import re
 import schedule
 import threading
 import time
 from datetime import datetime
-
 from gpiozero import CPUTemperature
 
-from distribute.command import CommandService
-from distribute.email import EmailDistributor
-from persist.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
-from sensors.dht import DHT, DHTResult
-from util.manager import PostgresDockerManager
-from visualize.plots import draw_plots
+from core.command import CommandService
+from core.distribute import send_visualization_email
+from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
+from core.sensors.dht import DHT, DHTResult
+from core.virtualization import PostgresDockerManager
+from core.plotting import draw_plots
 
-# only logs from this file will be written to console but all logs will be saved to file
-for handler in logging.root.handlers[:]:
-    logging.root.removeHandler(handler)
-logging.basicConfig(filename='measurement.log',
-                    encoding='utf-8',
-                    level=logging.INFO)
-config = configparser.ConfigParser()
-config.read('hometemp.ini')
-log = logging.getLogger('hometemp')
-
+# GLOBAL Variables
+log = None
 command_service = None
 
 
@@ -67,7 +58,7 @@ def get_sensor_data(used_pin):
 
 
 def _get__visualization_data():
-    auth = config["db"]
+    auth = database_config()
     sensor_data_handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'],
                                             'sensor_data')
     sensor_data_handler.init_db_connection(check_table=False)
@@ -118,8 +109,8 @@ def _create_visualization_commanded(commander):
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df,
                save_path=save_path)
     log.info("Command: Done")
-    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
-                                                wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
+    send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
+                             wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
 
 
 def create_visualization_timed():
@@ -127,8 +118,8 @@ def create_visualization_timed():
     sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df)
     log.info("Timed: Done")
-    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
-                                                wettercom_df=wettercom_df)
+    send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
+                             wettercom_df=wettercom_df)
 
 
 def run_received_commands():
@@ -144,11 +135,11 @@ def run_threaded(job_func):
 
 def collect_and_save_to_db():
     log.info("Start Measurement Data Collection")
-    auth = config["db"]
+    auth = database_config()
     handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
     handler.init_db_connection()
     cpu_temp = get_temperature()
-    room_temp, humidity, timestamp = get_sensor_data(int(config["hometemp"]["sensor_pin"]))
+    room_temp, humidity, timestamp = get_sensor_data(int(hometemp_config()["sensor_pin"]))
     if room_temp is not None and humidity is not None and timestamp is not None:
         log.info(
             "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
@@ -160,7 +151,7 @@ def collect_and_save_to_db():
 
 def init_postgres_container():
     log.info("Checking for existing database")
-    auth = config["db"]
+    auth = database_config()
     docker_manager = PostgresDockerManager(auth["db_name"], auth["db_user"], auth["db_pw"])
     container_name = auth["container_name"]
     if docker_manager.container_exists(container_name):
@@ -176,17 +167,13 @@ def init_postgres_container():
 
 
 def main():
-    log = logging.getLogger('hometemp')
-    log.addHandler(logging.StreamHandler())
-    log.info(f"------------------- HomeTemp v{config['hometemp']['version']} -------------------")
+    log.info(f"------------------- HomeTemp v{hometemp_config()['version']} -------------------")
     if not init_postgres_container():
         log.error("Postgres container startup error! Shutting down ...")
         exit(1)
         # after restart, database needs some time to start
     time.sleep(1)
 
-    global command_service
-    command_service = CommandService()
     cmd_name = 'plot'
     function_params = ['commander']
     command_service.add_new_command((cmd_name, [], _create_visualization_commanded, function_params))
@@ -208,4 +195,9 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_logging(log_file='hometemp.log')
+    load_config()
+    # Define all global variables
+    log = get_logger(__name__)
+    command_service = CommandService()
     main()

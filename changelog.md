@@ -1,5 +1,9 @@
 # Project: HomeTemp
 
+## 0.4-BaseTemp
+
+Fork for testing new features and sensors 
+
 ## 0.4
 
 This version adds the ability to create, receive and execute commands from external.
