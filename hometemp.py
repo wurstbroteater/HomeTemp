@@ -8,7 +8,7 @@ from datetime import datetime
 from gpiozero import CPUTemperature
 
 from core.command import CommandService
-from core.distribute import EmailDistributor
+from core.distribute import send_visualization_email
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 from core.sensors.dht import DHT, DHTResult
 from core.virtualization import PostgresDockerManager
@@ -109,8 +109,8 @@ def _create_visualization_commanded(commander):
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df,
                save_path=save_path)
     log.info("Command: Done")
-    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
-                                                wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
+    send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
+                             wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
 
 
 def create_visualization_timed():
@@ -118,8 +118,8 @@ def create_visualization_timed():
     sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df)
     log.info("Timed: Done")
-    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
-                                                wettercom_df=wettercom_df)
+    send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
+                             wettercom_df=wettercom_df)
 
 
 def run_received_commands():

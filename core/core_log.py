@@ -8,7 +8,7 @@ import logging.config
 # ----------------------------------------------------------------------------------------------------------------
 
 
-def setup_logging(log_file: str = 'app.log', logging_level: int = logging.INFO) -> None:
+def setup_logging(log_file: str = 'app.log',optional_params:list =list, logging_level: int = logging.INFO) -> None:
     """
     Configure logging to file and console, assures utf-8 file encoding and uses basic logging format.
 
