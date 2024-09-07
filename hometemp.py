@@ -195,7 +195,7 @@ def main():
 
 
 if __name__ == "__main__":
-    setup_logging(log_file='app.log')
+    setup_logging(log_file='hometemp.log')
     load_config()
     # Define all global variables
     log = get_logger(__name__)
