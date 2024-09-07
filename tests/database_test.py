@@ -1,7 +1,8 @@
-from persist.database import SensorDataHandler, DwDDataHandler
-from api.fetcher import DWDFetcher
 import configparser
 from datetime import datetime, timedelta
+
+from api.fetcher import DWDFetcher
+from persist.database import SensorDataHandler, DwDDataHandler
 
 config = configparser.ConfigParser()
 config.read('hometemp.ini')

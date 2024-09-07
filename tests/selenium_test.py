@@ -1,10 +1,11 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
+import configparser
+
 from pyvirtualdisplay import Display
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+
 from api.fetcher import WetterComFetcher
-import configparser, time
 
 config = configparser.ConfigParser()
 config.read('hometemp.ini')

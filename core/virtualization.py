@@ -1,8 +1,13 @@
+from core.core_log import get_logger
 import docker
 from docker import errors as de
 
-from util.utilities_logger import util_logger as log
+log = get_logger(__name__)
 
+
+# ----------------------------------------------------------------------------------------------------------------
+# TODO: Docu
+# ----------------------------------------------------------------------------------------------------------------
 
 class DockerManager:
     """

@@ -1,13 +1,17 @@
-import configparser
+from core.core_log import get_logger
+from core.core_configuration import distribution_config
 from email.utils import parseaddr
 from typing import List, Optional
+from core.distribute import EmailDistributor
 
-from distribute.dis_logger import dis_log as log
-from distribute.email import EmailDistributor
+log = get_logger(__name__)
 
-config = configparser.ConfigParser()
-config.read('hometemp.ini')
 
+
+
+# ----------------------------------------------------------------------------------------------------------------
+# TODO: Docu
+# ----------------------------------------------------------------------------------------------------------------
 
 class Command:
 
@@ -25,7 +29,7 @@ class Command:
 
     def __eq__(self, other):
         """
-        A command is identifyed by its id and parameters
+        A command is identified by its id and parameters
         """
         if not isinstance(other, Command):
             return False
@@ -46,15 +50,14 @@ class CommandRequest:
 class CommandService:
 
     def __init__(self):
-        self.allowed_commanders = eval(config["distribution"]["allowed_commanders"])
+        self.allowed_commanders = eval(distribution_config()["allowed_commanders"])
         self.parser = CommandParser()
         self.email_service = EmailDistributor()
 
     def _get_emails_with_valid_prefix(self):
         found_email_with_command = []
-        # TODO: Problem when there are more than one hometemp instances, then UNSEEN might not work
-        # because the other instances won't reset the email to UNSEEN
-        for email_id, received_message in self.email_service.get_emails(which_emails='ALL'):
+
+        for email_id, received_message in self.email_service.get_emails(which_emails='UNSEEN'):
             sender = str(parseaddr(received_message['From'])[1])
             subject = received_message['Subject']
             body = received_message.get_payload()
@@ -102,14 +105,14 @@ class CommandParser:
 
     def __init__(self):
         # for command validation
-        # always treat prefix as case insensitiv
-        self.valid_command_prefixes = ['BaseTempCommand'.lower(), 'BaseTempCmd'.lower(), 'BTcmd'.lower()]
+        # always treat prefix as case-insensitive
+        self.valid_command_prefixes = ['HomeTempCommand'.lower(), 'HomeTempCmd'.lower(), 'HTcmd'.lower()]
         # default supported commands
         # supported commands needs to be added via add_command method before executing get_received_command_requestes
         # TODO: should be Set
         self.valid_commands = []
 
-    # ------- start command parsing -------  
+    # ------- start command parsing -------
 
     def _validate_header_prefix(self, header):
         header = str(header).strip().lower().split(' ')
@@ -130,9 +133,9 @@ class CommandParser:
                 break
         return command
 
-    # ------- end command parsing -------              
+    # ------- end command parsing -------
 
-    # ------- start public methods ------- 
+    # ------- start public methods -------
 
     def parse_received_command(self, commander, header, body) -> Optional[Command]:
         """

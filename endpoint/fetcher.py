@@ -1,4 +1,4 @@
-import logging
+from core.core_log import get_logger
 import urllib.parse
 from datetime import datetime
 
@@ -10,7 +10,7 @@ from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
-log = logging.getLogger("api.fetcher")
+log = get_logger(__name__)
 
 
 class UlmDeFetcher:

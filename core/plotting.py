@@ -1,10 +1,14 @@
+from core.core_log import get_logger
 from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from visualize.vis_logger import vis_log as log
+log = get_logger(__name__)
 
+# ----------------------------------------------------------------------------------------------------------------
+# TODO: Docu
+# ----------------------------------------------------------------------------------------------------------------
 
 def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True, save_path=None):
     sns.set_theme(style="darkgrid")

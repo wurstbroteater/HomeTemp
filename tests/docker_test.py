@@ -1,5 +1,6 @@
-from util.manager import PostgresDockerManager
 import configparser
+
+from util.manager import PostgresDockerManager
 
 config = configparser.ConfigParser()
 config.read('hometemp.ini')

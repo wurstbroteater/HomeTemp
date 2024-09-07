@@ -1,9 +1,11 @@
+import configparser
 import logging
-import configparser, schedule, time
+import schedule
+import time
 from datetime import datetime, timedelta
+
 from api.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
 from persist.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler
-from hometemp import run_threaded
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -50,7 +52,8 @@ def dwd_fetch_and_save():
                         log.info(timestamp_to_update.strftime(
                             "%Y-%m-%d %H:%M:%S") + f" old/new: {old_temp}/{new_temp} {new_dev}")
                         if old_temp is None:
-                            handler.insert_dwd_data(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp, new_dev)
+                            handler.insert_dwd_data(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp,
+                                                    new_dev)
                         elif old_temp != new_temp:
                             handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"),
                                                              new_temp,

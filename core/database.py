@@ -1,3 +1,4 @@
+from core.core_log import get_logger
 from abc import ABC, abstractmethod
 
 import pandas as pd
@@ -5,8 +6,7 @@ from sqlalchemy import create_engine, text, select, update, insert, inspect, exc
     DECIMAL, \
     TIMESTAMP
 
-from persist.persistence_logger import per_log as log
-
+log = get_logger(__name__)
 
 class PostgresHandler(ABC):
     """
