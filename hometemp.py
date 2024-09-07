@@ -1,12 +1,19 @@
-import configparser, logging, re, schedule, time, threading
-from datetime import datetime, timedelta
+import configparser
+import logging
+import re
+import schedule
+import threading
+import time
+from datetime import datetime
+
 from gpiozero import CPUTemperature
-from distribute.email import EmailDistributor
+
 from distribute.command import CommandService
+from distribute.email import EmailDistributor
 from persist.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
+from sensors.dht import DHT, DHTResult
 from util.manager import PostgresDockerManager
 from visualize.plots import draw_plots
-from sensors.dht import DHT, DHTResult
 
 # only logs from this file will be written to console but all logs will be saved to file
 for handler in logging.root.handlers[:]:
@@ -55,8 +62,9 @@ def get_sensor_data(used_pin):
                 # postgres expects timestamp ins ISO 8601 format
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 return result.temperature, result.humidity, timestamp
-    
+
     return None, None, None
+
 
 def _get__visualization_data():
     auth = config["db"]
@@ -66,7 +74,8 @@ def _get__visualization_data():
     # sensor data
     df = sensor_data_handler.read_data_into_dataframe()
     df = df.sort_values(by="timestamp")
-    df['timestamp'] = df['timestamp'].map(lambda x: datetime.strptime(str(x).replace("+00:00","").strip(), '%Y-%m-%d %H:%M:%S'))
+    df['timestamp'] = df['timestamp'].map(
+        lambda x: datetime.strptime(str(x).replace("+00:00", "").strip(), '%Y-%m-%d %H:%M:%S'))
     # Google weather data
     google_handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
     google_handler.init_db_connection(check_table=False)
@@ -92,7 +101,8 @@ def _get__visualization_data():
     ulmde_handler = UlmDeHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'ulmde_data')
     ulmde_handler.init_db_connection()
     ulmde_df = ulmde_handler.read_data_into_dataframe()
-    ulmde_df['timestamp'] = ulmde_df['timestamp'].map(lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
+    ulmde_df['timestamp'] = ulmde_df['timestamp'].map(
+        lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
 
     return (df, google_df, dwd_df, wettercom_df, ulmde_df)
 
@@ -102,24 +112,30 @@ def _get__visualization_data():
 def _create_visualization_commanded(commander):
     log.info("Command: Creating Measurement Data Visualization")
     sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
-    
+
     name = datetime.now().strftime("%d-%m-%Y")
     save_path = f"plots/commanded/{name}.pdf"
-    draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df, save_path=save_path)
+    draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df,
+               save_path=save_path)
     log.info("Command: Done")
-    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
+    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
+                                                wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
+
 
 def create_visualization_timed():
     log.info("Timed: Creating Measurement Data Visualization")
     sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
     draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df)
     log.info("Timed: Done")
-    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df)
+    EmailDistributor().send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
+                                                wettercom_df=wettercom_df)
+
 
 def run_received_commands():
     log.info("Checking for commands")
     command_service.receive_and_execute_commands()
     log.info("Done")
+
 
 def run_threaded(job_func):
     job_thread = threading.Thread(target=job_func)
@@ -135,8 +151,10 @@ def collect_and_save_to_db():
     room_temp, humidity, timestamp = get_sensor_data(int(config["hometemp"]["sensor_pin"]))
     if room_temp is not None and humidity is not None and timestamp is not None:
         log.info(
-            "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp, humidity))
-        handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
+            "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
+                                                                                  humidity))
+        handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp,
+                                            cpu_temp=cpu_temp)
     log.info("Done")
 
 

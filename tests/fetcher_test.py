@@ -1,6 +1,8 @@
-import pandas as pd
-from api.fetcher import DWDFetcher
 import configparser
+
+import pandas as pd
+
+from api.fetcher import DWDFetcher
 
 config = configparser.ConfigParser()
 config.read("hometemp.ini")

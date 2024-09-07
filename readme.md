@@ -22,8 +22,10 @@ This idea is still growing prosperously and currently provides the following fea
 - Data fetching from various API endpoints/websites
 - Commanding via email
 
-While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `fetch_forecasts.py` is used to fetch data
-from endpoints, currently: Deutsche Wetterdienst (DWD) and Google Weather, Ulm.de and Wetter.com. `crunch_numbers.ipynb` is a
+While `hometemp.py` is the entrypoint to start periodical data collection and distribution, `fetch_forecasts.py` is used
+to fetch data
+from endpoints, currently: Deutsche Wetterdienst (DWD) and Google Weather, Ulm.de and Wetter.com. `crunch_numbers.ipynb`
+is a
 playground for everything.
 
 ## Installation Instructions
@@ -76,7 +78,8 @@ Afterwards, a reboot is required otherwise the following error will occur:
 docker.errors.DockerException: Error while fetching server API version: ('Connection aborted.', PermissionError(13, 'Permission denied'))
 ```
 
-It is also possible to start the a container via the following command. HomeTemp will use this container if the name of the container
+It is also possible to start the a container via the following command. HomeTemp will use this container if the name of
+the container
 matches the the name specified in `hometemp.ini`.
 
 ```sh

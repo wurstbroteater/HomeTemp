@@ -1,7 +1,8 @@
+import configparser
 import logging
-import configparser, re, time
-import time
-from datetime import datetime, timedelta
+import re
+from datetime import datetime
+
 from persist.database import SensorDataHandler
 
 for handler in logging.root.handlers[:]:

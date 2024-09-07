@@ -1,7 +1,9 @@
-import logging, configparser, time
-from distribute.email import EmailDistributor
-from distribute.command import CommandService
+import configparser
+import logging
+import time
 
+from distribute.command import CommandService
+from distribute.email import EmailDistributor
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('command_test')
@@ -11,7 +13,6 @@ config = configparser.ConfigParser()
 config.read('hometemp.ini')
 auth = config["distribution"]
 command_service = None
-
 
 
 def foo(commander):
@@ -40,5 +41,6 @@ def main():
 
     # Extract command from emails containing a command name and execute it
     command_service.receive_and_execute_commands()
+
 
 main()

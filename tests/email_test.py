@@ -1,7 +1,8 @@
 import configparser
-from distribute.email import EmailDistributor
-from email.mime.multipart import MIMEMultipart
 import time
+from email.mime.multipart import MIMEMultipart
+
+from distribute.email import EmailDistributor
 
 config = configparser.ConfigParser()
 config.read('hometemp.ini')
@@ -10,7 +11,6 @@ test_sender = config["distribution"]["from_email"]
 test_receiver = config["distribution"]["to_email"]
 test_subject = "MEGASUPERDUPERULTATEST"
 
-
 service = EmailDistributor()
 # create message
 message_to_send: MIMEMultipart = service.create_message(subject=test_subject, content="Test")
@@ -18,7 +18,7 @@ message_to_send["From"] = test_sender
 message_to_send["To"] = test_receiver
 
 # send message
-service.send_email(from_email=test_sender,to_email=test_receiver, message=message_to_send)
+service.send_email(from_email=test_sender, to_email=test_receiver, message=message_to_send)
 
 time.sleep(2)
 
@@ -45,4 +45,3 @@ for id, received_message in service.get_emails(which_emails='ALL'):
     header = received_message['Subject']
     body = received_message.get_payload()
     print(id, sender, header, body)
-

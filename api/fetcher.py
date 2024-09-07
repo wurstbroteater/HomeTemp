@@ -1,16 +1,17 @@
 import logging
-import requests
 import urllib.parse
 from datetime import datetime
+
+import requests
 from bs4 import BeautifulSoup as bs
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import WebDriverException
 from pyvirtualdisplay import Display
+from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 
 log = logging.getLogger("api.fetcher")
+
 
 class UlmDeFetcher:
 
@@ -21,7 +22,7 @@ class UlmDeFetcher:
         """
         try:
             # set connect and read timeout to 5 seconds
-            response = requests.get('https://www.ulm.de/', timeout=(5,5))
+            response = requests.get('https://www.ulm.de/', timeout=(5, 5))
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Ulm.de connection problem: " + str(e))
             return None
@@ -60,7 +61,7 @@ class WetterComFetcher:
         """
         try:
             # set connect and read timeout to 5 seconds
-            response = requests.get(url, timeout=(5,5))
+            response = requests.get(url, timeout=(5, 5))
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Wetter.com connection problem: " + str(e))
             return None
@@ -78,7 +79,7 @@ class WetterComFetcher:
                 log.error("Temperature element not found on the page.")
         else:
             log.error("Failed to retrieve weather data.")
-        
+
         return None
 
     @staticmethod
@@ -94,7 +95,7 @@ class WetterComFetcher:
         service = webdriver.ChromeService(executable_path='/usr/lib/chromium-browser/chromedriver')
         driver = webdriver.Chrome(service=service, options=options)
         timeout_s = 30
-        driver.set_page_load_timeout(timeout_s) 
+        driver.set_page_load_timeout(timeout_s)
         driver.implicitly_wait(timeout_s)
         try:
             driver.get(url)
@@ -128,7 +129,7 @@ class GoogleFetcher:
             session.headers["Accept-Language"] = language
             session.headers["Content-Language"] = language
             # set connect and read timeout to 5 seconds
-            html = session.get(url, timeout=(5,5))
+            html = session.get(url, timeout=(5, 5))
             soup = bs(html.text, "html.parser")
 
             return {"region": soup.find("div", attrs={"id": "wob_loc"}).text,
@@ -136,7 +137,8 @@ class GoogleFetcher:
                     "precipitation": float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%", "")),
                     "humidity": float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", "")),
                     "wind": float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))}
-        except (WebDriverException, AttributeError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (
+        WebDriverException, AttributeError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error("Google Weather connection problem: " + str(e))
             return None
 
@@ -152,7 +154,7 @@ class Fetcher:
         self.endpoint = endpoint
         self.params = None if not params else urllib.parse.urlencode(params)
         self.api_link = self._create_api_link()
-        self.timeouts = (30,5) # connect timeout 30s and read timeout 5s
+        self.timeouts = (30, 5)  # connect timeout 30s and read timeout 5s
 
     def __str__(self):
         return f"Fetcher[{self.api_link}]"

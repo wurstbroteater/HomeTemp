@@ -1,4 +1,3 @@
-
 # MIT License
 # 
 # Original author: Zoltan Szarvas
@@ -11,17 +10,16 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from sensors.sensor_logger import sen_log as log
 import time
+
 import RPi.GPIO as GPIO
 
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
+
 # DHTxx sensor result returned by DHT.read() method'
 class DHTResult:
-    
-
     ERR_NO_ERROR = 0
     ERR_MISSING_DATA = 1
     ERR_CRC = 2
@@ -29,22 +27,19 @@ class DHTResult:
 
     error_code = ERR_NO_ERROR
     temperature = -1
-    humidity = -1     
+    humidity = -1
 
     def __init__(self, error_code, temperature, humidity):
         self.error_code = error_code
         self.temperature = temperature
         self.humidity = humidity
-                                
 
     def is_valid(self):
         return self.error_code == DHTResult.ERR_NO_ERROR
-        
-    
-    
+
+
 # DHTxx sensor reader class for Raspberry'
 class DHT:
-    
     __pin = 0
     __isDht11 = True
 
@@ -71,7 +66,7 @@ class DHT:
 
         # parse lengths of all data pull up periods
         pull_up_lengths = self.__parse_data_pull_up_lengths(data)
-        
+
         if len(pull_up_lengths) == 0:
             return DHTResult(DHTResult.ERR_NOT_FOUND, 0, 0)
 
@@ -98,28 +93,27 @@ class DHT:
         # the_bytes[3]: temperature decimal
         temperature = -1
         humidity = -1
-        if(self.__isDht11):
+        if (self.__isDht11):
             # DHT11
             temperature = the_bytes[2] + float(the_bytes[3]) / 10
             humidity = the_bytes[0] + float(the_bytes[1]) / 10
         else:
-            #DHT22
+            # DHT22
             temperature = (the_bytes[2] * 256 + float(the_bytes[3])) / 10
             humidity = (the_bytes[0] * 256 + float(the_bytes[1])) / 10
-            c = (float)(((the_bytes[2]&0x7F)<< 8)+the_bytes[3])/10
-            
-            if ( c > 125 ):
+            c = (float)(((the_bytes[2] & 0x7F) << 8) + the_bytes[3]) / 10
+
+            if (c > 125):
                 c = the_bytes[2]
-                
+
             if (the_bytes[2] & 0x80):
                 c = -c
-            
+
             temperature = c
-            humidity = ((the_bytes[0]<<8)+the_bytes[1])/10.00
-        
+            humidity = ((the_bytes[0] << 8) + the_bytes[1]) / 10.00
+
         GPIO.cleanup()
         return DHTResult(DHTResult.ERR_NO_ERROR, temperature, humidity)
-                                                          
 
     def __send_and_sleep(self, output, sleep):
         GPIO.output(self.__pin, output)
@@ -156,8 +150,8 @@ class DHT:
 
         state = STATE_INIT_PULL_DOWN
 
-        lengths = [] # will contain the lengths of data pull up periods
-        current_length = 0 # will contain the length of the previous period
+        lengths = []  # will contain the lengths of data pull up periods
+        current_length = 0  # will contain the length of the previous period
 
         for i in range(len(data)):
 
@@ -246,4 +240,3 @@ class DHT:
 
     def __calculate_checksum(self, the_bytes):
         return the_bytes[0] + the_bytes[1] + the_bytes[2] + the_bytes[3] & 255
-        

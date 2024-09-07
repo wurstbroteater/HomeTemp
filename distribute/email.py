@@ -1,13 +1,16 @@
-import configparser, smtplib, imaplib
-from typing import List, Optional, Tuple
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
+import configparser
+import imaplib
+import os
+import smtplib
+from datetime import datetime
 from email import encoders, message_from_bytes
 from email.message import Message
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import List, Optional, Tuple
+
 from distribute.dis_logger import dis_log as log
-from datetime import datetime
-import os
 
 config = configparser.ConfigParser()
 config.read('hometemp.ini')
@@ -17,7 +20,6 @@ class EmailDistributor:
 
     def __init__(self):
         self.config = config["distribution"]
-
 
     def _get_imap_connection(self) -> Optional[imaplib.IMAP4_SSL]:
         """
@@ -33,9 +35,8 @@ class EmailDistributor:
             server.login(imap_user, imap_pw)
         except Exception as e:
             log.error(f"Error while connecting to {imap_server}:{imap_port} : {str(e)}")
-        
-        return server
 
+        return server
 
     def get_emails(self, which_emails='UNSEEN') -> Optional[List[Tuple[str, Message]]]:
         """
@@ -44,7 +45,7 @@ class EmailDistributor:
         server = self._get_imap_connection()
         if server is None:
             return None
-        
+
         # list of tuples containing the email id and message
         received_emails = []
         try:
@@ -63,16 +64,15 @@ class EmailDistributor:
         finally:
             server.close()
             server.logout()
-        
+
         return received_emails
-    
 
     def delete_email_by_id(self, email_id: str) -> bool:
-        server = self._get_imap_connection() 
-        was_successful = False 
+        server = self._get_imap_connection()
+        was_successful = False
         if server is None:
             return was_successful
-        
+
         try:
             server.select('inbox')
             server.store(email_id, '+FLAGS', '\\Deleted')
@@ -86,7 +86,6 @@ class EmailDistributor:
             server.logout()
 
         return was_successful
-
 
     def send_email(self, from_email: str, to_email: str, message: MIMEMultipart) -> bool:
         smtp_server = self.config["smtp_server"]
@@ -106,9 +105,8 @@ class EmailDistributor:
             log.error(f"Error sending email: {str(e)}")
 
         return False
-    
 
-    def create_message(self, subject: str, content: str, attachment_paths = []) -> MIMEMultipart:
+    def create_message(self, subject: str, content: str, attachment_paths=[]) -> MIMEMultipart:
         """
         from and to email have to be added by the receiving logic.
         """
@@ -122,7 +120,7 @@ class EmailDistributor:
                 attachment = open(attachment_path, "rb")
                 attachment_content = attachment.read()
                 attachment.close()
-                
+
                 file_name = os.path.basename(attachment_path)
 
                 part = MIMEBase("application", "octet-stream")
@@ -136,8 +134,7 @@ class EmailDistributor:
                 continue
 
         return message
-    
- 
+
     def send_visualization_email(self, df, google_df, dwd_df, ulmde_df, wettercom_df, path_to_pdf=None, receiver=None):
         """
         Creates and sends an email with a description for each dataframe
@@ -149,7 +146,7 @@ class EmailDistributor:
             # TODO: change hardcoded link
             path_to_pdf = f"/home/ericl/HomeTemp/plots/{file_name}"
         else:
-            file_name =  os.path.basename(path_to_pdf)
+            file_name = os.path.basename(path_to_pdf)
 
         from_email = self.config["from_email"]
         receiver = receiver if receiver is not None else self.config["to_email"]
@@ -179,4 +176,3 @@ class EmailDistributor:
         msg["To"] = receiver
 
         _ = self.send_email(from_email=from_email, to_email=receiver, message=msg)
-
