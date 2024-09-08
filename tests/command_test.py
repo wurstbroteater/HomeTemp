@@ -1,15 +1,11 @@
-from core.core_log import setup_logging, get_logger
 import time
 
 from core.command import CommandService
+from core.core_configuration import load_config, distribution_config
 from core.distribute import EmailDistributor
 
-log = get_logger(__name__)
-
 # Global Vars
-config = configparser.ConfigParser()
-config.read('hometemp.ini')
-auth = config["distribution"]
+auth = None
 command_service = None
 
 
@@ -18,8 +14,10 @@ def foo(commander):
 
 
 def main():
-    global command_service
+    load_config()
+    global command_service, auth
     command_service = CommandService()
+    auth = distribution_config()
     # Add command
     cmd_name = 'test'
     cmd_params = []
