@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, text, select, update, insert, inspect, exc
 
 log = get_logger(__name__)
 
+
 class PostgresHandler(ABC):
     """
     Abstract class for initializing the Postgres database. It provides methods for the initialization, removal of the

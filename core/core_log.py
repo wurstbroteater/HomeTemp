@@ -1,6 +1,7 @@
 import logging
 import logging.config
 
+
 # ----------------------------------------------------------------------------------------------------------------
 # TODO: Docu
 # setup_logging() should be used in main
@@ -8,7 +9,7 @@ import logging.config
 # ----------------------------------------------------------------------------------------------------------------
 
 
-def setup_logging(log_file: str = None, optional_params:list =list, logging_level: int = logging.INFO) -> None:
+def setup_logging(log_file: str = None, optional_params: list = list, logging_level: int = logging.INFO) -> None:
     """
     Configure logging to file and console, assures utf-8 file encoding and uses basic logging format.
 
@@ -26,7 +27,7 @@ def setup_logging(log_file: str = None, optional_params:list =list, logging_leve
     formatter = logging.Formatter(logging.BASIC_FORMAT)
     console_handler.setFormatter(formatter)
 
-    if log_file is not None: 
+    if log_file is not None:
         file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setLevel(logging_level)
         file_handler.setFormatter(formatter)
@@ -34,7 +35,7 @@ def setup_logging(log_file: str = None, optional_params:list =list, logging_leve
     # Add the handlers to the logger but prevent adding handlers multiple times
     if not logger.handlers:
         logger.addHandler(console_handler)
-        if log_file is not None: 
+        if log_file is not None:
             logger.addHandler(file_handler)
 
 

@@ -8,7 +8,6 @@ from core.core_configuration import hometemp_config
 log = get_logger(__name__)
 
 
-
 # ----------------------------------------------------------------------------------------------------------------
 # TODO: Docu
 # ----------------------------------------------------------------------------------------------------------------
@@ -106,7 +105,8 @@ class CommandParser:
     def __init__(self):
         # for command validation
         # always treat prefix as case-insensitive
-        self.valid_command_prefixes = list(map(lambda p: str(p).lower() ,eval(hometemp_config()['valid_command_prefix'])))
+        self.valid_command_prefixes = list(
+            map(lambda p: str(p).lower(), eval(hometemp_config()['valid_command_prefix'])))
         # default supported commands
         # supported commands needs to be added via add_command method before executing get_received_command_requestes
         # TODO: should be Set

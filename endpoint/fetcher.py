@@ -138,7 +138,8 @@ class GoogleFetcher:
                     "humidity": float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", "")),
                     "wind": float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))}
         except (
-        WebDriverException, AttributeError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                WebDriverException, AttributeError, requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError) as e:
             log.error("Google Weather connection problem: " + str(e))
             return None
 

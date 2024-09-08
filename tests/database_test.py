@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from core.database import SensorDataHandler, DwDDataHandler
 from endpoint.fetcher import DWDFetcher
 
-
 auth = database_config()
 
 
