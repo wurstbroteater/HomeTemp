@@ -1,14 +1,12 @@
-import configparser
+from core.core_configuration import distribution_config
 import time
 from email.mime.multipart import MIMEMultipart
 
-from distribute.email import EmailDistributor
+from core.distribute import EmailDistributor
 
-config = configparser.ConfigParser()
-config.read('hometemp.ini')
-
-test_sender = config["distribution"]["from_email"]
-test_receiver = config["distribution"]["to_email"]
+dis_config = distribution_config()
+test_sender = dis_config["from_email"]
+test_receiver = dis_config["to_email"]
 test_subject = "MEGASUPERDUPERULTATEST"
 
 service = EmailDistributor()

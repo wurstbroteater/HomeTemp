@@ -1,12 +1,11 @@
-import configparser
+from core.core_configuration import database_config, dwd_config
 from datetime import datetime, timedelta
 
-from api.fetcher import DWDFetcher
-from persist.database import SensorDataHandler, DwDDataHandler
+from core.database import SensorDataHandler, DwDDataHandler
+from endpoint.fetcher import DWDFetcher
 
-config = configparser.ConfigParser()
-config.read('hometemp.ini')
-auth = config["db"]
+
+auth = database_config()
 
 
 def foo():
@@ -30,7 +29,7 @@ def foo():
 
 def process_data_updates():
     sanity_threshold = 100
-    fetcher = DWDFetcher(config["dwd"]["station"])
+    fetcher = DWDFetcher(dwd_config()["station"])
     data = fetcher.get_dwd_data()
     handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
     handler.init_db_connection()

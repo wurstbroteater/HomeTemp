@@ -1,4 +1,4 @@
-from sensors.camera import RpiCamController
+from core.sensors.camera import RpiCamController
 from datetime import datetime
 from typing import Callable
 import concurrent.futures

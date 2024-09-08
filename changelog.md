@@ -2,18 +2,25 @@
 
 ## 0.4-BaseTemp
 
-Fork for testing new features and sensors 
+Fork for testing new features and sensors
 
 ## 0.4
 
-This version adds the ability to create, receive and execute commands from external.
+This version adds the ability to create, receive and execute commands from external, introduces new instance `BaseTemp`
+and refactors the current module structure. Therefore, this release contains **BREAKING CHANGES**!
 
+- Refactored old modules `distribute`, `persist` and `visualize` into `core` module
+- Renamed module `api` to `endpoint`
+- Added `BaseTemp`
+- Divided `crunch_numbers.ipynb` into one for HomeTemp and one for BaseTemp
+- Added wrapper `RpiCamController` for `rpicam-apps` command to be able to take pictures with raspberry pi camera module
+- Added `camera_test.py` for testing `RpiCamController`
 - Updated `EmailDistributor` to support CRUD for emails
 - Added `Command`, `CommandRequest`, `CommandParser` and `CommandService` to enable commanding
 - Added `command_test.py` as (test) demo for commanding
-- Restructured and added new fields in `default_hometemp.ini/distribution`
-- ~~Replaced deprecated dependency `Adafruit-DHT` with new `adafruit-circuitpython-dht`~~
-- Replaced deprecated dependency `Adafruit-DHT` with new module `sensors`
+- Restructured and added new fields in `default_hometemp.ini`
+- Restructured and updated dependencies
+- Replaced deprecated dependency `Adafruit-DHT` with new module `core.sensors.dht`
 - Updated readme.md
 
 ## 0.3.3

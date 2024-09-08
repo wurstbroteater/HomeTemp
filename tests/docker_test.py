@@ -1,12 +1,8 @@
-import configparser
-
-from util.manager import PostgresDockerManager
-
-config = configparser.ConfigParser()
-config.read('hometemp.ini')
+from core.core_configuration import database_config
+from core.virtualization import PostgresDockerManager
 
 if __name__ == "__main__":
-    auth = config["db"]
+    auth = database_config()
     docker_manager = PostgresDockerManager(auth["db_name"], auth["db_user"], auth["db_pw"])
     container_name = auth["container_name"]
     print(docker_manager.container_exists(container_name))

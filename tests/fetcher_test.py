@@ -1,13 +1,8 @@
-import configparser
-
+from core.core_configuration import dwd_config
 import pandas as pd
+from endpoint.fetcher import DWDFetcher
 
-from api.fetcher import DWDFetcher
-
-config = configparser.ConfigParser()
-config.read("hometemp.ini")
-
-fetcher = DWDFetcher(config["dwd"]["station"])
+fetcher = DWDFetcher(dwd_config()["station"])
 print(fetcher)
 c_time, c_temp = fetcher.get_dwd_data()
 print(f"DWD forecast temperature data for Ulm is: {c_time.strftime('%Y-%m-%d %H:%M:%S')} {c_temp}°C")

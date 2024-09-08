@@ -1,12 +1,10 @@
-import configparser
-import logging
+from core.core_log import setup_logging, get_logger
 import time
 
-from distribute.command import CommandService
-from distribute.email import EmailDistributor
+from core.command import CommandService
+from core.distribute import EmailDistributor
 
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger('command_test')
+log = get_logger(__name__)
 
 # Global Vars
 config = configparser.ConfigParser()
@@ -29,7 +27,7 @@ def main():
     function_params = ['commander']
     command_service.add_new_command((cmd_name, cmd_params, function_to_execute, function_params))
 
-    # Send email containg command
+    # Send email containing command
     mail_service = EmailDistributor()
     message = mail_service.create_message(subject=f"Htcmd {cmd_name}", content="")
     sender = auth["from_email"]
