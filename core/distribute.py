@@ -39,7 +39,7 @@ class EmailDistributor:
 
         return server
 
-    def get_emails(self, which_emails='UNSEEN') -> Optional[List[Tuple[str, Message]]]:
+    def get_emails(self, which_emails='ALL') -> Optional[List[Tuple[str, Message]]]:
         """
         which emails possibilities: 'ALL' 'UNSEEN'
         """
