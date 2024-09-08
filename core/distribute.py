@@ -216,11 +216,11 @@ def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, pat
     message += str(ulmde_df.tail(6))
 
     distributor = EmailDistributor()
-    msg = self.create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
+    msg = distributor.create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
     msg["From"] = from_email
     msg["To"] = receiver
 
-    _ = self.send_email(from_email=from_email, to_email=receiver, message=msg)
+    _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
 
 
 def send_picture_email(picture_path, df, receiver):
