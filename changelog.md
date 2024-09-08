@@ -21,6 +21,8 @@ and refactors the current module structure. Therefore, this release contains **B
 - Restructured and added new fields in `default_hometemp.ini`
 - Restructured and updated dependencies
 - Replaced deprecated dependency `Adafruit-DHT` with new module `core.sensors.dht`
+- Updated logging and introduced new module `core.core_log`
+- Introduced new module `core.core_configuration` for handling config file parsing and publishing
 - Updated readme.md
 
 ## 0.3.3
