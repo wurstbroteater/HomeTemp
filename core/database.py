@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, text, select, update, insert, inspect, exc
 
 log = get_logger(__name__)
 
+
 # ----------------------------------------------------------------------------------------------------------------
 # Database connection module. Defines an abstract class PostgresHandler. Every handler for a database table
 # must implement _create_table which defines the structure of the table.

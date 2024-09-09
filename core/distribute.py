@@ -18,6 +18,7 @@ log = get_logger(__name__)
 # The data distribution module. Contains EmailDistributor for publishing emails with content.
 # Also includes static util methods for creating certain types of mails.
 # ----------------------------------------------------------------------------------------------------------------
+
 class EmailDistributor:
 
     def __init__(self):
@@ -108,39 +109,42 @@ class EmailDistributor:
 
         return False
 
-    def create_message(self, subject: str, content: str, attachment_paths=[]) -> MIMEMultipart:
-        """
-        from and to email have to be added by the receiving logic.
-        """
-        message = MIMEMultipart()
-        message["Subject"] = subject
-
-        message.attach(MIMEText(content, "plain"))
-
-        for attachment_path in attachment_paths:
-            try:
-                attachment = open(attachment_path, "rb")
-                attachment_content = attachment.read()
-                attachment.close()
-
-                file_name = os.path.basename(attachment_path)
-
-                part = MIMEBase("application", "octet-stream")
-                part.set_payload(attachment_content)
-                encoders.encode_base64(part)
-                part.add_header("Content-Disposition", f"attachment; filename= {file_name}")
-                message.attach(part)
-
-            except FileNotFoundError:
-                log.warning(f"No file to attach found in {attachment_path}")
-                continue
-
-        return message
-
 
 # ----------------------------------------------------------------------------------------------------------------
-# Util methods: Docu
+# Util methods
 # ----------------------------------------------------------------------------------------------------------------
+
+def create_message(subject: str, content: str, attachment_paths=None) -> MIMEMultipart:
+    """
+    from and to email have to be added by the receiving logic.
+    """
+    if attachment_paths is None:
+        attachment_paths = []
+    message = MIMEMultipart()
+    message["Subject"] = subject
+
+    message.attach(MIMEText(content, "plain"))
+
+    for attachment_path in attachment_paths:
+        try:
+            attachment = open(attachment_path, "rb")
+            attachment_content = attachment.read()
+            attachment.close()
+
+            file_name = os.path.basename(attachment_path)
+
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(attachment_content)
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", f"attachment; filename= {file_name}")
+            message.attach(part)
+
+        except FileNotFoundError:
+            log.warning(f"No file to attach found in {attachment_path}")
+            continue
+
+    return message
+
 
 def send_visualization_email(df, google_df=None, dwd_df=None, ulmde_df=None, wettercom_df=None, path_to_pdf=None,
                              receiver=None):
@@ -175,7 +179,7 @@ def _send_base_temp_vis(df, path_to_pdf=None, receiver=None):
     message = create_sensor_data_message(df)
 
     distributor = EmailDistributor()
-    msg = distributor.create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
+    msg = create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
     msg["From"] = from_email
     msg["To"] = receiver
 
@@ -217,7 +221,7 @@ def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, pat
     message += str(ulmde_df.tail(6))
 
     distributor = EmailDistributor()
-    msg = distributor.create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
+    msg = create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
     msg["From"] = from_email
     msg["To"] = receiver
 
@@ -233,7 +237,7 @@ def send_picture_email(picture_path, df, receiver):
     email_config = distribution_config()
     from_email = email_config["from_email"]
     distributor = EmailDistributor()
-    msg = distributor.create_message(subject=subject, content=message, attachment_paths=[picture_path])
+    msg = create_message(subject=subject, content=message, attachment_paths=[picture_path])
     msg["From"] = from_email
     msg["To"] = receiver
 
@@ -242,7 +246,7 @@ def send_picture_email(picture_path, df, receiver):
 
 def send_heat_warning_email(current_temp):
     distributor = EmailDistributor()
-    msg = distributor.create_message(
+    msg = create_message(
         subject=f"BaseTemp v{hometemp_config()['version']} HEAT WARNING OF {current_temp}°C",
         content="Its the heat of the moment")
     email_config = distribution_config()

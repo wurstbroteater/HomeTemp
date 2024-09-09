@@ -10,10 +10,10 @@ log = get_logger(__name__)
 
 # ----------------------------------------------------------------------------------------------------------------
 # This module is responsible for parsing, processing and holding command information.
-# A Command consists of an id, passed parameters, a function and function parameters to executre when the id was
+# A Command consists of an id, passed parameters, a function and function parameters to execute when the id was
 # parsed. Currently, commands are retrieved via email, so CommandRequest is a data class associating a valid 
 # command with its requester, i.e., the sender of the mail.
-# Supported commands needs to be added via add_command method before executing get_received_command_requestes
+# Supported commands needs to be added via add_command method before executing receive_and_execute_commands
 # ----------------------------------------------------------------------------------------------------------------
 
 

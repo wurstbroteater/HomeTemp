@@ -27,7 +27,7 @@ def main():
 
     # Send email containing command
     mail_service = EmailDistributor()
-    message = mail_service.create_message(subject=f"Htcmd {cmd_name}", content="")
+    message = create_message(subject=f"Htcmd {cmd_name}", content="")
     sender = auth["from_email"]
     receiver = auth["to_email"]
     message["From"] = sender

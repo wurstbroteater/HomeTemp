@@ -11,7 +11,7 @@ test_subject = "MEGASUPERDUPERULTATEST"
 
 service = EmailDistributor()
 # create message
-message_to_send: MIMEMultipart = service.create_message(subject=test_subject, content="Test")
+message_to_send: MIMEMultipart = create_message(subject=test_subject, content="Test")
 message_to_send["From"] = test_sender
 message_to_send["To"] = test_receiver
 

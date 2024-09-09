@@ -11,6 +11,7 @@ log = get_logger(__name__)
 # The visualization module. Provides means to create a plot for sensor data and is able to save them to pdf.
 # ----------------------------------------------------------------------------------------------------------------
 
+
 def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True, save_path=None):
     sns.set_theme(style="darkgrid")
     fig = plt.figure(figsize=(25, 12))
@@ -61,6 +62,8 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None
         google_df_last_24h = google_df[google_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
         sns.lineplot(label="Google Forecast", x="timestamp", y="temp", marker='o', markersize=6,
                      data=google_df_last_24h)
+    else:
+        google_df_last_24h = None
     if wettercom_df is not None:
         wettercom_df_last_24h = wettercom_df[wettercom_df["timestamp"] >= datetime.now() - timedelta(hours=25)]
         sns.lineplot(label="Wetter.com Forecast", x="timestamp", y="temp_stat", marker='o', data=wettercom_df_last_24h)
@@ -77,7 +80,7 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None
     # Humidity Measurement last 24 h
     plt.subplot(gs[3])
     sns.lineplot(label="Home", x="timestamp", y="humidity", marker='o', markersize=6, color='purple', data=df_last_24h)
-    if google_df is not None:
+    if google_df_last_24h is not None:
         sns.lineplot(label="Google Forecast", x="timestamp", y="humidity", marker='o', markersize=6,
                      data=google_df_last_24h)
     plt.title("Humidity Last 24 Hours")

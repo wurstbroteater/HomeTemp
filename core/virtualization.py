@@ -6,7 +6,7 @@ log = get_logger(__name__)
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# The virtualization module. Defines a base class DockerManager which every Manager releated to handling
+# The virtualization module. Defines a base class DockerManager which every Manager related to handling
 # docker images or containers must implement like the PostgresDockerManager.
 # ----------------------------------------------------------------------------------------------------------------
 

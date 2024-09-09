@@ -52,7 +52,7 @@ class RpiCamController:
         """
         result = subprocess.run(
             command,
-            # No excpetion on returncode != 0 to handle them by calling methods
+            # No exception on return-code != 0 to handle them by calling methods
             check=False,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
@@ -86,7 +86,7 @@ class RpiCamController:
     def capture_image(self, file_path: str = "test", encoding: str = "png", rotation: int = 0,
                       dimension: tuple[int] = None) -> bool:
         """
-        file_path must be the path to the image without endcoding, e.g., /path/to/image and set endcoding to "png"
+        file_path must be the path to the image without encoding, e.g., /path/to/image and set encoding to "png"
         results in internal usage of /path/to/image.png
         """
         if rotation < 0 or rotation > 360:

@@ -14,7 +14,7 @@ log = get_logger(__name__)
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# The fetching module. Contains data fetcher for retireving data from defined endpoints.
+# The fetching module. Contains data fetcher for retrieving data from defined endpoints.
 # ----------------------------------------------------------------------------------------------------------------
 
 class UlmDeFetcher:
