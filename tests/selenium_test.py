@@ -1,13 +1,10 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 from pyvirtualdisplay import Display
-from api.fetcher import WetterComFetcher
-import configparser, time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 
-config = configparser.ConfigParser()
-config.read('hometemp.ini')
+from core.core_configuration import wettercom_config
+from endpoint.fetcher import WetterComFetcher
 
 
 def get_data_dynamic(url):
@@ -39,8 +36,9 @@ def get_data_dynamic(url):
 
 
 if __name__ == "__main__":
-    temp_fetch_stat = WetterComFetcher.get_data_static(config["wettercom"]["url"][1:-1])
-    temp_fetch_dyn = get_data_dynamic(config["wettercom"]["url"][1:-1])
-    # temp_fetch_dyn = WetterComFetcher.get_data_dynamic(config["wettercom"]["url"][1:-1])
+    w_conf = wettercom_config()
+    temp_fetch_stat = WetterComFetcher.get_data_static(w_conf["url"][1:-1])
+    temp_fetch_dyn = get_data_dynamic(w_conf["url"][1:-1])
+    # temp_fetch_dyn = WetterComFetcher.get_data_dynamic(w_conf["url"][1:-1])
 
     print(f"stat vs dyn temp: {temp_fetch_stat} vs {temp_fetch_dyn}")

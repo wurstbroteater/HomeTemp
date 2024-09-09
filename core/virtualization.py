@@ -1,7 +1,14 @@
+from core.core_log import get_logger
 import docker
 from docker import errors as de
-from util.utilities_logger import util_logger as log
 
+log = get_logger(__name__)
+
+
+# ----------------------------------------------------------------------------------------------------------------
+# The virtualization module. Defines a base class DockerManager which every Manager related to handling
+# docker images or containers must implement like the PostgresDockerManager.
+# ----------------------------------------------------------------------------------------------------------------
 
 class DockerManager:
     """
@@ -96,3 +103,24 @@ class PostgresDockerManager(DockerManager):
                 log.error(f"Error creating container {container_name}: {e}")
         else:
             log.info(f"Container {container_name} already exists.")
+
+
+# ----------------------------------------------------------------------------------------------------------------
+# Static utility methods
+# ----------------------------------------------------------------------------------------------------------------
+
+
+def init_postgres_container(auth):
+    log.info("Checking for existing database")
+    docker_manager = PostgresDockerManager(auth["db_name"], auth["db_user"], auth["db_pw"])
+    container_name = auth["container_name"]
+    if docker_manager.container_exists(container_name):
+        log.info("Reusing existing database container")
+        return docker_manager.start_container(container_name)
+    else:
+        log.info("No database container found. Creating database container")
+        if docker_manager.pull_postgres_image():
+            docker_manager.create_postgres_container(container_name)
+            return docker_manager.start_container(container_name)
+
+    return False

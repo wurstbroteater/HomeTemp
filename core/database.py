@@ -1,12 +1,18 @@
-from persist.persistence_logger import per_log as log
+from core.core_log import get_logger
+from abc import ABC, abstractmethod
+
+import pandas as pd
 from sqlalchemy import create_engine, text, select, update, insert, inspect, exc, Table, Column, MetaData, Integer, \
     DECIMAL, \
     TIMESTAMP
-from sqlalchemy.exc import OperationalError
-from abc import ABC, abstractmethod
-import pandas as pd
-import time
 
+log = get_logger(__name__)
+
+
+# ----------------------------------------------------------------------------------------------------------------
+# Database connection module. Defines an abstract class PostgresHandler. Every handler for a database table
+# must implement _create_table which defines the structure of the table.
+# ----------------------------------------------------------------------------------------------------------------
 
 class PostgresHandler(ABC):
     """
@@ -50,13 +56,13 @@ class PostgresHandler(ABC):
         db_url = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
         try:
             return create_engine(db_url,
-                    pool_pre_ping=True,
-                    connect_args={
-                        "keepalives": 1,
-                        "keepalives_idle": 30,
-                        "keepalives_interval": 10,
-                        "keepalives_count": 5,
-                    })
+                                 pool_pre_ping=True,
+                                 connect_args={
+                                     "keepalives": 1,
+                                     "keepalives_idle": 30,
+                                     "keepalives_interval": 10,
+                                     "keepalives_count": 5,
+                                 })
         except exc.SQLAlchemyError as e:
             log.error("Problems while initialising database access: " + str(e))
             return None

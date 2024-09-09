@@ -1,26 +1,21 @@
-import logging
-import configparser, schedule, time
+from core.core_log import setup_logging, get_logger
+import time
 from datetime import datetime, timedelta
-from api.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
-from persist.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler
-from hometemp import run_threaded
 
-for handler in logging.root.handlers[:]:
-    logging.root.removeHandler(handler)
-logging.basicConfig(filename='fetching.log',
-                    encoding='utf-8',
-                    level=logging.INFO)
+import schedule
 
-log = logging.getLogger('dwdfetcher')
-log.addHandler(logging.StreamHandler())
+from core.core_configuration import load_config, database_config, dwd_config, google_config, wettercom_config, \
+    hometemp_config
+from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler
+from endpoint.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
 
-config = configparser.ConfigParser()
-config.read("hometemp.ini")
+# GLOBAL Variables
+log = None
 
 
 def dwd_fetch_and_save():
-    auth = config["db"]
-    fetcher = DWDFetcher(config["dwd"]["station"])
+    auth = database_config()
+    fetcher = DWDFetcher(dwd_config()["station"])
     c_time, c_temp, dev = fetcher.get_dwd_data()
     if c_time is None or c_temp is None or dev is None:
         log.error(f"[DWD] Could not receive DWD data")
@@ -50,7 +45,8 @@ def dwd_fetch_and_save():
                         log.info(timestamp_to_update.strftime(
                             "%Y-%m-%d %H:%M:%S") + f" old/new: {old_temp}/{new_temp} {new_dev}")
                         if old_temp is None:
-                            handler.insert_dwd_data(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp, new_dev)
+                            handler.insert_dwd_data(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"), new_temp,
+                                                    new_dev)
                         elif old_temp != new_temp:
                             handler.update_temp_by_timestamp(timestamp_to_update.strftime("%Y-%m-%d %H:%M:%S"),
                                                              new_temp,
@@ -64,9 +60,9 @@ def dwd_fetch_and_save():
 
 
 def google_fetch_and_save():
-    auth = config["db"]
+    auth = database_config()
     fetcher = GoogleFetcher()
-    google_data = fetcher.get_weather_data(config["google"]["location"])
+    google_data = fetcher.get_weather_data(google_config()["location"])
     if google_data is None:
         log.error("[Google] Could not receive google data")
     else:
@@ -85,24 +81,24 @@ def google_fetch_and_save():
 
 def wettercom_fetch_and_save():
     # dyn is allowed to be null in database
-    wettercom_temp_static = WetterComFetcher().get_data_static(config["wettercom"]["url"][1:-1])
+    wettercom_temp_static = WetterComFetcher().get_data_static(wettercom_config()["url"][1:-1])
     if wettercom_temp_static is None:
         log.error("[Wetter.com] Failed to fetch static temp data. Skipping!")
         return
-    wettercom_temp_dyn = WetterComFetcher.get_data_dynamic(config["wettercom"]["url"][1:-1])
+    wettercom_temp_dyn = WetterComFetcher.get_data_dynamic(wettercom_config()["url"][1:-1])
     c_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if wettercom_temp_dyn is None:
         log.warning("[Wetter.com] Failed to fetch dynamic temp data.")
     log.info(
         f"[Wetter.com] Static vs Dynamic Temperature at {c_time} is {wettercom_temp_static}°C vs {wettercom_temp_dyn}°C")
-    auth = config["db"]
+    auth = database_config()
     handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
     handler.init_db_connection()
     handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
 
 
 def ulmde_fetch_and_save():
-    auth = config["db"]
+    auth = database_config()
     ulm_temp = UlmDeFetcher.get_data()
     if ulm_temp is None:
         log.error("[Ulm] Could not receive google data")
@@ -116,8 +112,7 @@ def ulmde_fetch_and_save():
 
 
 def main():
-    # Todo: integrate into hometemp for final release
-    log.info(f"------------------- Fetch DWD Measurements v{config['hometemp']['version']} -------------------")
+    log.info(f"------------------- Fetch DWD Measurements v{hometemp_config()['version']} -------------------")
     schedule.every(10).minutes.do(ulmde_fetch_and_save)
     schedule.every(10).minutes.do(dwd_fetch_and_save)
     schedule.every(10).minutes.do(google_fetch_and_save)
@@ -135,4 +130,8 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_logging(log_file='fetching.log')
+    load_config()
+    # Define all global variables
+    log = get_logger(__name__)
     main()

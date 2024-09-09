@@ -1,6 +1,35 @@
 # Project: HomeTemp
 
+## 0.4-BaseTemp
+
+Fork for testing new features and sensors
+
 ## 0.4
+
+This version adds the ability to create, receive and execute commands from external, introduces new instance `BaseTemp`
+and refactors the current module structure. Therefore, this release contains **BREAKING CHANGES**!
+
+- Refactored old modules `distribute`, `persist`, `util` and `visualize` into `core` modules
+- Moved `get_sensor_data`, `init_postgres_container` and `get_cpu_temperature` into related core modules
+- Renamed module `api` to `endpoint`
+- Added `BaseTemp`
+- Divided `crunch_numbers.ipynb` into one for HomeTemp and one for BaseTemp
+- Added wrapper `RpiCamController` for `rpicam-apps` command to be able to take pictures with raspberry pi camera module
+- Added `camera_test.py` for testing `RpiCamController`
+- Updated `EmailDistributor` to support CRUD for emails
+- Added `Command`, `CommandRequest`, `CommandParser` and `CommandService` to enable commanding
+- Added `command_test.py` as (test) demo for commanding
+- Restructured and added new fields in `default_hometemp.ini`
+- Restructured and updated dependencies
+- Replaced deprecated dependency `Adafruit-DHT` with new module `core.sensors.dht`
+- Updated logging and introduced new module `core.core_log`
+- Introduced new module `core.core_configuration` for handling config file parsing and publishing
+- Updated readme.md
+
+## 0.3.3
+
+- Added URI-save whitespace in `GoogleFetcher`
+- Updated `readme.md`
 
 ## 0.3.2
 
@@ -11,7 +40,8 @@
 ## 0.3.1
 
 - Added data fetcher, database handler and visualization for **Ulm.de**
-- Fixed deadlocks causing whole Pi to be unresponsive (database recovery mode was triggered by to many pending connections)
+- Fixed deadlocks causing whole Pi to be unresponsive (database recovery mode was triggered by to many pending
+  connections)
 
 ## 0.3
 
@@ -51,5 +81,5 @@
 
 ## 0.1
 
-Initial idea: Write script for periodically collecting room temperature and humidity and visulaize the data.
+Initial idea: Write script for periodically collecting room temperature and humidity and visualize the data.
 In the end, this data should be retrievable from everywhere (not just in local network), i.e. in an app or website.
