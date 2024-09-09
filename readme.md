@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.4-DEV
+# Project: HomeTemp v0.4
 
 The original idea of `HomeTemp` was to automatically measure the temperature and humidity of a room and create plots
 visualizing the data. Currently supported temperature and humidity sensors are `AM2302`. `DHT11` and `DHT22` sensor,
