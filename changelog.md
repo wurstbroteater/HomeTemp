@@ -9,7 +9,8 @@ Fork for testing new features and sensors
 This version adds the ability to create, receive and execute commands from external, introduces new instance `BaseTemp`
 and refactors the current module structure. Therefore, this release contains **BREAKING CHANGES**!
 
-- Refactored old modules `distribute`, `persist` and `visualize` into `core` module
+- Refactored old modules `distribute`, `persist`, `util` and `visualize` into `core` modules
+- Moved `get_sensor_data`, `init_postgres_container` and `get_cpu_temperature` into related core modules
 - Renamed module `api` to `endpoint`
 - Added `BaseTemp`
 - Divided `crunch_numbers.ipynb` into one for HomeTemp and one for BaseTemp
