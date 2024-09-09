@@ -13,11 +13,13 @@
 # This module is responsible for communication with temperature + humidity sensors DHT11, DHT22 or AM2302.
 # ----------------------------------------------------------------------------------------------------------------
 
-
+from core.core_log import get_logger
+from datetime import datetime
 import time
 
 import RPi.GPIO as GPIO
 
+log = get_logger(__name__)
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
@@ -244,3 +246,38 @@ class DHT:
 
     def __calculate_checksum(self, the_bytes):
         return the_bytes[0] + the_bytes[1] + the_bytes[2] + the_bytes[3] & 255
+
+
+# ----------------------------------------------------------------------------------------------------------------
+# Static utility methods
+# ----------------------------------------------------------------------------------------------------------------
+
+def get_sensor_data(used_pin, is_dht11_sensor):
+    """
+    Returns temperature and humidity data measures by AM2302 Sensor and the measurement timestamp.
+    """
+    max_tries = 15
+    tries = 0
+    used_sensor = DHT(used_pin, is_dht11_sensor)
+    while True:
+        if tries >= max_tries:
+            log.error(f"Failed to retrieve data from AM2302 sensor: Maximum retries reached.")
+            break
+        else:
+            time.sleep(2)
+            result = used_sensor.read()
+            # Different errors while reading the sensor data can happen often, just retry.
+            if result.error_code == DHTResult.ERR_NOT_FOUND:
+                tries += 1
+                log.warning(f"({tries}/{max_tries}) Sensor could not be found. Using correct pin?")
+                continue
+            elif not result.is_valid():
+                tries += 1
+                log.warning(f"({tries}/{max_tries}) Sensor data invalid")
+                continue
+            elif result.is_valid() and result.error_code == DHTResult.ERR_NO_ERROR:
+                # postgres expects timestamp ins ISO 8601 format
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                return result.temperature, result.humidity, timestamp
+
+    return None, None, None

@@ -2,57 +2,18 @@ from core.core_log import setup_logging, get_logger
 from core.core_configuration import load_config, database_config, hometemp_config
 import schedule, time, threading
 from datetime import datetime
-from gpiozero import CPUTemperature
-
 from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
 from core.command import CommandService
 from core.database import SensorDataHandler
-from core.virtualization import PostgresDockerManager
+from core.sensors.util import get_temperature
+from core.virtualization import PostgresDockerManager, init_postgres_container
 from core.plotting import draw_plots
-from core.sensors.dht import DHT, DHTResult
+from core.sensors.dht import get_sensor_data
 from core.sensors.camera import RpiCamController
 
 # GLOBAL Variables
 log = None
 command_service = None
-
-
-# ------------------------------- Raspberry Pi Temps ----------------------------------------------
-
-def get_temperature():
-    cpu = CPUTemperature()
-    return float(cpu.temperature)
-
-
-def get_sensor_data(used_pin):
-    """
-    Returns temperature and humidity data measures by DHT11 Sensor and the measurement timestamp.
-    """
-    max_tries = 20
-    tries = 0
-    DHT_SENSOR = DHT(used_pin, True)
-    while True:
-        if tries >= max_tries:
-            log.error(f"Failed to retrieve data from DHT11 sensor: Maximum retries reached.")
-            break
-        else:
-            time.sleep(2)
-            result = DHT_SENSOR.read()
-            if result.error_code == DHTResult.ERR_NOT_FOUND:
-                tries += 1
-                log.warning(f"({tries}/{max_tries}) Sensor could not be found. Using correct pin?")
-                # maybe exit here but invastige when this error occurs (should never)
-                continue
-            elif not result.is_valid():
-                tries += 1
-                log.warning(f"({tries}/{max_tries}) Sensor data invalid")
-                continue
-            elif result.is_valid() and result.error_code == DHTResult.ERR_NO_ERROR:
-                # postgres expects timestamp ins ISO 8601 format
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                return result.temperature, result.humidity, timestamp
-
-    return None, None, None
 
 
 def _get__visualization_data():
@@ -136,7 +97,7 @@ def collect_and_save_to_db():
     handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
     handler.init_db_connection()
     cpu_temp = get_temperature()
-    room_temp, humidity, timestamp = get_sensor_data(int(hometemp_config()["sensor_pin"]))
+    room_temp, humidity, timestamp = get_sensor_data(int(hometemp_config()["sensor_pin"]), True)
     if room_temp is not None or humidity is not None or timestamp is not None:
         log.info(
             "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
@@ -152,26 +113,9 @@ def collect_and_save_to_db():
     log.info("Done")
 
 
-def init_postgres_container():
-    log.info("Checking for existing database")
-    auth = database_config()
-    docker_manager = PostgresDockerManager(auth["db_name"], auth["db_user"], auth["db_pw"])
-    container_name = auth["container_name"]
-    if docker_manager.container_exists(container_name):
-        log.info("Reusing existing database container")
-        return docker_manager.start_container(container_name)
-    else:
-        log.info("No database container found. Creating database container")
-        if docker_manager.pull_postgres_image():
-            docker_manager.create_postgres_container(container_name)
-            return docker_manager.start_container(container_name)
-
-    return False
-
-
 def main():
     log.info(f"------------------- HomeTemp v{hometemp_config()['version']} -------------------")
-    if not init_postgres_container():
+    if not init_postgres_container(database_config()):
         log.error("Postgres container startup error! Shutting down ...")
         exit(1)
         # after restart, database needs some time to start
