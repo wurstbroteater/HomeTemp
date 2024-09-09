@@ -15,7 +15,8 @@ log = get_logger(__name__)
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# TODO: Docu
+# The data distribution module. Contains EmailDistributor for publishing emails with content.
+# Also includes static util methods for creating certain types of mails.
 # ----------------------------------------------------------------------------------------------------------------
 class EmailDistributor:
 

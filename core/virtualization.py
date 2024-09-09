@@ -6,7 +6,8 @@ log = get_logger(__name__)
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# TODO: Docu
+# The virtualization module. Defines a base class DockerManager which every Manager releated to handling
+# docker images or containers must implement like the PostgresDockerManager.
 # ----------------------------------------------------------------------------------------------------------------
 
 class DockerManager:

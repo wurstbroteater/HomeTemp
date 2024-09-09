@@ -3,9 +3,9 @@ import logging.config
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# TODO: Docu
-# setup_logging() should be used in main
-# get_logger should be used in modules to register to logging
+# Logging management module.
+# - The setup_logging() should be used in main and should always be called (once) before any logging takes place
+# - The get_logger should be used in modules to register to logging
 # ----------------------------------------------------------------------------------------------------------------
 
 

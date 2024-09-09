@@ -13,6 +13,10 @@ from selenium.webdriver.common.by import By
 log = get_logger(__name__)
 
 
+# ----------------------------------------------------------------------------------------------------------------
+# The fetching module. Contains data fetcher for retireving data from defined endpoints.
+# ----------------------------------------------------------------------------------------------------------------
+
 class UlmDeFetcher:
 
     @staticmethod

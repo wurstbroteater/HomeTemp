@@ -8,7 +8,7 @@ log = get_logger(__name__)
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# TODO: Docu
+# The visualization module. Provides means to create a plot for sensor data and is able to save them to pdf.
 # ----------------------------------------------------------------------------------------------------------------
 
 def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True, save_path=None):

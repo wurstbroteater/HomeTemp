@@ -1,9 +1,14 @@
 from core.core_log import get_logger
-# pip install pillow
 from PIL import Image
 import subprocess
 
 log = get_logger(__name__)
+
+# ----------------------------------------------------------------------------------------------------------------
+# This module is responsible for communication with a camera connected to the Raspberry Pi.
+# It supports the 5MP Raspberry Pi camera module with an OV5647 sensor which is accessed via the 
+# bash command rpicam-apps.
+# ----------------------------------------------------------------------------------------------------------------
 
 # Dimension for 5MP Raspberry Pi camera module static image resolution default
 DIMENSION_CAMERA_DEFAULT = (2592, 1944)

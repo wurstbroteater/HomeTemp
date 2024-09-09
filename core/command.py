@@ -9,8 +9,13 @@ log = get_logger(__name__)
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# TODO: Docu
+# This module is responsible for parsing, processing and holding command information.
+# A Command consists of an id, passed parameters, a function and function parameters to executre when the id was
+# parsed. Currently, commands are retrieved via email, so CommandRequest is a data class associating a valid 
+# command with its requester, i.e., the sender of the mail.
+# Supported commands needs to be added via add_command method before executing get_received_command_requestes
 # ----------------------------------------------------------------------------------------------------------------
+
 
 class Command:
 
@@ -103,12 +108,9 @@ class CommandService:
 class CommandParser:
 
     def __init__(self):
-        # for command validation
         # always treat prefix as case-insensitive
         self.valid_command_prefixes = list(
             map(lambda p: str(p).lower(), eval(hometemp_config()['valid_command_prefix'])))
-        # default supported commands
-        # supported commands needs to be added via add_command method before executing get_received_command_requestes
         # TODO: should be Set
         self.valid_commands = []
 
