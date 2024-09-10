@@ -1,8 +1,8 @@
 # Project: HomeTemp
 
-## 0.4-BaseTemp
+## 0.5
 
-Fork for testing new features and sensors
+TBD
 
 ## 0.4
 
