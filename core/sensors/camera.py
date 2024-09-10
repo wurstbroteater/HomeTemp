@@ -77,10 +77,11 @@ class RpiCamController:
             }
 
     def _rotate_image(self, image_path: str, rotation: int) -> bool:
-        image = Image.open(image_path)
-        # 'expand' to resize for the whole image
-        rotated_image = image.rotate(rotation, expand=True)
-        rotated_image.save(image_path)
+        if rotation != 0:
+            image = Image.open(image_path)
+            # 'expand' to resize for the whole image
+            rotated_image = image.rotate(rotation, expand=True)
+            rotated_image.save(image_path)
         return True
 
     def capture_image(self, file_path: str = "test", encoding: str = "png", rotation: int = 0,

@@ -4,6 +4,9 @@
 
 TBD
 
+- Optimized `RpiCamController._rotate_image` to update an image only if the rotation parameter is not 0
+
+
 ## 0.4
 
 This version adds the ability to create, receive and execute commands from external, introduces new instance `BaseTemp`
