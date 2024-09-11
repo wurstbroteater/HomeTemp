@@ -9,6 +9,7 @@ log = get_logger(__name__)
 def create_timelapse(input_folder: str, output_video_path: str, image_encoding="png", fps: int = 2) -> None:
     # List to store the image file paths
     image_files = []
+    image_encoding = "." + image_encoding
     for filename in os.listdir(input_folder):
         if filename.endswith(image_encoding):
             try:
