@@ -5,7 +5,7 @@
 TBD
 
 - Optimized `RpiCamController._rotate_image` to update an image only if the rotation parameter is not 0
-
+- Added timelapse video creation of a set of pictures with the name format '%Y-%m-%d-%H:%M:%S'
 
 ## 0.4
 

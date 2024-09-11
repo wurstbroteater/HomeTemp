@@ -24,7 +24,8 @@ picture via commanding.
 - Recovering sensor data from log file
 - Data fetching from various API endpoints/websites
 - Commanding via email
-- Taking pictures via camera module (only tested on **Raspberry Pi 4 Model B**)
+- Taking pictures (timed or commanded) via camera module (only tested on **Raspberry Pi 4 Model B**)
+- Create timelapse video of a set of pictures
 
 ## Installation Instructions
 
@@ -43,7 +44,7 @@ requirements file.
 ```sh
 sudo apt-get install libpq-dev xvfb
 ## Module names
-pip install pillow rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4 jupyter_client jupyter_core
+pip install opencv-python pillow rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4 jupyter_client jupyter_core
 # or
 #pip install -r requirements.txt
 ```
