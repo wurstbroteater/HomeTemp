@@ -6,15 +6,14 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from typing import Tuple, List, Optional
 from datetime import datetime, timedelta
-import matplotlib.gridspec as gridspec
 import logging
 
 log = logging.getLogger(__name__)
 
 custom_theme = {
-    # 'context': 'notebook',   # Can be 'paper', 'notebook', 'talk', 'poster'
+    'context': 'paper',   # Can be 'paper', 'notebook', 'talk', 'poster'
     'style': 'darkgrid',  # Can be 'darkgrid', 'whitegrid', 'dark', 'white', 'ticks'
-    'palette': 'deep'  # Can be 'deep', 'muted', 'bright', 'pastel', etc.
+    'palette': 'deep'     # Can be 'deep', 'muted', 'bright', 'pastel', etc.
 }
 
 
@@ -50,6 +49,16 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None
 
     plots_w_params = [df_temp_plt_params, df_temp_24_plt_params, df_hum_plt_params, df_hum_24_plt_params]
     combined_fig, _ = create_lineplots(plots_w_params, theme=custom_theme, rows=2, cols=2)
+
+    if with_save:
+        name = datetime.now().strftime("%d-%m-%Y")
+        if save_path is None:
+            loc = f"plots/{name}.pdf"
+        else:
+            loc = save_path
+        combined_fig.savefig(loc)
+        log.info(f"Saved plots to {loc}")
+
     return combined_fig
 
 
@@ -131,7 +140,6 @@ def create_lineplots(plot_params: List[dict],
                      rows: int = 1,
                      cols: int = 1,
                      theme: Optional[dict] = None,
-                     save_path: str = None,
                      despine=False) -> Tuple[plt.Figure, List[plt.Axes]]:
     """
     Create multiple or one dimensional subplots of line plots using a list of dictionaries for plot parameters.
@@ -143,7 +151,6 @@ def create_lineplots(plot_params: List[dict],
     :param rows: The number of rows in the figure (default is 1).
     :param cols: The number of columns in the figure (default is 1).
     :param theme: Optional dictionary to customize Seaborn theme (default is None).
-    :param save_path: Optional path to save the figure as a file (default is None).
     :param despine: Optional flag to despine the subplots (default is False).
     :return: A tuple containing the Figure and list of Axes objects.
     """
@@ -199,11 +206,5 @@ def create_lineplots(plot_params: List[dict],
         ax_in_subplot.legend()
 
     plt.tight_layout()
-
-    if save_path is not None:
-        save_file = os.path.join(save_path, 'multiple_plots.pdf')
-        fig.savefig(save_file)
-        log.info(f'Plot saved to {save_file}')
-
     plt.close(fig)
     return fig, axes
