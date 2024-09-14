@@ -12,6 +12,40 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def main_plot_params(fr,title, marker=None, color=None, alpha=None, markersize=None):
+    out = {
+        "data": fr,
+        "title": title,
+        # if set overwrite x/y label with this
+        "xlabel": "Time",
+        "ylabel": "Temp (°C)",
+        # mandatory seaborn parameters
+        "label": "Home",
+        "x": "timestamp",
+        "y" : "room_temp",
+    }
+    # optional seaborn parameters
+    if color:
+        out["color"] = color
+    if marker:
+        out["marker"] = marker
+    if alpha:
+        out["alpha"] = alpha
+    if markersize:
+        out["markersize"] = markersize
+    
+    return out
+
+def inner_plots_params(fr, label, x, y, alpha=0.6):
+    return {
+        "data": fr,
+        "label": "Home",
+        "x": "timestamp",
+        "y" : "room_temp",
+       "alpha" :alpha
+    }
+
+
 def create_multiple_lineplots(plot_params: List[dict], 
                               fig_size: Tuple[int, int] = (25, 12), 
                               theme: Optional[dict] = None, 
@@ -48,7 +82,8 @@ def create_multiple_lineplots(plot_params: List[dict],
         # Ensure axes is a list even if there's only one plot
         axes = [axes]  
     
-    for idx, plot_dict in enumerate(plot_params):
+    for idx, wrapper_dict in enumerate(plot_params):
+        plot_dict = wrapper_dict["main"]
         data = plot_dict.pop('data')
         title = plot_dict.pop('title')
         xlabel = plot_dict.pop('xlabel', plot_dict.get('x'))
@@ -56,6 +91,10 @@ def create_multiple_lineplots(plot_params: List[dict],
         ax_in_subplot = axes[idx]
         print(plot_dict)
         sns.lineplot(data=data, ax=ax_in_subplot, **plot_dict)
+        inner_plots = wrapper_dict.get('inner', None)
+        if inner_plots:
+            for inner_plot_dicts in inner_plots:
+                    sns.lineplot(label="Wetter.com Live", x="timestamp", y="temp_dyn", alpha=0.6, data=wettercom_df)
         if despine:
             sns.despine(left=True, bottom=True)
 
