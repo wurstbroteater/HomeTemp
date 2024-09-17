@@ -65,8 +65,9 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None
 # -
 # -------------------------------------------------- Util Methods --------------------------------------------------
 # -
-def last_24h_df(_df: pd.DataFrame) -> pd.DataFrame:
-    last_24h = datetime.now() - timedelta(hours=24)
+def last_24h_df(_df: pd.DataFrame, start_time=None) -> pd.DataFrame:
+    start = datetime.now()
+    last_24h = (start if start_time is None else start_time) - timedelta(hours=24)
     return _df[_df['timestamp'] >= last_24h]
 
 
