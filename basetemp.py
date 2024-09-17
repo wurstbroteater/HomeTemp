@@ -104,10 +104,15 @@ def collect_and_save_to_db():
                                                                                   humidity))
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp,
                                             cpu_temp=cpu_temp)
+        # TODO: make customizable
         # heat warning
         max_heat = 28.5
-        if room_temp > max_heat:
-            log.warning(f"Sending heat warning because room temp is above {max_heat}°C")
+        is_overheating = room_temp > max_heat
+        min_heat = 17.0
+        if is_overheating or room_temp < min_heat:
+            indicator = "above" if is_overheating else "below"
+            extremum = max_heat if is_overheating else min_heat
+            log.warning(f"Sending heat warning because room temp is {indicator} {extremum}°C")
             send_heat_warning_email(room_temp)
 
     log.info("Done")
