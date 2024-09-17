@@ -21,31 +21,36 @@ custom_theme = {
 # -------------------------------------------------- Main Methods --------------------------------------------------
 # -
 def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True, save_path=None):
-    df_temp_inner_plt_params = [
-        inner_plots_params(dwd_df, "DWD Forecast", "timestamp", "temp"),
-        inner_plots_params(google_df, "Google Forecast", "timestamp", "temp"),
-        inner_plots_params(wettercom_df, "Wetter.com Forecast", "timestamp", "temp_stat"),
-        inner_plots_params(wettercom_df, "Wetter.com Live", "timestamp", "temp_dyn"),
-        inner_plots_params(ulmde_df, "Ulm Forecast", "timestamp", "temp")
-    ]
-    df_temp_24_inner_plt_params = [
-        inner_24_plots_params(dwd_df, "DWD Forecast", "timestamp", "temp"),
-        inner_24_plots_params(google_df, "Google Forecast", "timestamp", "temp"),
-        inner_24_plots_params(wettercom_df, "Wetter.com Forecast", "timestamp", "temp_stat"),
-        inner_24_plots_params(wettercom_df, "Wetter.com Live", "timestamp", "temp_dyn", marker="s"),
-        inner_24_plots_params(ulmde_df, "Ulm Forecast", "timestamp", "temp")
-    ]
+    df_temp_inner_plt_params = []
+    df_temp_24_inner_plt_params = []
+    if dwd_df is not None:
+        df_temp_inner_plt_params.append(inner_plots_params(dwd_df, "DWD Forecast", "timestamp", "temp"))
+        df_temp_24_inner_plt_params.append(inner_24_plots_params(dwd_df, "DWD Forecast", "timestamp", "temp"))
+    if google_df is not None:
+        df_temp_inner_plt_params.append(inner_plots_params(google_df, "Google Forecast", "timestamp", "temp"),)
+        df_temp_24_inner_plt_params.append( inner_24_plots_params(google_df, "Google Forecast", "timestamp", "temp"))
+    if wettercom_df is not None:
+        df_temp_inner_plt_params.append(inner_plots_params(wettercom_df, "Wetter.com Forecast", "timestamp", "temp_stat"))
+        df_temp_inner_plt_params.append(inner_plots_params(wettercom_df, "Wetter.com Live", "timestamp", "temp_dyn"))
+        df_temp_24_inner_plt_params.append(inner_24_plots_params(wettercom_df, "Wetter.com Forecast", "timestamp", "temp_stat"))
+        df_temp_24_inner_plt_params.append(inner_24_plots_params(wettercom_df, "Wetter.com Live", "timestamp", "temp_dyn", marker="s"))
+    if ulmde_df is not None:
+        df_temp_inner_plt_params.append(inner_plots_params(ulmde_df, "Ulm Forecast", "timestamp", "temp"))
+        df_temp_24_inner_plt_params.append(inner_24_plots_params(ulmde_df, "Ulm Forecast", "timestamp", "temp"))
+
     df_temp_plt_params = {"main": main_plot_params(df, "Temperature Over Time"), "inner": df_temp_inner_plt_params}
     df_temp_24_plt_params = {
         'main': main_plot_params(last_24h_df(df), "Temperature Last 24 Hours", marker='o', markersize=6),
         "inner": df_temp_24_inner_plt_params}
 
-    df_hum_plt_params = {"main": main_plot_params(df, "Humidity Over Time", y="humidity", color="purple"),
-                         "inner": [inner_plots_params(google_df, "Google Forecast", "timestamp", "humidity")]}
+    df_hum_plt_params = {"main": main_plot_params(df, "Humidity Over Time", y="humidity", color="purple")}
+    if google_df is not None: 
+         df_hum_plt_params["inner"] = [inner_plots_params(google_df, "Google Forecast", "timestamp", "humidity")]
     df_hum_24_plt_params = {
         'main': main_plot_params(last_24h_df(df), "Humidity Last 24 Hours", marker='o', markersize=6, color="purple",
-                                 ylabel="Humidity (%)", y="humidity"),
-        "inner": [inner_24_plots_params(google_df, "Google Forecast", "timestamp", "humidity", alpha=None)]}
+                                 ylabel="Humidity (%)", y="humidity")}
+    if google_df is not None: 
+        df_hum_24_plt_params["inner"] = [inner_24_plots_params(google_df, "Google Forecast", "timestamp", "humidity", alpha=None)]
 
     plots_w_params = [df_temp_plt_params, df_temp_24_plt_params, df_hum_plt_params, df_hum_24_plt_params]
     combined_fig, _ = create_lineplots(plots_w_params, theme=custom_theme, rows=2, cols=2)
