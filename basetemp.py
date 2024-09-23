@@ -106,7 +106,7 @@ def collect_and_save_to_db():
                                             cpu_temp=cpu_temp)
         # TODO: make customizable
         # heat warning
-        max_heat = 28.5
+        max_heat = 28.9
         is_overheating = room_temp > max_heat
         min_heat = 17.0
         if is_overheating or room_temp < min_heat:
