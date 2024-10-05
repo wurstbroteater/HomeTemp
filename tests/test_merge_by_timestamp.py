@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime, timedelta
-from core.p import last_24h_df, merge_temperature_by_timestamp
+from core.plotting import last_24h_df, merge_temperature_by_timestamp
 
 base_time = datetime(2024, 10, 5, 12, 0, 0)
 
@@ -36,11 +36,11 @@ df4 = pd.DataFrame({
 })
 
 dataframes_info = [
-    {'df': df1, 'name': 'df1', 'keys': ['temp']},
-    {'df': df2, 'name': 'df2', 'keys': ['temp']},
-    {'df': df3, 'name': 'df3', 'keys': ['temp_stat', 'temp_dyn']},
+    {'data': df1, 'name': 'df1', 'keys': ['temp']},
+    {'data': df2, 'name': 'df2', 'keys': ['temp']},
+    {'data': df3, 'name': 'df3', 'keys': ['temp_stat', 'temp_dyn']},
     #{'df': df4, 'name': 'df4', 'keys': ['temp']},  # Empty dataframe
-    {'df': main_df, 'name': 'main', 'keys': ['room_temp'], 'main': True}
+    {'data': main_df, 'name': 'main', 'keys': ['room_temp'], 'main': True}
 ]
 
 #dataframes_info = [{'df': last_24h_df(ulmde_df), 'name': 'ulm','keys': ['temp']},{'df':last_24h_df(dwd_df),'name': 'dwd', 'keys': ['temp']},{'df':last_24h_df(wettercom_df),'name': 'wettercom', 'keys': ['temp_stat', 'temp_dyn']},{'df': last_24h_df(google_df),'name': 'google', 'keys': ['temp']},{'df': last_24h_df(df),'name': 'main', 'keys': ['room_temp'], 'main': True}]
