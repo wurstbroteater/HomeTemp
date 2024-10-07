@@ -27,7 +27,7 @@ class UlmDeFetcher:
         try:
             # set connect and read timeout to 5 seconds
             response = requests.get('https://www.ulm.de/', timeout=(5, 5))
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Ulm.de connection problem: " + str(e))
             return None
 
@@ -66,7 +66,7 @@ class WetterComFetcher:
         try:
             # set connect and read timeout to 5 seconds
             response = requests.get(url, timeout=(5, 5))
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Wetter.com connection problem: " + str(e))
             return None
 
@@ -174,7 +174,7 @@ class Fetcher:
                 return self._handle_ok_status_code(response)
             else:
                 return self._handle_bad_status_code(code)
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Creating the connection failed with error: {e}")
             return None
 
@@ -221,6 +221,7 @@ class DWDFetcher(Fetcher):
 
         # from milliseconds to seconds
         start_measurement_time_s = self.data["start"] / 1000
+        # TODO: Fix deprecated method usage
         m_time = datetime.utcfromtimestamp(start_measurement_time_s)
         diff = current_time - m_time
         return int(diff.total_seconds() / (self.data["timeStep"] / 1000))
