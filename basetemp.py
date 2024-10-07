@@ -134,10 +134,16 @@ def main():
     command_service.add_new_command((vis_cmd_name, [], _create_visualization_commanded, vis_fun_params))
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
-    schedule.every().day.at("11:45").do(run_threaded, create_visualization_timed)
-    schedule.every().day.at("19:00").do(run_threaded, take_picture_timed)
-    schedule.every().day.at("03:00").do(run_threaded, take_picture_timed)
-    schedule.every().day.at("10:30").do(run_threaded, take_picture_timed)
+    # Phase 1
+    #schedule.every().day.at("11:45").do(run_threaded, create_visualization_timed)
+    #schedule.every().day.at("19:00").do(run_threaded, take_picture_timed)
+    #schedule.every().day.at("03:00").do(run_threaded, take_picture_timed)
+    #schedule.every().day.at("10:30").do(run_threaded, take_picture_timed)
+    # Phase 2
+    schedule.every().day.at("9:15").do(run_threaded, create_visualization_timed)
+    schedule.every().day.at("08:45").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("04:00").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("23:00").do(run_threaded, take_picture_timed)
     schedule.every(17).minutes.do(run_threaded, run_received_commands)
 
     log.info("finished initialization")
