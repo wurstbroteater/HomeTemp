@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.4
+# Project: HomeTemp v0.5-DEV
 
 The original idea of `HomeTemp` was to automatically measure the temperature and humidity of a room and create plots
 visualizing the data. Currently supported temperature and humidity sensors are `AM2302`. `DHT11` and `DHT22` sensor,
@@ -24,7 +24,8 @@ picture via commanding.
 - Recovering sensor data from log file
 - Data fetching from various API endpoints/websites
 - Commanding via email
-- Taking pictures via camera module (only tested on **Raspberry Pi 4 Model B**)
+- Taking pictures (timed or commanded) via camera module (only tested on **Raspberry Pi 4 Model B**)
+- Create timelapse video of a set of pictures
 
 ## Installation Instructions
 
@@ -43,7 +44,7 @@ requirements file.
 ```sh
 sudo apt-get install libpq-dev xvfb
 ## Module names
-pip install pillow rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4 jupyter_client jupyter_core
+pip install opencv-python pillow rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4 jupyter_client jupyter_core
 # or
 #pip install -r requirements.txt
 ```

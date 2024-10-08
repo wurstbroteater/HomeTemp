@@ -104,10 +104,15 @@ def collect_and_save_to_db():
                                                                                   humidity))
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp,
                                             cpu_temp=cpu_temp)
+        # TODO: make customizable
         # heat warning
-        max_heat = 28.5
-        if room_temp > max_heat:
-            log.warning(f"Sending heat warning because room temp is above {max_heat}°C")
+        max_heat = 28.9
+        is_overheating = room_temp > max_heat
+        min_heat = 17.0
+        if is_overheating or room_temp < min_heat:
+            indicator = "above" if is_overheating else "below"
+            extremum = max_heat if is_overheating else min_heat
+            log.warning(f"Sending heat warning because room temp is {indicator} {extremum}°C")
             send_heat_warning_email(room_temp)
 
     log.info("Done")
@@ -129,10 +134,16 @@ def main():
     command_service.add_new_command((vis_cmd_name, [], _create_visualization_commanded, vis_fun_params))
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
-    schedule.every().day.at("11:45").do(run_threaded, create_visualization_timed)
-    schedule.every().day.at("19:00").do(run_threaded, take_picture_timed)
-    schedule.every().day.at("03:00").do(run_threaded, take_picture_timed)
-    schedule.every().day.at("10:30").do(run_threaded, take_picture_timed)
+    # Phase 1
+    #schedule.every().day.at("11:45").do(run_threaded, create_visualization_timed)
+    #schedule.every().day.at("19:00").do(run_threaded, take_picture_timed)
+    #schedule.every().day.at("03:00").do(run_threaded, take_picture_timed)
+    #schedule.every().day.at("10:30").do(run_threaded, take_picture_timed)
+    # Phase 2
+    schedule.every().day.at("09:15").do(run_threaded, create_visualization_timed)
+    schedule.every().day.at("08:45").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("04:00").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("23:00").do(run_threaded, take_picture_timed)
     schedule.every(17).minutes.do(run_threaded, run_received_commands)
 
     log.info("finished initialization")
@@ -140,7 +151,7 @@ def main():
     collect_and_save_to_db()
     # create_visualization_timed()
     time.sleep(1)
-    # take_picture_timed()
+    #take_picture_timed()
     run_received_commands()
     log.info("entering main loop")
     while True:
