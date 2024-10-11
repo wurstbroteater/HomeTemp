@@ -140,8 +140,8 @@ def main():
     #schedule.every().day.at("03:00").do(run_threaded, take_picture_timed)
     #schedule.every().day.at("10:30").do(run_threaded, take_picture_timed)
     # Phase 2
-    schedule.every().day.at("09:15").do(run_threaded, create_visualization_timed)
-    schedule.every().day.at("08:45").do(run_threaded, take_picture_timed)
+    schedule.every().day.at("08:30").do(run_threaded, create_visualization_timed)
+    schedule.every().day.at("08:15").do(run_threaded, take_picture_timed)
     schedule.every().day.at("04:00").do(run_threaded, take_picture_timed)
     schedule.every().day.at("23:00").do(run_threaded, take_picture_timed)
     schedule.every(17).minutes.do(run_threaded, run_received_commands)
