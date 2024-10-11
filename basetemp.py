@@ -35,7 +35,7 @@ def _get__visualization_data():
 def _take_picture(name, encoding="png"):
     rpi_cam = RpiCamController()
     # file name is set in capture_image to filepath.encoding which is png on default
-    return rpi_cam.capture_image(file_path=name, encoding=encoding, rotation=90)
+    return rpi_cam.capture_image(file_path=name, encoding=encoding)
 
 
 def take_picture_timed():
