@@ -28,6 +28,9 @@ def create_timelapse(input_folder: str, output_video_path: str, image_encoding="
         video = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
         for image_file in image_files:
             img = cv2.imread(image_file)
+            if img.shape[0] != height or img.shape[1] != width:
+                # Resize image to match the first frame's dimensions
+                img = cv2.resize(img, (width, height))
             video.write(img)
         video.release()
         log.info(f"Timelapse video saved as {output_video_path}")
