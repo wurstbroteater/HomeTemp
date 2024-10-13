@@ -60,7 +60,10 @@ On a raspberry pi, install chromium driver with the following command and set pe
 
 ```sh
 sudo apt-get install chromium-chromedriver
-sudo chmod -R 755 /usr/lib/chromium-browser 
+sudo chmod -R 755 /usr/lib/chromium-browser
+# or if not existing
+sudo chmod -R 755 /usr/bin/chromedriver
+
 ```
 
 ## Start Instructions

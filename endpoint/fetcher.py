@@ -96,7 +96,7 @@ class WetterComFetcher:
         display.start()
         options = Options()
         options.add_argument('--disable-blink-features=AutomationControlled')
-        service = webdriver.ChromeService(executable_path='/usr/lib/chromium-browser/chromedriver')
+        service = webdriver.ChromeService(executable_path='/usr/bin/chromedriver')
         driver = webdriver.Chrome(service=service, options=options)
         timeout_s = 30
         driver.set_page_load_timeout(timeout_s)
