@@ -2,6 +2,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from enum import Enum
 from matplotlib.axes import Axes
 from typing import Tuple, List, Optional,  Dict, Any
 from datetime import datetime, timedelta
@@ -21,10 +22,42 @@ custom_theme = {
     'palette': 'deep'     # Can be 'deep', 'muted', 'bright', 'pastel', etc.
 }
 
+class DATA(Enum):
+    # enumIdx, keys
+    Main = 1, ["room_temp"]
+    DWD_DE = 2, ["temp"]
+    GOOGLE_COM = 3, ["temp"]
+    WETTER_COM = 4, ["temp_stat", "temp_dyn"]
+    ULM_DE = 5, ["temp"]
+
+
+class PlotData:
+
+     def __init__(self, name: DATA, main:bool, plot_params):
+         self.name = name
+         self.main = main
+         self.plot_params =plot_params
+
+
 
 # -
 # -------------------------------------------------- Main Methods --------------------------------------------------
 # -
+
+
+# For main plot
+# plotdata = [{"name": "google", "main": True,known_data=DATA.GOOGLE_COM, "df":google_df}]
+# -> merge_subplots_for=[DATA.MAIN, DATA.GOOGLE_COM]
+# For non main
+# plotdata = [{"name": "ulm",known_data=DATA.ULM_DE, "df":ulm_df}]
+def draw_complete_summary(merge_subplots_for=[], plot_data=[{"name": "someName", "df":"dataframe reference", "main": True}], save_path="somePath or None means no save"):
+    pass
+
+def _create_representation(merge_subplots_for=[], plot_data=[]):
+    pass
+
+
+
 def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True, save_path=None):
     df_temp_inner_plt_params = []
     df_temp_24_inner_plt_params = []
@@ -200,31 +233,6 @@ def merge_temperature_by_timestamp(dataframes_info: List[Dict[str, Any]], timest
     - NaN values in temperature columns are handled gracefully, and will not affect the calculation of min, max, 
       or mean values for each row.
     - If a DataFrame is empty or has no valid data within the tolerance, its contribution to the result will be ignored.
-
-    Example
-    -------
-    >>> main_df = pd.DataFrame({
-    ...     'timestamp': [pd.Timestamp('2024-10-05 12:00:00'), pd.Timestamp('2024-10-05 12:10:00')],
-    ...     'room_temp': [22.0, 21.8]
-    ... })
-    >>> df1 = pd.DataFrame({
-    ...     'timestamp': [pd.Timestamp('2024-10-05 12:00:00'), pd.Timestamp('2024-10-05 12:10:00')],
-    ...     'temp': [15.2, 16.1]
-    ... })
-    >>> df2 = pd.DataFrame({
-    ...     'timestamp': [pd.Timestamp('2024-10-05 12:00:00'), pd.Timestamp('2024-10-05 12:07:00')],
-    ...     'temp': [14.9, 15.5]
-    ... })
-    >>> dataframes_info = [
-    ...     {'df': df1, 'keys': ['temp']},
-    ...     {'df': df2, 'keys': ['temp']},
-    ...     {'df': main_df, 'keys': ['room_temp'], 'main': True}
-    ... ]
-    >>> result_df = merge_and_calculate_temperature_stats(dataframes_info, tolerance=5)
-    >>> log.info(result_df)
-              timestamp  inside_temp  outside_min  outside_max  outside_mean
-    0 2024-10-05 12:00:00         22.0         14.9         15.2         15.05
-    1 2024-10-05 12:10:00         21.8         15.5         16.1         15.80
     """
 
     main_df_info = next((df_info for df_info in dataframes_info if df_info.get('main', False)), None)
