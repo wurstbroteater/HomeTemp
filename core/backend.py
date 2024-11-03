@@ -13,6 +13,13 @@ MAX_RETRIES = 3
 RETRY_DELAY_S = 2 
 log = get_logger(__name__)
 
+def simulate_command_processing(command: str) -> str:
+    """Simulate processing steps for the given command."""
+    for step in ["processing", "command completed"]:
+        time.sleep(5)
+        log.info(str(step))
+        yield step
+
 class RequestProcessor:
     _instance: 'RequestProcessor' = None  # Class variable to hold the singleton instance
 
@@ -40,17 +47,11 @@ class RequestProcessor:
                         log.info(f"Processing command: {command}")
                         self.send_status_update(server_socket, "queued")
                         
-                        for status in self.simulate_command_processing(command):
+                        for status in simulate_command_processing(command):
                             self.send_status_update(server_socket, status)
 
                         self.send_status_update(server_socket, "success: command ended with status 'completed'")
                         self.is_processing = False
-
-    def simulate_command_processing(self, command: str) -> str:
-        """Simulate processing steps for the given command."""
-        yield "processing"
-        time.sleep(2)  # Simulating time taken to process the command
-        yield "command completed"
 
     def send_status_update(self, server_socket: socket.socket, message: str) -> None:
         """Send a status update to the server."""
@@ -77,34 +78,57 @@ def connect_to_server() -> socket.socket:
     log.info("Max attempts reached. Exiting.")
     return None
 
+def is_socket_closed(sock: socket.socket) -> bool:
+    out = False
+    try:
+        # this will try to read bytes without blocking and also without removing them from buffer (peek only)
+        data = sock.recv(16, socket.MSG_DONTWAIT | socket.MSG_PEEK)
+        if len(data) == 0:
+            out= True
+    except BlockingIOError:
+        out= False  # socket is open and reading from it would block
+    except ConnectionResetError:
+        out= True  # socket was closed for some other reason
+    except Exception as e:
+        log.exception("unexpected exception when checking if a socket is closed")
+        out= False
+    if not out:
+        log.info("Server connection closed")
+    return out
+
 def main() -> None:
     """Main client function to handle connections and command processing."""
     processor = RequestProcessor()
     command_thread = None
-
+    server_socket = connect_to_server()
     while True:
-        server_socket = connect_to_server()
-        if server_socket is None:
-            break
-        else:
+        try:
             if command_thread is None:
                 command_thread = threading.Thread(target=processor.process_commands, args=(server_socket,), daemon=True)
                 command_thread.start() 
 
-        while True:
-            try:
-                # Wait for command from server
-                command = server_socket.recv(1024).decode()
-                if command:
-                    processor.add_command(command)
-                else:
-                    log.info("Server connection closed.")
-                    break 
-            except (socket.error):
-                log.info("Error receiving command. Reconnecting...")
-                break 
+            while True:
+                log.info("Checking for commands")
+                try:
+                    # Wait for command from server
+                    command = server_socket.recv(1024).decode()
+                    if command:
+                        processor.add_command(command)
+                    time.sleep(2)
+                except (socket.error):
+                    log.info("Error receiving command. Reconnecting...")
+                    break
+               
+                if is_socket_closed(server_socket):
+                    break
+        except KeyboardInterrupt:
+            log.info("User initiated shutdown")
+            break
 
+        time.sleep(2)
+        
     log.info("Client shutting down.")
+    server_socket.close()
 
 if __name__ == "__main__":
     main()
