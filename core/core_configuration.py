@@ -64,6 +64,12 @@ def wettercom_config() -> SectionProxy:
     return config[used_key]
 
 
+def backend_config() -> SectionProxy:
+    used_key = 'backend'
+    _validate_config(used_key, False)
+    return config[used_key]
+
+
 def _validate_config(used_key: str, used_key_present_error: bool = True) -> None:
     """
     Validate that the configuration has been loaded and the specified section exists.
