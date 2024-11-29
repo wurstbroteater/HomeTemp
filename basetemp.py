@@ -14,7 +14,7 @@ from core.sensors.camera import RpiCamController
 # GLOBAL Variables
 log = None
 command_service = None
-
+SEND_TEMPERATURE_WARNING = False
 
 def _get__visualization_data():
     auth = database_config()
@@ -108,8 +108,8 @@ def collect_and_save_to_db():
         # heat warning
         max_heat = 28.9
         is_overheating = room_temp > max_heat
-        min_heat = 17.0
-        if is_overheating or room_temp < min_heat:
+        min_heat = 16.5
+        if SEND_TEMPERATURE_WARNING and (is_overheating or room_temp < min_heat):
             indicator = "above" if is_overheating else "below"
             extremum = max_heat if is_overheating else min_heat
             log.warning(f"Sending heat warning because room temp is {indicator} {extremum}°C")
