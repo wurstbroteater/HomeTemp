@@ -9,7 +9,6 @@ from matplotlib.axes import Axes
 from typing import Tuple, List, Optional,  Dict, Any
 from datetime import datetime, timedelta
 
-
 log = get_logger(__name__)
 
 
@@ -24,21 +23,84 @@ custom_theme = {
     'palette': 'deep'     # Can be 'deep', 'muted', 'bright', 'pastel', etc.
 }
 
+MINIMAL_INNER = lambda df, label, y: {"data": df, "label": label, "x": "timestamp", "y": y, "alpha": 0.6}
+MINIMAL_INNER_24 = lambda df, label, y: {"data": df, "label": label, "x": "timestamp", "y": y, "alpha": 0.6, "marker": "o", "markersize": 6}
+TEMP_TUPLE_DEFAULT = ("temp", None)
+#MINIMAL_MAIN = lambda title : { "title": title, "label":"Home","xlabel":"Time", "x":"timestamp", "ylabel":"Temp (°C)", "y":"room_temp"}
+
+
 class SupportedDataFrames(Enum):
-    # enumIdx, temperature keys, ...
-    Main = 1, ["room_temp"]
-    DWD_DE = 2, ["temp"]
-    GOOGLE_COM = 3, ["temp"]
-    WETTER_COM = 4, ["temp_stat", "temp_dyn"]
-    ULM_DE = 5, ["temp"]
+    """
+        Supported data frames to plot parameters
+    
+    """
+    # enumIdx, name, temperature keys list of tuple (df key, plot label with None for default see _label) , humidity key
+    Main = 1, "Room", [("room_temp", None)], "humidity"
+    DWD_DE = 2, "DWD", [TEMP_TUPLE_DEFAULT], None
+    GOOGLE_COM = 3, "Google.de", [TEMP_TUPLE_DEFAULT], "humidity"
+    WETTER_COM = 4, "Wetter.com", [("temp_stat", "Forecast"), ("temp_dyn", "Live")], "humidity"
+    ULM_DE = 5, "Ulm.de", [TEMP_TUPLE_DEFAULT], None
 
 
+    def __init__(self, enum_idx:int, display_name:str, temperature_keys:list, humidiy_key:str):
+        self.enum_idx = enum_idx
+        self.display_name = display_name
+        self.temperature_keys = temperature_keys
+        self.humidiy_key = humidiy_key
+    
+
+    def _label(self, label_overwrite:str | None = None) -> str:
+        if label_overwrite is None:
+            return f"{self.display_name} Forecast"
+        else:
+            return f"{self.display_name} {label_overwrite}"
+
+    def get_temp_inner_plots_params(self, data:pd.DataFrame) -> list | None:
+        if self is SupportedDataFrames.Main:
+            return None
+        return list(map(lambda temp_keys: MINIMAL_INNER(data, self._label(temp_keys[1]), temp_keys[0]), self.temperature_keys))
+
+    def get_hum_inner_plots_params(self, data:pd.DataFrame) -> list | None:
+        if self.humidiy_key is not None:
+            return [MINIMAL_INNER(data, self._label(), self.humidiy_key)]
+        return None
+    
+    
+    def get_temp_24h_inner_plots_params(self, data:pd.DataFrame) -> list | None:
+        # TODO: ASSURE 24 h ?
+        if self is SupportedDataFrames.Main:
+           return None
+        elif self is SupportedDataFrames.WETTER_COM:
+             return [MINIMAL_INNER_24(data, self._label(self.temperature_keys[0][1]),self.temperature_keys[0][0]),
+                     MINIMAL_INNER_24(data, self._label(self.temperature_keys[1][1]),self.temperature_keys[1][0]) | {"marker":"s"}]
+        
+        return list(map(lambda temp_keys: MINIMAL_INNER(data, self._label(temp_keys[1]), temp_keys[0]), self.temperature_keys))
+    
+    def get_hum_24h_inner_plots_params(self, data:pd.DataFrame) -> list | None:
+        if self.humidiy_key is not None:
+            return [MINIMAL_INNER(data, self._label(), self.humidiy_key) | {"alpha": 1}]
+        return None
+
+    
+        
+      
 class PlotData:
 
-     def __init__(self, data: SupportedDataFrames, main:bool, plot_params:dict):
-         self.data = data
-         self.main = main
-         self.plot_params =plot_params
+    def __init__(self, support: SupportedDataFrames, data:pd.DataFrame, main_plot_cfg:dict=None):
+         self.support:SupportedDataFrames = support
+         self.data:pd.DataFrame = data
+         self.main:bool = main_plot_cfg is not None
+         self.main_plot_cfg:dict = {} if main_plot_cfg is None else main_plot_cfg
+
+    def inner_params(self):
+        return self.support.get_temp_inner_plots_params(self.data)
+    
+    def inner_24_params(self):
+        return self.support.get_temp_24h_inner_plots_params(last_24h_df(self.data))
+    
+    def info(self):
+        defau = {'df': self.data,'name': self.support.display_name, 'keys': list(map(lambda x: x[0], self.support.temperature_keys))}
+        return defau | {"main" : True} if self.main else defau
 
 
 
@@ -53,11 +115,50 @@ class PlotData:
 # For non main
 # plotdata = [{"name": "ulm",known_data=DATA.ULM_DE, "df":ulm_df}]
 # -->  plotdata = [PlotData(SupportedDataFrames.ULM_DE, False, some plot parameter like name and stuff)]
-def draw_complete_summary(merge_subplots_for=[], plot_data=[{"name": "someName", "df":"dataframe reference", "main": True}], save_path="somePath or None means no save"):
-    pass
+#def draw_complete_summary(merge_subplots_for=[], plot_data=[{"name": "someName", "df":"dataframe reference", "main": True}], save_path="somePath or None means no save"):
+#    pass
 
-def _create_representation(merge_subplots_for=[], plot_data=[]):
-    pass
+#def _create_representation(merge_subplots_for=[], plot_data=[]):
+#    pass
+
+def draw_complete_summary(merge_subplots_for:List[PlotData], plot_data:List[PlotData], save_path:str=None):
+    main_plot, sub_plots = _filter_main_plot_data(plot_data)
+    df_temp_inner_plt_params = list(map(lambda x: x.inner_params(), sub_plots))
+    df_temp_24_inner_plt_params = list(map(lambda x: x.inner_24_params(), sub_plots))
+    dataframes_info = list(map(lambda x: x.info(), plot_data))
+    df_temp_plt_params = {
+        "main": main_plot_params(main_plot.data, "Temperature Over Time"), 
+        "inner": df_temp_inner_plt_params}
+    df_temp_24_plt_params = {
+        'main': main_plot_params(last_24h_df(main_plot.data), "Temperature Last 24 Hours", marker='o', markersize=6),
+        "inner": df_temp_24_inner_plt_params}
+    # TODO: somehwere is problem because TypeError: 'str' object cannot be interpreted as an integer
+
+    df_hum_plt_params = {"main": main_plot_params(main_plot.data, "Humidity Over Time", y="humidity", color="purple")}
+    google = [d for d in sub_plots if d.support is SupportedDataFrames.GOOGLE_COM]
+    google_df = None if len(google) == 0 else google[0].data
+
+    df_hum_24_plt_params = {'main': main_plot_params(last_24h_df(main_plot.data), "Humidity Last 24 Hours", marker='o', markersize=6, color="purple", ylabel="Humidity (%)", y="humidity")}
+    if google_df is not None: 
+        df_hum_plt_params["inner"] = [google[0].support.get_hum_inner_plots_params(google[0].data)]
+        df_hum_24_plt_params["inner"] = [google[0].support.get_hum_24h_inner_plots_params(google[0].data)]
+
+        
+
+    plots_w_params = [df_temp_plt_params, df_temp_24_plt_params, df_hum_plt_params, df_hum_24_plt_params]
+    combined_fig, _ = create_lineplots(plots_w_params,dataframes_info=dataframes_info, theme=custom_theme, rows=2, cols=2)
+
+    return combined_fig
+
+
+def _filter_main_plot_data(plot_data_list: List[PlotData]) -> Tuple[PlotData, List[PlotData]]:
+    main_elements = [plot_data for plot_data in plot_data_list if plot_data.main]
+    
+    if len(main_elements) != 1:
+        raise ValueError(f"Expected exactly one 'main' element, but found {len(main_elements)}.")
+    
+    remaining_elements = [plot_data for plot_data in plot_data_list if not plot_data.main]
+    return main_elements[0], remaining_elements
 
 
 
@@ -143,7 +244,7 @@ def inner_24_plots_params(fr, label, x, y, marker="o", markersize=6, alpha=0.6, 
 def inner_plots_params(fr, label, x, y, marker=None, color=None, markersize=None) -> dict:
     return seaborn_lineplot_params(fr, label, x, y, marker=marker, color=color, alpha=0.6, markersize=markersize)
 
-
+# supported seaborn
 def seaborn_lineplot_params(fr, label, x, y, marker=None, color=None, alpha=None, markersize=None) -> dict:
     out = {
         "data": fr,
