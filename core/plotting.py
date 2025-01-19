@@ -1,3 +1,5 @@
+
+from core.core_log import get_logger
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -6,9 +8,9 @@ from enum import Enum
 from matplotlib.axes import Axes
 from typing import Tuple, List, Optional,  Dict, Any
 from datetime import datetime, timedelta
-import logging
 
-log = logging.getLogger(__name__)
+
+log = get_logger(__name__)
 
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -22,8 +24,8 @@ custom_theme = {
     'palette': 'deep'     # Can be 'deep', 'muted', 'bright', 'pastel', etc.
 }
 
-class DATA(Enum):
-    # enumIdx, keys
+class SupportedDataFrames(Enum):
+    # enumIdx, temperature keys, ...
     Main = 1, ["room_temp"]
     DWD_DE = 2, ["temp"]
     GOOGLE_COM = 3, ["temp"]
@@ -33,8 +35,8 @@ class DATA(Enum):
 
 class PlotData:
 
-     def __init__(self, name: DATA, main:bool, plot_params):
-         self.name = name
+     def __init__(self, data: SupportedDataFrames, main:bool, plot_params:dict):
+         self.data = data
          self.main = main
          self.plot_params =plot_params
 
@@ -50,6 +52,7 @@ class PlotData:
 # -> merge_subplots_for=[DATA.MAIN, DATA.GOOGLE_COM]
 # For non main
 # plotdata = [{"name": "ulm",known_data=DATA.ULM_DE, "df":ulm_df}]
+# -->  plotdata = [PlotData(SupportedDataFrames.ULM_DE, False, some plot parameter like name and stuff)]
 def draw_complete_summary(merge_subplots_for=[], plot_data=[{"name": "someName", "df":"dataframe reference", "main": True}], save_path="somePath or None means no save"):
     pass
 
