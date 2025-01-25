@@ -122,6 +122,9 @@ class PlotData:
 #    pass
 
 def draw_complete_summary(merge_subplots_for:List[PlotData], plot_data:List[PlotData], save_path:str=None):
+    # TODO: save_path is abs folder, e.g. /path/to/save or path/to/save/ where is save is a folder
+    # all pdfs are saved with format  "%d-%m-%Y"  maybe seconds aswell?
+    # TODO: integrate merge_subplots_for
     main_plot, sub_plots = _filter_main_plot_data(plot_data)
     df_temp_inner_plt_params = list(map(lambda x: x.inner_params(), sub_plots))
     df_temp_24_inner_plt_params = list(map(lambda x: x.inner_24_params(), sub_plots))
@@ -132,7 +135,6 @@ def draw_complete_summary(merge_subplots_for:List[PlotData], plot_data:List[Plot
     df_temp_24_plt_params = {
         'main': main_plot_params(last_24h_df(main_plot.data), "Temperature Last 24 Hours", marker='o', markersize=6),
         "inner": df_temp_24_inner_plt_params}
-    # TODO: somehwere is problem because TypeError: 'str' object cannot be interpreted as an integer
 
     df_hum_plt_params = {"main": main_plot_params(main_plot.data, "Humidity Over Time", y="humidity", color="purple")}
     google = [d for d in sub_plots if d.support is SupportedDataFrames.GOOGLE_COM]
@@ -140,15 +142,8 @@ def draw_complete_summary(merge_subplots_for:List[PlotData], plot_data:List[Plot
 
     df_hum_24_plt_params = {'main': main_plot_params(last_24h_df(main_plot.data), "Humidity Last 24 Hours", marker='o', markersize=6, color="purple", ylabel="Humidity (%)", y="humidity")}
     if google_df is not None: 
-        df_hum_plt_params["inner"] = google[0].support.get_hum_inner_plots_params(google_df)
-        df_hum_24_plt_params["inner"] = google[0].support.get_hum_24h_inner_plots_params(google_df)
-
-    #print(df_temp_24_plt_params)
-    #print("\n")
-    print(df_hum_24_plt_params)
-    print("\n")
-    #print(df_hum_plt_params)
-        
+        df_hum_plt_params["inner"] = [google[0].support.get_hum_inner_plots_params(google_df)]
+        df_hum_24_plt_params["inner"] = [google[0].support.get_hum_24h_inner_plots_params(last_24h_df(google_df))]
 
     plots_w_params = [df_temp_plt_params, df_temp_24_plt_params, df_hum_plt_params, df_hum_24_plt_params]
     combined_fig, _ = create_lineplots(plots_w_params,dataframes_info=dataframes_info, theme=custom_theme, rows=2, cols=2)
@@ -464,6 +459,7 @@ def create_lineplots(plot_params: List[dict],
                         log.warning("inner plot with no content!")
                     for ipd in inner_plot_dicts:
                         inner_data = ipd.pop("data")
+                        #log.info(f"ipd {ipd}")
                         sns.lineplot(data=inner_data, ax=ax, **ipd)
                     pass
                 elif type(inner_plot_dicts) is dict:
