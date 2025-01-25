@@ -1,12 +1,17 @@
-import logging
+from core.core_log import setup_logging, get_logger
+from core.core_configuration import load_config, database_config, google_config
 from core.plotting import *
-log = logging.getLogger(__name__)
+from endpoint.fetcher import GoogleFetcher
+load_config()
+setup_logging()
+log =  get_logger(__name__)
 base_time = datetime(2024, 10, 5, 12, 0, 0)
 
 # Normal Case DataFrame (main)
 main_df = pd.DataFrame({
     'timestamp': [base_time, base_time + timedelta(minutes=10), base_time + timedelta(minutes=20)],
-    'room_temp': [22.0, 21.8, 22.1] 
+    'room_temp': [22.0, 21.8, 22.1], 
+       'humidity': [44.9, 25.5, 16.0]
 })
 
 # DataFrame 1: Aligned timestamps
@@ -39,5 +44,6 @@ test =[PlotData(SupportedDataFrames.Main, main_df, {}),
        PlotData(SupportedDataFrames.GOOGLE_COM, df1),
        PlotData(SupportedDataFrames.DWD_DE, df2)]
 print(draw_complete_summary([],test))
+
 
 

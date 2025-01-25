@@ -38,7 +38,7 @@ class SupportedDataFrames(Enum):
     Main = 1, "Room", [("room_temp", None)], "humidity"
     DWD_DE = 2, "DWD", [TEMP_TUPLE_DEFAULT], None
     GOOGLE_COM = 3, "Google.de", [TEMP_TUPLE_DEFAULT], "humidity"
-    WETTER_COM = 4, "Wetter.com", [("temp_stat", "Forecast"), ("temp_dyn", "Live")], "humidity"
+    WETTER_COM = 4, "Wetter.com", [("temp_stat", "Forecast"), ("temp_dyn", "Live")], None
     ULM_DE = 5, "Ulm.de", [TEMP_TUPLE_DEFAULT], None
 
 
@@ -92,10 +92,10 @@ class PlotData:
          self.main:bool = main_plot_cfg is not None
          self.main_plot_cfg:dict = {} if main_plot_cfg is None else main_plot_cfg
 
-    def inner_params(self):
+    def inner_params(self) -> list:
         return self.support.get_temp_inner_plots_params(self.data)
     
-    def inner_24_params(self):
+    def inner_24_params(self) -> list:
         return self.support.get_temp_24h_inner_plots_params(last_24h_df(self.data))
     
     def info(self):
@@ -140,9 +140,14 @@ def draw_complete_summary(merge_subplots_for:List[PlotData], plot_data:List[Plot
 
     df_hum_24_plt_params = {'main': main_plot_params(last_24h_df(main_plot.data), "Humidity Last 24 Hours", marker='o', markersize=6, color="purple", ylabel="Humidity (%)", y="humidity")}
     if google_df is not None: 
-        df_hum_plt_params["inner"] = [google[0].support.get_hum_inner_plots_params(google[0].data)]
-        df_hum_24_plt_params["inner"] = [google[0].support.get_hum_24h_inner_plots_params(google[0].data)]
+        df_hum_plt_params["inner"] = google[0].support.get_hum_inner_plots_params(google_df)
+        df_hum_24_plt_params["inner"] = google[0].support.get_hum_24h_inner_plots_params(google_df)
 
+    #print(df_temp_24_plt_params)
+    #print("\n")
+    print(df_hum_24_plt_params)
+    print("\n")
+    #print(df_hum_plt_params)
         
 
     plots_w_params = [df_temp_plt_params, df_temp_24_plt_params, df_hum_plt_params, df_hum_24_plt_params]
@@ -448,13 +453,26 @@ def create_lineplots(plot_params: List[dict],
             ax = create_merged_temperature_plot(merged, 'timestamp', 'outside_min', 'outside_max', 'inside_temp', ax_in_subplot=ax_in_subplot)[1]  
         else:
             ax = sns.lineplot(data=data, ax=ax_in_subplot, **plot_dict)
-            #TODO: use [] instead of None
-            inner_plots = wrapper_dict.get('inner', None)
-            if inner_plots:
-                for inner_plot_dicts in inner_plots:
+            inner_plots = wrapper_dict.get('inner', [])
+            for inner_plot_dicts in inner_plots:
+                #log.info(f"inner plot {idx}: {type(inner_plot_dicts)}{inner_plot_dicts}")
+                # TODO: this should be a workaround until everyhing supports new?
+                if type(inner_plot_dicts) is list:
+                    # support new version rework
+                    log.info("supporting new")
+                    if len(inner_plot_dicts) == 0:
+                        log.warning("inner plot with no content!")
+                    for ipd in inner_plot_dicts:
+                        inner_data = ipd.pop("data")
+                        sns.lineplot(data=inner_data, ax=ax, **ipd)
+                    pass
+                elif type(inner_plot_dicts) is dict:
+                    log.info("supporting old")
+                    # support for old version untill draw_plots is gone
                     inner_data = inner_plot_dicts.pop("data")
-                    #log.info(f"inner plot {idx}: {inner_plot_dicts}")
                     sns.lineplot(data=inner_data, ax=ax, **inner_plot_dicts)
+                else:
+                     log.warning(f"Skipping unsupported type {type(inner_plot_dicts)} {str(inner_plot_dicts)}")
 
 
         # TODO: still neeeded ? What does it do?
