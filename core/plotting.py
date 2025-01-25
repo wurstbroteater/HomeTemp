@@ -99,6 +99,7 @@ class PlotData:
         return self.support.get_temp_24h_inner_plots_params(last_24h_df(self.data))
     
     def info(self):
+        # TODO: df key still important?
         defau = {'df': self.data,'name': self.support.display_name, 'keys': list(map(lambda x: x[0], self.support.temperature_keys))}
         return defau | {"main" : True} if self.main else defau
 
