@@ -78,7 +78,7 @@ class SupportedDataFrames(Enum):
     
     def get_hum_24h_inner_plots_params(self, data:pd.DataFrame) -> list | None:
         if self.humidiy_key is not None:
-            return [MINIMAL_INNER(data, self._label(), self.humidiy_key) | {"alpha": 1}]
+            return [MINIMAL_INNER_24(data, self._label(), self.humidiy_key) | {"alpha": 1}]
         return None
 
     
@@ -437,6 +437,9 @@ def create_lineplots(plot_params: List[dict],
     for idx, wrapper_dict in enumerate(plot_params):
         plot_dict = wrapper_dict["main"]
         data = plot_dict.pop('data')
+        if len(data) == 0:
+            log.info(f"skipping empty MAIN dataframe")
+            continue
         title = plot_dict.pop('title')
         xlabel = plot_dict.pop('xlabel', plot_dict.get('x'))
         ylabel = plot_dict.pop('ylabel', plot_dict.get('y'))
@@ -459,9 +462,10 @@ def create_lineplots(plot_params: List[dict],
                         log.warning("inner plot with no content!")
                     for ipd in inner_plot_dicts:
                         inner_data = ipd.pop("data")
-                        #log.info(f"ipd {ipd}")
-                        sns.lineplot(data=inner_data, ax=ax, **ipd)
-                    pass
+                        if len(inner_data) > 0 :
+                            sns.lineplot(data=inner_data, ax=ax, **ipd)
+                        else:
+                            log.info(f"skipping empty INNER dataframe with config {ipd}")
                 elif type(inner_plot_dicts) is dict:
                     log.info("supporting old")
                     # support for old version untill draw_plots is gone
