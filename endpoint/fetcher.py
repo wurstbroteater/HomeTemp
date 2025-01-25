@@ -6,9 +6,12 @@ import requests
 from bs4 import BeautifulSoup as bs
 from pyvirtualdisplay import Display
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 log = get_logger(__name__)
 
@@ -92,6 +95,7 @@ class WetterComFetcher:
 
         Fetches the dynamic temperature data from Wetter.com link for a city/region
         """
+        #TODO: display still needed ?
         display = Display(visible=0, size=(1600, 1200))
         display.start()
         options = Options()
@@ -101,6 +105,7 @@ class WetterComFetcher:
         timeout_s = 30
         driver.set_page_load_timeout(timeout_s)
         driver.implicitly_wait(timeout_s)
+        #TODO: instead of returning in try catch, it should fill a field which is returned in the end
         try:
             driver.get(url)
             found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
@@ -125,28 +130,52 @@ class GoogleFetcher:
         """
 
         url = "https://www.google.com/search?lr=lang_en&ie=UTF-8&q=weather%20" + location
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
-        language = "en-US,en;q=0.5"
+        options = Options()
+        options.add_argument("--headless")  # Run in headless mode
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36")
+        display = Display(visible=0, size=(1600, 1200))
+        display.start()
         try:
-            session = requests.Session()
-            session.headers["User-Agent"] = user_agent
-            session.headers["Accept-Language"] = language
-            session.headers["Content-Language"] = language
-            # set connect and read timeout to 5 seconds
-            html = session.get(url, timeout=(5, 5))
-            soup = bs(html.text, "html.parser")
+            # Initialize the WebDriver
+            print("init")
+            service = Service('/usr/bin/chromedriver')  # Replace with your chromedriver path
+            driver = webdriver.Chrome(service=service, options=options)
+            driver.get(url)
+            timeout_s = 15
+            web_wait_timeout  = 10
+            driver.set_page_load_timeout(timeout_s)
+            driver.implicitly_wait(timeout_s)
 
-            return {"region": soup.find("div", attrs={"id": "wob_loc"}).text,
-                    "temp_now": float(soup.find("span", attrs={"id": "wob_tm"}).text),
-                    "precipitation": float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%", "")),
-                    "humidity": float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", "")),
-                    "wind": float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))}
-        except (
-                WebDriverException, AttributeError, requests.exceptions.Timeout,
-                requests.exceptions.ConnectionError) as e:
-            log.error("Google Weather connection problem: " + str(e))
+            # Wait for the weather data to load
+            print("wait")
+            print(driver.page_source)
+            WebDriverWait(driver, web_wait_timeout).until(
+                EC.presence_of_element_located((By.ID, "wob_loc"))
+            )
+
+            print("bs")
+
+            # Parse the page source with BeautifulSoup
+            soup = bs(driver.page_source, "html.parser")
+
+            weather_data = {
+                "region": soup.find("div", attrs={"id": "wob_loc"}).text,
+                "temp_now": float(soup.find("span", attrs={"id": "wob_tm"}).text),
+                "precipitation": float(soup.find("span", attrs={"id": "wob_pp"}).text.replace("%", "")),
+                "humidity": float(soup.find("span", attrs={"id": "wob_hm"}).text.replace("%", "")),
+                "wind": float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))
+            }
+            driver.quit()
+            return weather_data
+
+        except Exception as e:
+            print(f"Error fetching weather data: {e}")
+            if 'driver' in locals():
+                driver.quit()
+            display.stop()
             return None
-
 
 class Fetcher:
     """
@@ -265,3 +294,29 @@ class DWDFetcher(Fetcher):
             dev = self.data["temperatureStd"][current_temp_forecast_index]
             # log.info(f"Found: {current_temp_forecast_index}, {current_time}, {temp}°C, dev: {dev}")
             return current_time, temp, dev
+
+# TODO: support openweather and weatherAPI
+class WeatherAPI:
+    @staticmethod
+    def get_weather_data(location: str, api_key: str):
+        """
+        Fetch weather data from OpenWeatherMap API.
+
+        :param location: Location name, e.g., "New York"
+        :param api_key: Your OpenWeatherMap API key
+        :return: A dictionary with weather data or None if an error occurs.
+        """
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&units=metric&appid={api_key}"
+        try:
+            response = requests.get(url, timeout=(5, 5))
+            response.raise_for_status()
+            data = response.json()
+            return {
+                "region": data["name"],
+                "temp_now": data["main"]["temp"],
+                "humidity": data["main"]["humidity"],
+                "wind": data["wind"]["speed"]
+            }
+        except Exception as e:
+            print(f"Error fetching weather data: {e}")
+            return None
