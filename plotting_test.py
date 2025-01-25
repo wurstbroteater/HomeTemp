@@ -43,7 +43,7 @@ df3 = pd.DataFrame({
 test =[PlotData(SupportedDataFrames.Main, main_df, {}),
        PlotData(SupportedDataFrames.GOOGLE_COM, df1),
        PlotData(SupportedDataFrames.DWD_DE, df2)]
-print(draw_complete_summary([],test))
+print(draw_complete_summary(test))
 
 
 

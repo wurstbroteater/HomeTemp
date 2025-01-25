@@ -121,14 +121,15 @@ class PlotData:
 #def _create_representation(merge_subplots_for=[], plot_data=[]):
 #    pass
 
-def draw_complete_summary(merge_subplots_for:List[PlotData], plot_data:List[PlotData], save_path:str=None):
+def draw_complete_summary(plot_data:List[PlotData], merge_subplots_for:List[PlotData]=None, save_path:str=None):
     # TODO: save_path is abs folder, e.g. /path/to/save or path/to/save/ where is save is a folder
     # all pdfs are saved with format  "%d-%m-%Y"  maybe seconds aswell?
-    # TODO: integrate merge_subplots_for
+    if merge_subplots_for is None:
+        merge_subplots_for = []
     main_plot, sub_plots = _filter_main_plot_data(plot_data)
     df_temp_inner_plt_params = list(map(lambda x: x.inner_params(), sub_plots))
     df_temp_24_inner_plt_params = list(map(lambda x: x.inner_24_params(), sub_plots))
-    dataframes_info = list(map(lambda x: x.info(), plot_data))
+    dataframes_info = None if len(merge_subplots_for) == 0 else list(map(lambda x: x.info(), merge_subplots_for))
     df_temp_plt_params = {
         "main": main_plot_params(main_plot.data, "Temperature Over Time"), 
         "inner": df_temp_inner_plt_params}
