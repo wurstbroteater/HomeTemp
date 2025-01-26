@@ -74,7 +74,7 @@ class SupportedDataFrames(Enum):
              return [MINIMAL_INNER_24(data, self._label(self.temperature_keys[0][1]),self.temperature_keys[0][0]),
                      MINIMAL_INNER_24(data, self._label(self.temperature_keys[1][1]),self.temperature_keys[1][0]) | {"marker":"s"}]
         
-        return list(map(lambda temp_keys: MINIMAL_INNER(data, self._label(temp_keys[1]), temp_keys[0]), self.temperature_keys))
+        return list(map(lambda temp_keys: MINIMAL_INNER_24(data, self._label(temp_keys[1]), temp_keys[0]), self.temperature_keys))
     
     def get_hum_24h_inner_plots_params(self, data:pd.DataFrame) -> list | None:
         if self.humidiy_key is not None:
