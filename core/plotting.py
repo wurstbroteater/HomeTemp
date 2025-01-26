@@ -1,4 +1,3 @@
-
 from core.core_log import get_logger
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -6,11 +5,10 @@ import pandas as pd
 import numpy as np
 from enum import Enum
 from matplotlib.axes import Axes
-from typing import Tuple, List, Optional,  Dict, Any
+from typing import Tuple, List, Optional, Dict, Any
 from datetime import datetime, timedelta
 
 log = get_logger(__name__)
-
 
 # ----------------------------------------------------------------------------------------------------------------
 # The NEW visualization module. Provides means to create a plot for sensor data and is able to save them to pdf.
@@ -18,15 +16,15 @@ log = get_logger(__name__)
 
 
 custom_theme = {
-    'context': 'paper',   # Can be 'paper', 'notebook', 'talk', 'poster'
+    'context': 'paper',  # Can be 'paper', 'notebook', 'talk', 'poster'
     'style': 'darkgrid',  # Can be 'darkgrid', 'whitegrid', 'dark', 'white', 'ticks'
-    'palette': 'deep'     # Can be 'deep', 'muted', 'bright', 'pastel', etc.
+    'palette': 'deep'  # Can be 'deep', 'muted', 'bright', 'pastel', etc.
 }
 
 MINIMAL_INNER = lambda df, label, y: {"data": df, "label": label, "x": "timestamp", "y": y, "alpha": 0.6}
 MINIMAL_INNER_24 = lambda df, label, y: {"data": df, "label": label, "x": "timestamp", "y": y, "alpha": 0.6, "marker": "o", "markersize": 6}
 TEMP_TUPLE_DEFAULT = ("temp", None)
-#MINIMAL_MAIN = lambda title : { "title": title, "label":"Home","xlabel":"Time", "x":"timestamp", "ylabel":"Temp (°C)", "y":"room_temp"}
+# MINIMAL_MAIN = lambda title : { "title": title, "label":"Home","xlabel":"Time", "x":"timestamp", "ylabel":"Temp (°C)", "y":"room_temp"}
 
 
 class SupportedDataFrames(Enum):
@@ -41,68 +39,66 @@ class SupportedDataFrames(Enum):
     WETTER_COM = 4, "Wetter.com", [("temp_stat", "Forecast"), ("temp_dyn", "Live")], None
     ULM_DE = 5, "Ulm.de", [TEMP_TUPLE_DEFAULT], None
 
-
-    def __init__(self, enum_idx:int, display_name:str, temperature_keys:list, humidiy_key:str):
+    def __init__(self, enum_idx: int, display_name: str, temperature_keys: list, humidiy_key: str):
         self.enum_idx = enum_idx
         self.display_name = display_name
         self.temperature_keys = temperature_keys
         self.humidiy_key = humidiy_key
-    
 
-    def _label(self, label_overwrite:str | None = None) -> str:
+    def _label(self, label_overwrite: str | None = None) -> str:
         if label_overwrite is None:
             return f"{self.display_name} Forecast"
         else:
             return f"{self.display_name} {label_overwrite}"
 
-    def get_temp_inner_plots_params(self, data:pd.DataFrame) -> list | None:
+    def get_temp_inner_plots_params(self, data: pd.DataFrame) -> list | None:
         if self is SupportedDataFrames.Main:
             return None
-        return list(map(lambda temp_keys: MINIMAL_INNER(data, self._label(temp_keys[1]), temp_keys[0]), self.temperature_keys))
+        return list(
+            map(lambda temp_keys: MINIMAL_INNER(data, self._label(temp_keys[1]), temp_keys[0]), self.temperature_keys))
 
-    def get_hum_inner_plots_params(self, data:pd.DataFrame) -> list | None:
+    def get_hum_inner_plots_params(self, data: pd.DataFrame) -> list | None:
         if self.humidiy_key is not None:
             return [MINIMAL_INNER(data, self._label(), self.humidiy_key)]
         return None
-    
-    
-    def get_temp_24h_inner_plots_params(self, data:pd.DataFrame) -> list | None:
+
+    def get_temp_24h_inner_plots_params(self, data: pd.DataFrame) -> list | None:
         # TODO: ASSURE 24 h ?
         if self is SupportedDataFrames.Main:
-           return None
+            return None
         elif self is SupportedDataFrames.WETTER_COM:
-             return [MINIMAL_INNER_24(data, self._label(self.temperature_keys[0][1]),self.temperature_keys[0][0]),
-                     MINIMAL_INNER_24(data, self._label(self.temperature_keys[1][1]),self.temperature_keys[1][0]) | {"marker":"s"}]
-        
-        return list(map(lambda temp_keys: MINIMAL_INNER_24(data, self._label(temp_keys[1]), temp_keys[0]), self.temperature_keys))
-    
-    def get_hum_24h_inner_plots_params(self, data:pd.DataFrame) -> list | None:
+            return [MINIMAL_INNER_24(data, self._label(self.temperature_keys[0][1]), self.temperature_keys[0][0]),
+                    MINIMAL_INNER_24(data, self._label(self.temperature_keys[1][1]), self.temperature_keys[1][0]) | {
+                        "marker": "s"}]
+
+        return list(map(lambda temp_keys: MINIMAL_INNER_24(data, self._label(temp_keys[1]), temp_keys[0]),
+                        self.temperature_keys))
+
+    def get_hum_24h_inner_plots_params(self, data: pd.DataFrame) -> list | None:
         if self.humidiy_key is not None:
             return [MINIMAL_INNER_24(data, self._label(), self.humidiy_key) | {"alpha": 1}]
         return None
 
-    
-        
-      
+
 class PlotData:
 
-    def __init__(self, support: SupportedDataFrames, data:pd.DataFrame, main_plot_cfg:dict=None):
-         self.support:SupportedDataFrames = support
-         self.data:pd.DataFrame = data
-         self.main:bool = main_plot_cfg is not None
-         self.main_plot_cfg:dict = {} if main_plot_cfg is None else main_plot_cfg
+    def __init__(self, support: SupportedDataFrames, data: pd.DataFrame, main_plot_cfg: dict = None):
+        self.support: SupportedDataFrames = support
+        self.data: pd.DataFrame = data
+        self.main: bool = main_plot_cfg is not None
+        self.main_plot_cfg: dict = {} if main_plot_cfg is None else main_plot_cfg
 
     def inner_params(self) -> list:
         return self.support.get_temp_inner_plots_params(self.data)
-    
+
     def inner_24_params(self) -> list:
         return self.support.get_temp_24h_inner_plots_params(last_24h_df(self.data))
-    
+
     def info(self):
         # TODO: df key still important?
-        defau = {'df': self.data,'name': self.support.display_name, 'keys': list(map(lambda x: x[0], self.support.temperature_keys))}
-        return defau | {"main" : True} if self.main else defau
-
+        defau = {'df': self.data, 'name': self.support.display_name,
+                 'keys': list(map(lambda x: x[0], self.support.temperature_keys))}
+        return defau | {"main": True} if self.main else defau
 
 
 # -
@@ -116,13 +112,13 @@ class PlotData:
 # For non main
 # plotdata = [{"name": "ulm",known_data=DATA.ULM_DE, "df":ulm_df}]
 # -->  plotdata = [PlotData(SupportedDataFrames.ULM_DE, False, some plot parameter like name and stuff)]
-#def draw_complete_summary(merge_subplots_for=[], plot_data=[{"name": "someName", "df":"dataframe reference", "main": True}], save_path="somePath or None means no save"):
+# def draw_complete_summary(merge_subplots_for=[], plot_data=[{"name": "someName", "df":"dataframe reference", "main": True}], save_path="somePath or None means no save"):
 #    pass
 
-#def _create_representation(merge_subplots_for=[], plot_data=[]):
+# def _create_representation(merge_subplots_for=[], plot_data=[]):
 #    pass
 
-def draw_complete_summary(plot_data:List[PlotData], merge_subplots_for:List[PlotData]=None, save_path:str=None):
+def draw_complete_summary(plot_data: List[PlotData], merge_subplots_for: List[PlotData] = None, save_path: str = None):
     # TODO: save_path is abs folder, e.g. /path/to/save or path/to/save/ where is save is a folder
     # all pdfs are saved with format  "%d-%m-%Y"  maybe seconds aswell?
     if merge_subplots_for is None:
@@ -132,7 +128,7 @@ def draw_complete_summary(plot_data:List[PlotData], merge_subplots_for:List[Plot
     df_temp_24_inner_plt_params = list(map(lambda x: x.inner_24_params(), sub_plots))
     dataframes_info = None if len(merge_subplots_for) == 0 else list(map(lambda x: x.info(), merge_subplots_for))
     df_temp_plt_params = {
-        "main": main_plot_params(main_plot.data, "Temperature Over Time"), 
+        "main": main_plot_params(main_plot.data, "Temperature Over Time"),
         "inner": df_temp_inner_plt_params}
     df_temp_24_plt_params = {
         'main': main_plot_params(last_24h_df(main_plot.data), "Temperature Last 24 Hours", marker='o', markersize=6),
@@ -142,50 +138,55 @@ def draw_complete_summary(plot_data:List[PlotData], merge_subplots_for:List[Plot
     google = [d for d in sub_plots if d.support is SupportedDataFrames.GOOGLE_COM]
     google_df = None if len(google) == 0 else google[0].data
 
-    df_hum_24_plt_params = {'main': main_plot_params(last_24h_df(main_plot.data), "Humidity Last 24 Hours", marker='o', markersize=6, color="purple", ylabel="Humidity (%)", y="humidity")}
-    if google_df is not None: 
+    df_hum_24_plt_params = {
+        'main': main_plot_params(last_24h_df(main_plot.data), "Humidity Last 24 Hours", marker='o', markersize=6,
+                                 color="purple", ylabel="Humidity (%)", y="humidity")}
+    if google_df is not None:
         df_hum_plt_params["inner"] = [google[0].support.get_hum_inner_plots_params(google_df)]
         df_hum_24_plt_params["inner"] = [google[0].support.get_hum_24h_inner_plots_params(last_24h_df(google_df))]
 
     plots_w_params = [df_temp_plt_params, df_temp_24_plt_params, df_hum_plt_params, df_hum_24_plt_params]
-    combined_fig, _ = create_lineplots(plots_w_params,dataframes_info=dataframes_info, theme=custom_theme, rows=2, cols=2)
+    combined_fig, _ = create_lineplots(plots_w_params, dataframes_info=dataframes_info, theme=custom_theme, rows=2,
+                                       cols=2)
 
     return combined_fig
 
 
 def _filter_main_plot_data(plot_data_list: List[PlotData]) -> Tuple[PlotData, List[PlotData]]:
     main_elements = [plot_data for plot_data in plot_data_list if plot_data.main]
-    
+
     if len(main_elements) != 1:
         raise ValueError(f"Expected exactly one 'main' element, but found {len(main_elements)}.")
-    
+
     remaining_elements = [plot_data for plot_data in plot_data_list if not plot_data.main]
     return main_elements[0], remaining_elements
-
 
 
 def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True, save_path=None):
     df_temp_inner_plt_params = []
     df_temp_24_inner_plt_params = []
-    dataframes_info = [{'df': df,'name': 'main', 'keys': ['room_temp'], 'main': True}]
+    dataframes_info = [{'df': df, 'name': 'main', 'keys': ['room_temp'], 'main': True}]
     if dwd_df is not None:
         df_temp_inner_plt_params.append(inner_plots_params(dwd_df, "DWD Forecast", "timestamp", "temp"))
         df_temp_24_inner_plt_params.append(inner_24_plots_params(dwd_df, "DWD Forecast", "timestamp", "temp"))
-        dataframes_info.append({'df':dwd_df,'name': 'dwd', 'keys': ['temp']})
+        dataframes_info.append({'df': dwd_df, 'name': 'dwd', 'keys': ['temp']})
     if google_df is not None:
-        df_temp_inner_plt_params.append(inner_plots_params(google_df, "Google Forecast", "timestamp", "temp"),)
-        df_temp_24_inner_plt_params.append( inner_24_plots_params(google_df, "Google Forecast", "timestamp", "temp"))
-        dataframes_info.append({'df': google_df,'name': 'google', 'keys': ['temp']})
+        df_temp_inner_plt_params.append(inner_plots_params(google_df, "Google Forecast", "timestamp", "temp"), )
+        df_temp_24_inner_plt_params.append(inner_24_plots_params(google_df, "Google Forecast", "timestamp", "temp"))
+        dataframes_info.append({'df': google_df, 'name': 'google', 'keys': ['temp']})
     if wettercom_df is not None:
-        df_temp_inner_plt_params.append(inner_plots_params(wettercom_df, "Wetter.com Forecast", "timestamp", "temp_stat"))
+        df_temp_inner_plt_params.append(
+            inner_plots_params(wettercom_df, "Wetter.com Forecast", "timestamp", "temp_stat"))
         df_temp_inner_plt_params.append(inner_plots_params(wettercom_df, "Wetter.com Live", "timestamp", "temp_dyn"))
-        df_temp_24_inner_plt_params.append(inner_24_plots_params(wettercom_df, "Wetter.com Forecast", "timestamp", "temp_stat"))
-        df_temp_24_inner_plt_params.append(inner_24_plots_params(wettercom_df, "Wetter.com Live", "timestamp", "temp_dyn", marker="s"))
-        dataframes_info.append({'df':wettercom_df,'name': 'wettercom', 'keys': ['temp_stat', 'temp_dyn']})
+        df_temp_24_inner_plt_params.append(
+            inner_24_plots_params(wettercom_df, "Wetter.com Forecast", "timestamp", "temp_stat"))
+        df_temp_24_inner_plt_params.append(
+            inner_24_plots_params(wettercom_df, "Wetter.com Live", "timestamp", "temp_dyn", marker="s"))
+        dataframes_info.append({'df': wettercom_df, 'name': 'wettercom', 'keys': ['temp_stat', 'temp_dyn']})
     if ulmde_df is not None:
         df_temp_inner_plt_params.append(inner_plots_params(ulmde_df, "Ulm Forecast", "timestamp", "temp"))
         df_temp_24_inner_plt_params.append(inner_24_plots_params(ulmde_df, "Ulm Forecast", "timestamp", "temp"))
-        dataframes_info.append({'df': ulmde_df, 'name': 'ulm','keys': ['temp']})
+        dataframes_info.append({'df': ulmde_df, 'name': 'ulm', 'keys': ['temp']})
 
     df_temp_plt_params = {"main": main_plot_params(df, "Temperature Over Time"), "inner": df_temp_inner_plt_params}
     df_temp_24_plt_params = {
@@ -193,16 +194,18 @@ def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None
         "inner": df_temp_24_inner_plt_params}
 
     df_hum_plt_params = {"main": main_plot_params(df, "Humidity Over Time", y="humidity", color="purple")}
-    if google_df is not None: 
-         df_hum_plt_params["inner"] = [inner_plots_params(google_df, "Google Forecast", "timestamp", "humidity")]
+    if google_df is not None:
+        df_hum_plt_params["inner"] = [inner_plots_params(google_df, "Google Forecast", "timestamp", "humidity")]
     df_hum_24_plt_params = {
         'main': main_plot_params(last_24h_df(df), "Humidity Last 24 Hours", marker='o', markersize=6, color="purple",
                                  ylabel="Humidity (%)", y="humidity")}
-    if google_df is not None: 
-        df_hum_24_plt_params["inner"] = [inner_24_plots_params(google_df, "Google Forecast", "timestamp", "humidity", alpha=None)]
+    if google_df is not None:
+        df_hum_24_plt_params["inner"] = [
+            inner_24_plots_params(google_df, "Google Forecast", "timestamp", "humidity", alpha=None)]
 
     plots_w_params = [df_temp_plt_params, df_temp_24_plt_params, df_hum_plt_params, df_hum_24_plt_params]
-    combined_fig, _ = create_lineplots(plots_w_params,dataframes_info=dataframes_info, theme=custom_theme, rows=2, cols=2)
+    combined_fig, _ = create_lineplots(plots_w_params, dataframes_info=dataframes_info, theme=custom_theme, rows=2,
+                                       cols=2)
 
     if with_save:
         name = datetime.now().strftime("%d-%m-%Y")
@@ -246,6 +249,7 @@ def inner_24_plots_params(fr, label, x, y, marker="o", markersize=6, alpha=0.6, 
 def inner_plots_params(fr, label, x, y, marker=None, color=None, markersize=None) -> dict:
     return seaborn_lineplot_params(fr, label, x, y, marker=marker, color=color, alpha=0.6, markersize=markersize)
 
+
 # supported seaborn
 def seaborn_lineplot_params(fr, label, x, y, marker=None, color=None, alpha=None, markersize=None) -> dict:
     out = {
@@ -287,7 +291,8 @@ def _validate_and_sort_timestamp(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def merge_temperature_by_timestamp(dataframes_info: List[Dict[str, Any]], timestamp_col: str = 'timestamp', tolerance: int = 5.5) -> pd.DataFrame:
+def merge_temperature_by_timestamp(dataframes_info: List[Dict[str, Any]], timestamp_col: str = 'timestamp',
+                                   tolerance: int = 5.5) -> pd.DataFrame:
     """
     Merges multiple DataFrames based on aligned timestamps (within a tolerance window) and calculates the 
     minimum, maximum, and mean temperatures for each timestamp interval. 
@@ -344,16 +349,16 @@ def merge_temperature_by_timestamp(dataframes_info: List[Dict[str, Any]], timest
     main_df_info = next((df_info for df_info in dataframes_info if df_info.get('main', False)), None)
     if not main_df_info:
         raise ValueError("There must be exactly one DataFrame marked as 'main'")
-    
+
     main_df = main_df_info['df'][[timestamp_col] + main_df_info['keys']]
     main_df_len = len(main_df)
     time_delta = timedelta(minutes=tolerance)
     inside_temps = main_df[main_df_info['keys'][0]].values
-    
+
     outside_min = np.full(main_df_len, np.nan)
     outside_max = np.full(main_df_len, np.nan)
     outside_mean = np.full(main_df_len, np.nan)
-    
+
     for df_info in dataframes_info:
         df = df_info['df'][[timestamp_col] + df_info['keys']]
         skip_dataframe = df_info is main_df_info or len(df) == 0
@@ -367,14 +372,14 @@ def merge_temperature_by_timestamp(dataframes_info: List[Dict[str, Any]], timest
             tolerance=time_delta,
             direction='nearest'
         )
-        
+
         temps_in_interval = aligned_df[df_info['keys']].values
-        
+
         # ignoring NaN values
         row_min = np.nanmin(temps_in_interval, axis=1)
         row_max = np.nanmax(temps_in_interval, axis=1)
         row_mean = np.nanmean(temps_in_interval, axis=1)
-        
+
         # Update outside min, max, mean using np.nanmin/max/mean to handle overlapping DataFrames
         outside_min = np.nanmin([outside_min, row_min], axis=0)
         outside_max = np.nanmax([outside_max, row_max], axis=0)
@@ -446,16 +451,17 @@ def create_lineplots(plot_params: List[dict],
         xlabel = plot_dict.pop('xlabel', plot_dict.get('x'))
         ylabel = plot_dict.pop('ylabel', plot_dict.get('y'))
 
-        #log.info(f"plot {idx}: {plot_dict}")
+        # log.info(f"plot {idx}: {plot_dict}")
         ax_in_subplot = axes[idx]
         if dataframes_info is not None and idx == 0:
             merged = merge_temperature_by_timestamp(dataframes_info)
-            ax = create_merged_temperature_plot(merged, 'timestamp', 'outside_min', 'outside_max', 'inside_temp', ax_in_subplot=ax_in_subplot)[1]  
+            ax = create_merged_temperature_plot(merged, 'timestamp', 'outside_min', 'outside_max', 'inside_temp',
+                                                ax_in_subplot=ax_in_subplot)[1]
         else:
             ax = sns.lineplot(data=data, ax=ax_in_subplot, **plot_dict)
             inner_plots = wrapper_dict.get('inner', [])
             for inner_plot_dicts in inner_plots:
-                #log.info(f"inner plot {idx}: {type(inner_plot_dicts)}{inner_plot_dicts}")
+                # log.info(f"inner plot {idx}: {type(inner_plot_dicts)}{inner_plot_dicts}")
                 # TODO: this should be a workaround until everyhing supports new?
                 if type(inner_plot_dicts) is list:
                     # support new version rework
@@ -464,7 +470,7 @@ def create_lineplots(plot_params: List[dict],
                         log.warning("inner plot with no content!")
                     for ipd in inner_plot_dicts:
                         inner_data = ipd.pop("data")
-                        if len(inner_data) > 0 :
+                        if len(inner_data) > 0:
                             sns.lineplot(data=inner_data, ax=ax, **ipd)
                         else:
                             log.info(f"skipping empty INNER dataframe with config {ipd}")
@@ -474,8 +480,7 @@ def create_lineplots(plot_params: List[dict],
                     inner_data = inner_plot_dicts.pop("data")
                     sns.lineplot(data=inner_data, ax=ax, **inner_plot_dicts)
                 else:
-                     log.warning(f"Skipping unsupported type {type(inner_plot_dicts)} {str(inner_plot_dicts)}")
-
+                    log.warning(f"Skipping unsupported type {type(inner_plot_dicts)} {str(inner_plot_dicts)}")
 
         # TODO: still neeeded ? What does it do?
         if despine:
@@ -492,10 +497,11 @@ def create_lineplots(plot_params: List[dict],
     plt.close(fig)
     return fig, axes
 
-def create_merged_temperature_plot(df: pd.DataFrame, 
-                                   x_col: str = 'timestamp', 
-                                   min_temp_col: str = 'outside_min', 
-                                   max_temp_col: str = 'outside_max', 
+
+def create_merged_temperature_plot(df: pd.DataFrame,
+                                   x_col: str = 'timestamp',
+                                   min_temp_col: str = 'outside_min',
+                                   max_temp_col: str = 'outside_max',
                                    room_temp_col: str = 'inside_temp',
                                    theme: Optional[dict] = None,
                                    ax_in_subplot: Axes = None) -> tuple[plt.Figure, plt.Axes]:
@@ -525,23 +531,22 @@ def create_merged_temperature_plot(df: pd.DataFrame,
         ax = ax_in_subplot
     else:
         fig, ax = plt.subplots(figsize=(25, 12))
-    
-    sns.lineplot(x=x_col, y=min_temp_col, data=df, label='Min Outside Temp', 
+
+    sns.lineplot(x=x_col, y=min_temp_col, data=df, label='Min Outside Temp',
                  color='lightblue', linewidth=2, linestyle='--', ax=ax)
-    sns.lineplot(x=x_col, y=max_temp_col, data=df, label='Max Outside Temp', 
+    sns.lineplot(x=x_col, y=max_temp_col, data=df, label='Max Outside Temp',
                  color='lightblue', linewidth=2, linestyle='--', ax=ax)
-    sns.lineplot(x=x_col, y='mean_temp_outside', data=df, label='Mean Outside Temp', 
+    sns.lineplot(x=x_col, y='mean_temp_outside', data=df, label='Mean Outside Temp',
                  color='purple', alpha=0.4, linewidth=2, linestyle='-.', ax=ax)
     sns.lineplot(x=x_col, y=room_temp_col, data=df, label='Room Temp Inside', ax=ax)
 
     ax.fill_between(df[x_col], df[min_temp_col], df[max_temp_col], color='lightblue', alpha=0.4)
 
-    #ax.set_title("Outside Min/Max and Mean Temperatures, and Room Temperature Inside", fontsize=18, pad=20)
-    #ax.set_xlabel(x_col, fontsize=14)
-    #ax.set_ylabel("Temperature (°C)", fontsize=14)
-    #ax.legend(loc='upper left', fontsize='large')
+    # ax.set_title("Outside Min/Max and Mean Temperatures, and Room Temperature Inside", fontsize=18, pad=20)
+    # ax.set_xlabel(x_col, fontsize=14)
+    # ax.set_ylabel("Temperature (°C)", fontsize=14)
+    # ax.legend(loc='upper left', fontsize='large')
     plt.xticks(rotation=45)
     plt.tight_layout()
 
     return fig, ax
-
