@@ -30,23 +30,41 @@ picture via commanding.
 ## Installation Instructions
 
 The following steps needs to be performed once to assure correct driver setup.
-For venv use,
-
-```shell
-python -m venv --system-site-packages <PATH_TO_VENV>
-```
 
 ### Install Dependencies
 
 Use this code snippet to install the required dependencies. Either use pip install with module name or use the
 requirements file.
 
+#### Install System Dependencies
+
+Install **docker**, e.g., as described [here for raspberry-pi](https://docs.docker.com/engine/install/raspberry-pi-os/).
+
 ```sh
-sudo apt-get install libpq-dev xvfb
-## Module names
+sudo apt update
+sudo apt install libpq-dev xvfb
+```
+
+#### Setup Virtual Environment
+
+For venv setup, use `--system-site-package` parameter. The following snippets creates the environment in the folder
+`.venv`.
+
+```shell
+python -m venv --system-site-packages .venv
+```
+
+#### Install Python Dependencies
+
+It is recommended to install the dependencies via `requirements.txt`. Using the latest dependencies via modules names
+might cause problems.
+
+```sh
+# Recommended
+pip install -r requirements.txt
+# or at own risk Module names
 pip install opencv-python pillow rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4 jupyter_client jupyter_core
-# or
-#pip install -r requirements.txt
+
 ```
 
 ### Configure Hometemp.ini

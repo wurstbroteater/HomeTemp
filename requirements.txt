@@ -1,9 +1,10 @@
-Pillow==9.4.0
-lgpio==0.2.2.0
+psycopg2-binary==2.9.10
+psycopg2==2.9.9
 rpi-lgpio==0.6
 RPi.GPIO==0.7.1a4
-psycopg2==2.9.9
+lgpio==0.2.2.0
 gpiozero==2.0.1
+Pillow==9.4.0
 docker==7.1.0
 schedule==1.2.2
 seaborn==0.13.2
