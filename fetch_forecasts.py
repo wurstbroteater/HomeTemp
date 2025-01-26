@@ -115,13 +115,13 @@ def main():
     log.info(f"------------------- Fetch DWD Measurements v{hometemp_config()['version']} -------------------")
     schedule.every(10).minutes.do(ulmde_fetch_and_save)
     schedule.every(10).minutes.do(dwd_fetch_and_save)
-    #schedule.every(10).minutes.do(google_fetch_and_save)
+    schedule.every(10).minutes.do(google_fetch_and_save)
     schedule.every(10).minutes.do(wettercom_fetch_and_save)
 
     log.info("finished initialization")
     ulmde_fetch_and_save()
     dwd_fetch_and_save()
-    #google_fetch_and_save()
+    google_fetch_and_save()
     wettercom_fetch_and_save()
 
     while True:

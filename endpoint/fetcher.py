@@ -95,7 +95,6 @@ class WetterComFetcher:
 
         Fetches the dynamic temperature data from Wetter.com link for a city/region
         """
-        #TODO: display still needed ?
         display = Display(visible=0, size=(1600, 1200))
         display.start()
         options = Options()
@@ -105,18 +104,19 @@ class WetterComFetcher:
         timeout_s = 30
         driver.set_page_load_timeout(timeout_s)
         driver.implicitly_wait(timeout_s)
-        #TODO: instead of returning in try catch, it should fill a field which is returned in the end
+        out = None
         try:
             driver.get(url)
             found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
-            return int(found_temp.text.replace('°C', ''))
-
+            out = int(found_temp.text.replace('°C', ''))
         except (WebDriverException, Exception) as e:
             log.error(f"An error occurred while dynamically fetching temperature data: {str(e)}")
-            return None
+            out = None
         finally:
             display.stop()
             driver.quit()
+            
+        return out
 
 
 class GoogleFetcher:
@@ -130,17 +130,12 @@ class GoogleFetcher:
         """
 
         url = "https://www.google.com/search?lr=lang_en&ie=UTF-8&q=weather%20" + location
-        options = Options()
-        options.add_argument("--headless")  # Run in headless mode
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36")
         display = Display(visible=0, size=(1600, 1200))
         display.start()
+        options = Options()
+        options.add_argument('--disable-blink-features=AutomationControlled')
         try:
-            # Initialize the WebDriver
-            print("init")
-            service = Service('/usr/bin/chromedriver')  # Replace with your chromedriver path
+            service = Service('/usr/bin/chromedriver') 
             driver = webdriver.Chrome(service=service, options=options)
             driver.get(url)
             timeout_s = 15
@@ -148,16 +143,11 @@ class GoogleFetcher:
             driver.set_page_load_timeout(timeout_s)
             driver.implicitly_wait(timeout_s)
 
-            # Wait for the weather data to load
-            print("wait")
-            print(driver.page_source)
+            #print(driver.page_source)
             WebDriverWait(driver, web_wait_timeout).until(
                 EC.presence_of_element_located((By.ID, "wob_loc"))
             )
 
-            print("bs")
-
-            # Parse the page source with BeautifulSoup
             soup = bs(driver.page_source, "html.parser")
 
             weather_data = {
@@ -168,6 +158,7 @@ class GoogleFetcher:
                 "wind": float(soup.find("span", attrs={"id": "wob_ws"}).text.replace(" km/h", ""))
             }
             driver.quit()
+            display.stop()
             return weather_data
 
         except Exception as e:
