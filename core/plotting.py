@@ -338,15 +338,15 @@ class PlotsConfiguration:
 # -------------------------------------------------- Main Methods --------------------------------------------------
 # -
 
-def new_draw_complete(plot_data: List[PlotData], merge_subplots_for: List[PlotData]):
-    
+def new_draw_complete(plot_data: List[PlotData], merge_subplots_for: List[PlotData]=None):
+    nothing_to_merge = merge_subplots_for is None or len(merge_subplots_for) == 0
     COMPLETE_SUMMARY = [
         PlotsConfiguration(
-            lambda ax, _: DefaultPlotCategory.MERGED(plot_data,merge_subplots_for, ax),
+            lambda ax, main_plot_cfg: DefaultPlotCategory.DISTINCT(PlotDataSelector.TEMPALL, plot_data, ax, main_plot_cfg) if nothing_to_merge else DefaultPlotCategory.MERGED(plot_data,merge_subplots_for, ax),
             MINIMAL_MAIN("Temperature Over Time", "Temp (°C)", "room_temp"),
         ),
        PlotsConfiguration(
-           lambda ax, _: DefaultPlotCategory.MERGED24(plot_data, merge_subplots_for, ax),
+           lambda ax, main_plot_cfg:  DefaultPlotCategory.DISTINCT(PlotDataSelector.TEMP24, plot_data, ax, main_plot_cfg) if nothing_to_merge else DefaultPlotCategory.MERGED24(plot_data, merge_subplots_for, ax),
             MINIMAL_MAIN_24("Temperature Last 24 Hours", "Temp (°C)", "room_temp")
         ),
         PlotsConfiguration(
