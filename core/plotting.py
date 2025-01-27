@@ -362,7 +362,7 @@ def _save_to_pdf(fig:plt.Figure, save_path:str):
 # -------------------------------------------------- Main Methods --------------------------------------------------
 # -
 
-def new_draw_complete(plot_data: List[PlotData], merge_subplots_for: List[PlotData]=None, save_path:str=None):
+def draw_complete_summary(plot_data: List[PlotData], merge_subplots_for: List[PlotData]=None, save_path:str=None):
     nothing_to_merge = merge_subplots_for is None or len(merge_subplots_for) == 0
     COMPLETE_SUMMARY = [
         PlotsConfiguration(
@@ -385,8 +385,6 @@ def new_draw_complete(plot_data: List[PlotData], merge_subplots_for: List[PlotDa
     fig, _ = n_create_lineplots(COMPLETE_SUMMARY, rows=2, cols=2, theme=custom_theme)
     _save_to_pdf(fig, save_path)
     return fig
-
-
 
 
 
@@ -426,50 +424,6 @@ def n_create_lineplots(plot_configs: List[PlotsConfiguration],
     plt.tight_layout()
     plt.close(fig)
     return fig, axes
-
-
-def draw_complete_summary(plot_data: List[PlotData], merge_subplots_for: List[PlotData] = None, save_path: str = None):
-    # TODO: save_path is abs folder, e.g. /path/to/save or path/to/save/ where is save is a folder
-    # all pdfs are saved with format  "%d-%m-%Y"  maybe seconds aswell?
-    if merge_subplots_for is None:
-        merge_subplots_for = []
-    main_plot, sub_plots = _filter_main_plot_data(plot_data)
-    df_temp_inner_plt_params = list(map(lambda x: x.inner_params(), sub_plots))
-    df_temp_24_inner_plt_params = list(map(lambda x: x.inner_24_params(), sub_plots))
-    dataframes_info = None if len(merge_subplots_for) == 0 else list(map(lambda x: x.info(), merge_subplots_for))
-    df_temp_plt_params = {
-        "main": main_plot_params(main_plot.data, "Temperature Over Time"),
-        "inner": df_temp_inner_plt_params}
-    df_temp_24_plt_params = {
-        'main': main_plot_params(last_24h_df(main_plot.data), "Temperature Last 24 Hours", marker='o', markersize=6),
-        "inner": df_temp_24_inner_plt_params}
-
-    df_hum_plt_params = {"main": main_plot_params(main_plot.data, "Humidity Over Time", y="humidity", color="purple")}
-    google = [d for d in sub_plots if d.support is SupportedDataFrames.GOOGLE_COM]
-    google_df = None if len(google) == 0 else google[0].data
-
-    df_hum_24_plt_params = {
-        'main': main_plot_params(last_24h_df(main_plot.data), "Humidity Last 24 Hours", marker='o', markersize=6,
-                                 color="purple", ylabel="Humidity (%)", y="humidity")}
-    if google_df is not None:
-        df_hum_plt_params["inner"] = [google[0].support.get_hum_inner_plots_params(google_df)]
-        df_hum_24_plt_params["inner"] = [google[0].support.get_hum_24h_inner_plots_params(last_24h_df(google_df))]
-
-    plots_w_params = [df_temp_plt_params, df_temp_24_plt_params, df_hum_plt_params, df_hum_24_plt_params]
-    combined_fig, _ = create_lineplots(plots_w_params, dataframes_info=dataframes_info, theme=custom_theme, rows=2,
-                                       cols=2)
-
-    return combined_fig
-
-
-def _filter_main_plot_data(plot_data_list: List[PlotData]) -> Tuple[PlotData, List[PlotData]]:
-    main_elements = [plot_data for plot_data in plot_data_list if plot_data.main]
-
-    if len(main_elements) != 1:
-        raise ValueError(f"Expected exactly one 'main' element, but found {len(main_elements)}.")
-
-    remaining_elements = [plot_data for plot_data in plot_data_list if not plot_data.main]
-    return main_elements[0], remaining_elements
 
 
 def draw_plots(df, dwd_df=None, google_df=None, wettercom_df=None, ulmde_df=None, with_save=True, save_path=None):
@@ -579,26 +533,6 @@ def seaborn_lineplot_params(fr, label, x, y, marker=None, color=None, alpha=None
     if markersize:
         out["markersize"] = markersize
     return out
-
-
-def _validate_and_sort_timestamp(data: pd.DataFrame) -> pd.DataFrame:
-    """
-    Private method to validate that the DataFrame contains a 'timestamp' column.
-    Parses the 'timestamp' column and sorts the DataFrame by 'timestamp'.
-
-    :param data: The Pandas DataFrame containing the data.
-    :return: The validated and sorted DataFrame.
-    :raises ValueError: If 'timestamp' column is missing.
-    """
-    if 'timestamp' not in data.columns:
-        raise ValueError("DataFrame must contain a 'timestamp' column.")
-
-    # Parse the 'timestamp' column and sort by it
-    data['timestamp'] = data['timestamp'].map(
-        lambda x: datetime.strptime(str(x).replace("+00:00", "").strip(), '%Y-%m-%d %H:%M:%S'))
-    data = data.sort_values(by="timestamp")
-
-    return data
 
 
 def merge_temperature_by_timestamp(dataframes_info: List[Dict[str, Any]], timestamp_col: str = 'timestamp',

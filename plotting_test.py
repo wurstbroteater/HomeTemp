@@ -45,7 +45,7 @@ test =[PlotData(SupportedDataFrames.Main, main_df, True),
        PlotData(SupportedDataFrames.GOOGLE_COM, df1),
        PlotData(SupportedDataFrames.DWD_DE, df2)]
 #print(draw_complete_summary(test))
-print(new_draw_complete(test, test)[0])
+print(draw_complete_summary(test, test))
 
 
 

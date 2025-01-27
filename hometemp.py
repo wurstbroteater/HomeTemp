@@ -12,7 +12,8 @@ from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, Senso
 from core.sensors.dht import get_sensor_data
 from core.sensors.util import get_temperature
 from core.virtualization import init_postgres_container
-from core.plotting import draw_plots
+from core.plotting import PlotData,SupportedDataFrames, draw_complete_summary
+from typing import Callable, Tuple, List, Optional, Dict, Any
 
 # GLOBAL Variables
 log = None
@@ -62,27 +63,38 @@ def _get__visualization_data():
 
 # ------------------------------- Main  ----------------------------------------------
 
-def _create_visualization_commanded(commander):
-    log.info("Command: Creating Measurement Data Visualization")
+def _create_visualization(mode: str, save_path_template: str, email_receiver: Optional[str] = None):
+    log.info(f"{mode}: Creating Measurement Data Visualization")
     sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
-
+    plots = [
+        PlotData(SupportedDataFrames.Main, sensor_data, True),
+        PlotData(SupportedDataFrames.DWD_DE, dwd_df),
+        PlotData(SupportedDataFrames.GOOGLE_COM, google_df),
+        PlotData(SupportedDataFrames.WETTER_COM, wettercom_df),
+        PlotData(SupportedDataFrames.ULM_DE, ulmde_df),
+    ]
     name = datetime.now().strftime("%d-%m-%Y")
-    save_path = f"plots/commanded/{name}.pdf"
-    draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df,
-               save_path=save_path)
-    log.info("Command: Done")
-    send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
-                             wettercom_df=wettercom_df, path_to_pdf=save_path, receiver=commander)
+    save_path = save_path_template.format(name=name)
+    
+    draw_complete_summary(plots, merge_subplots_for=plots, save_path=save_path)
+    log.info(f"{mode}: Done")
+    
+    send_visualization_email(
+        df=sensor_data,
+        ulmde_df=ulmde_df,
+        google_df=google_df,
+        dwd_df=dwd_df,
+        wettercom_df=wettercom_df,
+        path_to_pdf=save_path,
+        receiver=email_receiver)
+
+
+def _create_visualization_commanded(commander):
+    _create_visualization(mode="Command",save_path_template="plots/commanded/{name}.pdf",email_receiver=commander)
 
 
 def create_visualization_timed():
-    log.info("Timed: Creating Measurement Data Visualization")
-    sensor_data, google_df, dwd_df, wettercom_df, ulmde_df = _get__visualization_data()
-    draw_plots(df=sensor_data, google_df=google_df, dwd_df=dwd_df, wettercom_df=wettercom_df, ulmde_df=ulmde_df)
-    log.info("Timed: Done")
-    send_visualization_email(df=sensor_data, ulmde_df=ulmde_df, google_df=google_df, dwd_df=dwd_df,
-                             wettercom_df=wettercom_df)
-
+    _create_visualization(mode="Timed",save_path_template="plots/{name}.pdf")
 
 def run_received_commands():
     log.info("Checking for commands")
