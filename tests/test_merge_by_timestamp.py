@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
-from core.plotting import last_24h_df, merge_temperature_by_timestamp
+# functions method to DefaultPlotCategory
+#from core.plotting import last_24h_df, merge_temperature_by_timestamp
 
 base_time = datetime(2024, 10, 5, 12, 0, 0)
 
@@ -46,5 +47,5 @@ dataframes_info = [
 #dataframes_info = [{'df': last_24h_df(ulmde_df), 'name': 'ulm','keys': ['temp']},{'df':last_24h_df(dwd_df),'name': 'dwd', 'keys': ['temp']},{'df':last_24h_df(wettercom_df),'name': 'wettercom', 'keys': ['temp_stat', 'temp_dyn']},{'df': last_24h_df(google_df),'name': 'google', 'keys': ['temp']},{'df': last_24h_df(df),'name': 'main', 'keys': ['room_temp'], 'main': True}]
 #dataframes_info = [{'df': ulmde_df, 'name': 'ulm','keys': ['temp']},{'df':dwd_df,'name': 'dwd', 'keys': ['temp']},{'df':wettercom_df,'name': 'wettercom', 'keys': ['temp_stat', 'temp_dyn']},{'df': google_df,'name': 'google', 'keys': ['temp']},{'df': df,'name': 'main', 'keys': ['room_temp'], 'main': True}]
 
-result_df = merge_temperature_by_timestamp(dataframes_info)
-print(result_df)
+#result_df = merge_temperature_by_timestamp(dataframes_info)
+#print(result_df)

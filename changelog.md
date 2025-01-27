@@ -8,6 +8,16 @@ TBD
 - Added timelapse video creation of a set of pictures with the name format '%Y-%m-%d-%H:%M:%S'
 - Updated `requirements.txt` to only contain top level dependencies
 - Updated `GoogleFetcher` to new javascript-enabled browser fetcher (uses Selenium now)
+- **BREAKING CHANGE**: Removed `draw_plots` from plotting and replaced it with `draw_complete_summary`
+- Refactored `core.plotting` to be more flexible and extendable
+    - Added `SupportedDataFrames` for defining how to enrich known dataframes with plotting information
+    - Added `PlotData` to combine dataframe with `SupportedDataFrames`
+    - Added `PlotDataSelector` to specify which data has to be selected from a `PlotData` instances
+    - Added `DefaultPlotCategory.DISTINCT` for multi-lineplots. Use with an `PlotDataSelector.*ALL`
+    - Added `DefaultPlotCategory.DISTINCT24` for 24h-multi-lineplots. Use with an `PlotDataSelector.*24`
+    - Added `DefaultPlotCategory.MERGED` for lineplots with merged subplots. Currently, only supports temperature!
+    - Added `DefaultPlotCategory.MERGED24` for 24h-lineplots with merged subplots. Currently, only supports temperature!
+    - Added `DefaultPlotCategory` for combining `DefaultPlotCategory` with the main plot parameter configuration
 
 ## 0.4
 
