@@ -23,11 +23,12 @@ custom_theme = {
 
 TEMP_TUPLE_DEFAULT = ("temp", None)
 
+# These functions represent direct seaborn plot parameters
 MINIMAL_INNER = lambda df, label, y: {"data": df, "label": label, "x": "timestamp", "y": y, "alpha": 0.6}
 MINIMAL_INNER_24 = lambda df, label, y: {"data": df, "label": label, "x": "timestamp", "y": y, "alpha": 0.6, "marker": "o", "markersize": 6}
 
-NOT_DIRECT_PARAMS = ["title", "xlabel", "ylable"]
-# These functions represent seaborn plot parameters
+NOT_DIRECT_PARAMS = ["title", "xlabel", "ylabel"]
+# These functions represent seaborn plot configurations, i.e., direct seaborn plot parameters and some for configurinig main plot, see NOT_DIRECT_PARAMS
 MINIMAL_MAIN = lambda title, ylabel, y : {"title": title,"xlabel":"Time", "ylabel":ylabel, "label":"Home", "x":"timestamp", "y":y}
 MINIMAL_MAIN_24 = lambda title, ylabel, y : {"title": title,"xlabel":"Time", "ylabel":ylabel, "label":"Home", "x":"timestamp", "y":y,  "marker":"o", "markersize":6} 
 
@@ -317,12 +318,6 @@ class DefaultPlotCategory:
 
         return ax
 
-def _direct_seaborn_only(main_plot:dict) -> dict:
-    NOT_DIRECT_PARAMS = ["title", "xlabel", "ylabel"]
-    return {key: main_plot[key] for key in set([*main_plot]) - set(NOT_DIRECT_PARAMS)}
-
-
-
 class PlotsConfiguration:
     def __init__(self,category: DefaultPlotCategory, main_plot: dict):
         self.category = category
@@ -330,7 +325,36 @@ class PlotsConfiguration:
 
     def __repr__(self):
         return f"PlotsConfiguration(category={self.category}, main_plot={self.main_plot})"
+    
+    def draw_main_plot(self, ax_in_subplot:plt.Axes):
+        plot_dict:dict = self.main_plot
+        title = plot_dict['title']
+        xlabel = plot_dict.get('xlabel', plot_dict.get('x'))
+        ylabel = plot_dict.get('ylabel', plot_dict.get('y'))
 
+        self.category(ax_in_subplot, self.main_plot)
+
+        ax_in_subplot.set_xlabel(xlabel)
+        ax_in_subplot.tick_params(axis="x", rotation=45)
+        ax_in_subplot.set_ylabel(ylabel)
+
+        ax_in_subplot.set_title(title)
+        ax_in_subplot.legend()
+
+
+def _direct_seaborn_only(main_plot:dict) -> dict:
+    keys_to_remove = NOT_DIRECT_PARAMS
+    return {key: main_plot[key] for key in set([*main_plot]) - set(keys_to_remove)}
+
+def _save_to_pdf(fig:plt.Figure, save_path:str):
+    if fig is None or save_path is None:
+        return
+    expected_file_type = ".pdf"
+    if not save_path.lower().endswith(expected_file_type):
+        log.info(f"Cannot save plot because file does not end with {expected_file_type}")
+        return
+    fig.savefig(save_path)
+    log.info(f"Saved plots to {save_path}")
 
 
 
@@ -338,7 +362,7 @@ class PlotsConfiguration:
 # -------------------------------------------------- Main Methods --------------------------------------------------
 # -
 
-def new_draw_complete(plot_data: List[PlotData], merge_subplots_for: List[PlotData]=None):
+def new_draw_complete(plot_data: List[PlotData], merge_subplots_for: List[PlotData]=None, save_path:str=None):
     nothing_to_merge = merge_subplots_for is None or len(merge_subplots_for) == 0
     COMPLETE_SUMMARY = [
         PlotsConfiguration(
@@ -358,9 +382,12 @@ def new_draw_complete(plot_data: List[PlotData], merge_subplots_for: List[PlotDa
             MINIMAL_MAIN_24("Humidity Last 24 Hours", "Humidity (%)", "humidity") | {"color": "purple"}
         )
         ]
-    # TODO: save to file
-    return n_create_lineplots(COMPLETE_SUMMARY, rows=2, cols=2, theme=custom_theme)
-    #return COMPLETE_SUMMARY
+    fig, _ = n_create_lineplots(COMPLETE_SUMMARY, rows=2, cols=2, theme=custom_theme)
+    _save_to_pdf(fig, save_path)
+    return fig
+
+
+
 
 
 def n_create_lineplots(plot_configs: List[PlotsConfiguration],
@@ -391,23 +418,10 @@ def n_create_lineplots(plot_configs: List[PlotsConfiguration],
         # in multi dim its a List[...List[Axes]]
         axes = axes.T.flatten()
 
-    for idx, c in enumerate(plot_configs):
-        cfg: PlotsConfiguration = c
-        log.info(f"Plot {idx} with {cfg}")
-        plot_dict:dict = cfg.main_plot
-        title = plot_dict['title']
-        xlabel = plot_dict.get('xlabel', plot_dict.get('x'))
-        ylabel = plot_dict.get('ylabel', plot_dict.get('y'))
-        ax_in_subplot:plt.Axes = axes[idx]
+    for idx, plot_config in enumerate(plot_configs):
+        log.info(f"Plot {idx} with {plot_config}")
+        plot_config.draw_main_plot(axes[idx])
 
-        cfg.category(ax_in_subplot, cfg.main_plot)
-
-        ax_in_subplot.set_xlabel(xlabel)
-        ax_in_subplot.tick_params(axis="x", rotation=45)
-        ax_in_subplot.set_ylabel(ylabel)
-
-        ax_in_subplot.set_title(title)
-        ax_in_subplot.legend()
    
     plt.tight_layout()
     plt.close(fig)
