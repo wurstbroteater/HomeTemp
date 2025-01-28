@@ -11,7 +11,10 @@ from datetime import datetime, timedelta
 log = get_logger(__name__)
 
 # ----------------------------------------------------------------------------------------------------------------
-# The NEW visualization module. Provides means to create a plot for sensor data and is able to save them to pdf.
+# The visualization module. Provides means to create a plot for sensor data and is able to save them to pdf.
+# A goal of the architecture is to easliy incorporate new plots and and new plot configurations, i.e., 
+# plot arrangements, plot theme, label names and seaborn parameters. 
+# See changelog.md 0.5 for class details.
 # ----------------------------------------------------------------------------------------------------------------
 
 
@@ -35,10 +38,6 @@ MINIMAL_MAIN_24 = lambda title, ylabel, y: {"title": title, "xlabel": "Time", "y
 # @formatter:on
 
 class SupportedDataFrames(Enum):
-    """
-        Supported data frames to plot parameters
-    
-    """
     # enumIdx, name, temperature keys list of tuple (df key, plot label with None for default see _label) , humidity key
     Main = 1, "Room", [("room_temp", None)], "humidity"
     DWD_DE = 2, "DWD", [TEMP_TUPLE_DEFAULT], None
@@ -213,10 +212,10 @@ class DefaultPlotCategory:
             df = p_data.get_temperatures([timestamp_col]) if df_filter_fun is None else df_filter_fun(
                 p_data.get_temperatures([timestamp_col]))
             if len(df) == 0:
-                log.info("skipping empty dataframe")
+                log.debug("skipping empty dataframe")
                 continue
             if p_data.main:
-                log.info("MERGED main df should not be contained in this list. skipping it.")
+                log.debug("MERGED main df should not be contained in this list. skipping it.")
                 continue
 
             aligned_df = pd.merge_asof(
@@ -278,10 +277,6 @@ class DefaultPlotCategory:
 
         ax.fill_between(df[x_col], df[min_temp_col], df[max_temp_col], color='lightblue', alpha=0.4)
 
-        # ax.set_title("Outside Min/Max and Mean Temperatures, and Room Temperature Inside", fontsize=18, pad=20)
-        # ax.set_xlabel(x_col, fontsize=14)
-        # ax.set_ylabel("Temperature (°C)", fontsize=14)
-        # ax.legend(loc='upper left', fontsize='large')
         plt.xticks(rotation=45)
         plt.tight_layout()
 
@@ -400,7 +395,7 @@ def _create_lineplots(plot_configs: List[PlotsConfiguration],
         axes = axes.T.flatten()
 
     for idx, plot_config in enumerate(plot_configs):
-        log.info(f"Plot {idx} with {plot_config}")
+        log.debug(f"Plot {idx} with {plot_config}")
         plot_config.draw_main_plot(axes[idx])
 
     plt.tight_layout()
