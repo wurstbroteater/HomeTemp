@@ -88,8 +88,8 @@ class SupportedDataFrames(Enum):
             return None
         elif self is SupportedDataFrames.WETTER_COM:
             return [MINIMAL_INNER_24(data, self._label(self.temperature_keys[0][1]), self.temperature_keys[0][0]),
-                    MINIMAL_INNER_24(data, self._label(self.temperature_keys[1][1]), self.temperature_keys[1][0]) | {
-                        "marker": "s"}]
+                    MINIMAL_INNER_24(data, self._label(self.temperature_keys[1][1]), self.temperature_keys[1][0]) | 
+                       {"marker": "s"}]
 
         return list(map(lambda temp_keys: MINIMAL_INNER_24(data, self._label(temp_keys[1]), temp_keys[0]),
                         self.temperature_keys))
