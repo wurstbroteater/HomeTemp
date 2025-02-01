@@ -1,3 +1,7 @@
+pandas~=2.0.3
+matplotlib~=3.5.1
+numpy~=1.25.2
+beautifulsoup4~=4.12.2
 psycopg2-binary==2.9.10
 psycopg2==2.9.9
 rpi-lgpio==0.6
@@ -10,7 +14,7 @@ schedule==1.2.2
 seaborn==0.13.2
 selenium==4.24.0
 SQLAlchemy==2.0.34
-requests==2.28.1
+requests==2.32.0
 PyVirtualDisplay==3.0
 bs4==0.0.2
 jupyter_client==8.6.2
