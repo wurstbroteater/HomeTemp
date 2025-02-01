@@ -14,7 +14,7 @@ from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
 from core.sensors.camera import RpiCamController
 from core.sensors.dht import get_sensor_data
 from core.sensors.util import get_temperature
-from core.virtualization import init_postgres_container
+from core.usage_util import init_database
 
 # GLOBAL Variables
 log = None
@@ -127,11 +127,7 @@ def collect_and_save_to_db():
 
 def main():
     log.info(f"------------------- HomeTemp v{hometemp_config()['version']} -------------------")
-    if not init_postgres_container(database_config()):
-        log.error("Postgres container startup error! Shutting down ...")
-        exit(1)
-        # after restart, database needs some time to start
-    time.sleep(1)
+    init_database(SensorDataHandler, database_config(), 'sensor_data')
 
     picture_cmd_name = 'pic'
     picture_fun_params = ['commander']

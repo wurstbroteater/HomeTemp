@@ -21,8 +21,12 @@ class PostgresHandler(ABC):
     table itself, or its content as well as checking for table existence or how many rows the table has.
     It only provides a default method for inserting data into the table but not for removing or updating it.
 
+    @Usage
+    Currently, a database needs to be initialized by init_db_connection() before accessing data.
+
     @Impl
     _create_table needs to be implemented in EVERY extending class because it is used by the provided methods.
+
     """
 
     def __init__(self, port, host, user, password, table):
@@ -38,20 +42,46 @@ class PostgresHandler(ABC):
     def _create_table(self):
         pass
 
-    def init_db_connection(self, check_table=True):
+    def is_db_ready(self) -> bool:
+        """Checks if the database is ready for transactions."""
+
+        if self.connection is None:
+            log.debug("Connection is None. Initializing...")
+            self.init_db_connection(check_table=False)
+        try:
+            with self.connection.connect() as con:
+                con.execute(text("SELECT 1"))
+            log.debug("Database is ready")  
+            return True
+        except exc.SQLAlchemyError as e:
+            log.debug("Database is not ready: " + str(e))
+            return False
+        
+    def close(self):
+        """Closes the database connection."""
+        if self.connection:
+            self.connection.dispose()
+            log.debug("Database connection closed.")
+
+    def init_db_connection(self, check_table=True) -> bool:
         """
         Establishes the connection to the Postgres database.
         If the check_table flag is true, it checks if the table in 'self.table' exists in the database and
         if not, the table is created.
+
+        Returns True if the initialization was successful otherwise False. Note that a initialized database 
+        might not be ready to accept transactions.
         """
         try:
             if self.connection is None:
                 self.connection = self._init_db()
-            log.debug("Connected to the database!")
+            log.info("Connected to the database!")
             if check_table and not self._check_table_existence():
                 self._create_table()
+            return True
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
+        return False
 
     def _init_db(self):
         db_url = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
@@ -103,7 +133,7 @@ class PostgresHandler(ABC):
             return inspect(self.connection).has_table(self.table)
 
         except exc.SQLAlchemyError as e:
-            log.error("Problem with database " + str(e))
+            log.error("Problem with database while checking for table " + str(e))
             return False
 
     def _insert_in_table(self, data_to_insert: dict):

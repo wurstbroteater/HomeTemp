@@ -7,6 +7,11 @@ from core.core_log import get_logger
 
 log = get_logger(__name__)
 
+# ----------------------------------------------------------------------------------------------------------------
+# The python utility module which provides utility methods for code not using any core internal datastructures.
+# Should only be used for imported python frameworks.
+# ----------------------------------------------------------------------------------------------------------------
+
 
 def create_timelapse(input_folder: str, output_video_path: str, image_encoding="png", fps: int = 2) -> None:
     # List to store the image file paths

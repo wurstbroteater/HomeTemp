@@ -18,6 +18,11 @@ TBD
     - Added `DefaultPlotCategory.MERGED` for lineplots with merged subplots. Currently, only supports temperature!
     - Added `DefaultPlotCategory.MERGED24` for 24h-lineplots with merged subplots. Currently, only supports temperature!
     - Added `DefaultPlotCategory` for combining `DefaultPlotCategory` with the main plot parameter configuration
+- Added new functionality to `core.database.PostgresHandler`:
+  - Added `close()` to close the current database connection. If the handler instance is reused, the `init_db_connection` has to  be called before doing something with the instance!
+  - Added `is_db_ready()` which returns true if the database is currently ready to accept transactions else false. By default, it initializes the database before checking for ready.
+- Added `core.usage_util` providing utilities for several core functionalities.
+- Optimized BaseTemp and HomeTemp to wait for database to be ready.
 
 ## 0.4
 
