@@ -1,4 +1,4 @@
-import docker, time
+import docker
 from docker import errors as de
 
 from core.core_log import get_logger
