@@ -12,6 +12,7 @@ picture via commanding.
 - Docker
 - libpq-dev
 - xvfb
+- Python >= 3.9
 - Everything in `requirements.txt` for pip
 
 ## Current Features
