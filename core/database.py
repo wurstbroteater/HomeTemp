@@ -75,7 +75,7 @@ class PostgresHandler(ABC):
         try:
             if self.connection is None:
                 self.connection = self._init_db()
-            log.info("Connected to the database!")
+            log.debug("Connected to the database!")
             if check_table and not self._check_table_existence():
                 self._create_table()
             return True
