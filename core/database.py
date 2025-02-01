@@ -47,7 +47,8 @@ class PostgresHandler(ABC):
 
         if self.connection is None:
             log.debug("Connection is None. Initializing...")
-            self.init_db_connection(check_table=False)
+            if not self.init_db_connection(check_table=False):
+                log.error("Unexpected unable to start database. Is there a problem with the database instance?")
         try:
             with self.connection.connect() as con:
                 con.execute(text("SELECT 1"))
