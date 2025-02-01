@@ -1,4 +1,3 @@
-from core.core_log import get_logger
 import urllib.parse
 from datetime import datetime
 
@@ -6,12 +5,14 @@ import requests
 from bs4 import BeautifulSoup as bs
 from pyvirtualdisplay import Display
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from core.core_log import get_logger
 
 log = get_logger(__name__)
 
@@ -30,7 +31,8 @@ class UlmDeFetcher:
         try:
             # set connect and read timeout to 5 seconds
             response = requests.get('https://www.ulm.de/', timeout=(5, 5))
-        except (requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (
+        requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Ulm.de connection problem: " + str(e))
             return None
 
@@ -69,7 +71,8 @@ class WetterComFetcher:
         try:
             # set connect and read timeout to 5 seconds
             response = requests.get(url, timeout=(5, 5))
-        except (requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (
+        requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Wetter.com connection problem: " + str(e))
             return None
 
@@ -115,7 +118,7 @@ class WetterComFetcher:
         finally:
             display.stop()
             driver.quit()
-            
+
         return out
 
 
@@ -135,15 +138,15 @@ class GoogleFetcher:
         options = Options()
         options.add_argument('--disable-blink-features=AutomationControlled')
         try:
-            service = Service('/usr/bin/chromedriver') 
+            service = Service('/usr/bin/chromedriver')
             driver = webdriver.Chrome(service=service, options=options)
             driver.get(url)
             timeout_s = 15
-            web_wait_timeout  = 10
+            web_wait_timeout = 10
             driver.set_page_load_timeout(timeout_s)
             driver.implicitly_wait(timeout_s)
 
-            #print(driver.page_source)
+            # print(driver.page_source)
             WebDriverWait(driver, web_wait_timeout).until(
                 EC.presence_of_element_located((By.ID, "wob_loc"))
             )
@@ -167,6 +170,7 @@ class GoogleFetcher:
                 driver.quit()
             display.stop()
             return None
+
 
 class Fetcher:
     """
@@ -194,7 +198,8 @@ class Fetcher:
                 return self._handle_ok_status_code(response)
             else:
                 return self._handle_bad_status_code(code)
-        except (requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (
+        requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log.error(f"Creating the connection failed with error: {e}")
             return None
 
@@ -285,6 +290,7 @@ class DWDFetcher(Fetcher):
             dev = self.data["temperatureStd"][current_temp_forecast_index]
             # log.info(f"Found: {current_temp_forecast_index}, {current_time}, {temp}°C, dev: {dev}")
             return current_time, temp, dev
+
 
 # TODO: support openweather and weatherAPI
 class WeatherAPI:

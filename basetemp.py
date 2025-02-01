@@ -1,21 +1,26 @@
-from core.core_log import setup_logging, get_logger
-from core.core_configuration import load_config, database_config, hometemp_config
-import schedule, time, threading
 from datetime import datetime
-from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
+from typing import Optional
+
+import schedule
+import threading
+import time
+
 from core.command import CommandService
+from core.core_configuration import load_config, database_config, hometemp_config
+from core.core_log import setup_logging, get_logger
 from core.database import SensorDataHandler
-from core.sensors.util import get_temperature
-from core.virtualization import PostgresDockerManager, init_postgres_container
-from core.plotting import PlotData,SupportedDataFrames, draw_complete_summary
-from core.sensors.dht import get_sensor_data
+from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
+from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
 from core.sensors.camera import RpiCamController
-from typing import Callable, Tuple, List, Optional, Dict, Any
+from core.sensors.dht import get_sensor_data
+from core.sensors.util import get_temperature
+from core.virtualization import init_postgres_container
 
 # GLOBAL Variables
 log = None
 command_service = None
 SEND_TEMPERATURE_WARNING = False
+
 
 def _get__visualization_data():
     auth = database_config()
@@ -63,22 +68,23 @@ def _take_picture_commanded(commander):
 
 
 def _create_visualization_commanded(commander):
-    _create_visualization(mode="Command",save_path_template="plots/commanded/{name}.pdf",email_receiver=commander)
+    _create_visualization(mode="Command", save_path_template="plots/commanded/{name}.pdf", email_receiver=commander)
 
 
 def create_visualization_timed():
     _create_visualization(mode="Timed", save_path_template="plots/commanded/{name}.pdf")
+
 
 def _create_visualization(mode: str, save_path_template: str, email_receiver: Optional[str] = None):
     log.info(f"{mode}: Creating Measurement Data Visualization")
     sensor_data = _get__visualization_data()
     name = datetime.now().strftime("%d-%m-%Y")
     save_path = save_path_template.format(name=name)
-    
+
     draw_complete_summary([PlotData(SupportedDataFrames.Main, sensor_data, True)], save_path=save_path)
     log.info(f"{mode}: Done")
-    
-    send_visualization_email(df=sensor_data,path_to_pdf=save_path,receiver=email_receiver)
+
+    send_visualization_email(df=sensor_data, path_to_pdf=save_path, receiver=email_receiver)
 
 
 def run_received_commands():
@@ -136,15 +142,15 @@ def main():
 
     schedule.every(10).minutes.do(collect_and_save_to_db)
     # Phase 1
-    #schedule.every().day.at("11:45").do(run_threaded, create_visualization_timed)
-    #schedule.every().day.at("19:00").do(run_threaded, take_picture_timed)
-    #schedule.every().day.at("03:00").do(run_threaded, take_picture_timed)
-    #schedule.every().day.at("10:30").do(run_threaded, take_picture_timed)
+    # schedule.every().day.at("11:45").do(run_threaded, create_visualization_timed)
+    # schedule.every().day.at("19:00").do(run_threaded, take_picture_timed)
+    # schedule.every().day.at("03:00").do(run_threaded, take_picture_timed)
+    # schedule.every().day.at("10:30").do(run_threaded, take_picture_timed)
     # Phase 2
     schedule.every().day.at("08:00").do(run_threaded, create_visualization_timed)
-    #schedule.every().day.at("06:00").do(run_threaded, take_picture_timed)
-    #schedule.every().day.at("02:00").do(run_threaded, take_picture_timed)
-    #schedule.every().day.at("20:00").do(run_threaded, take_picture_timed)
+    # schedule.every().day.at("06:00").do(run_threaded, take_picture_timed)
+    # schedule.every().day.at("02:00").do(run_threaded, take_picture_timed)
+    # schedule.every().day.at("20:00").do(run_threaded, take_picture_timed)
 
     # Common
     schedule.every(17).minutes.do(run_threaded, run_received_commands)
@@ -154,7 +160,7 @@ def main():
     collect_and_save_to_db()
     create_visualization_timed()
     time.sleep(1)
-    #take_picture_timed()
+    # take_picture_timed()
     run_received_commands()
     log.info("entering main loop")
     while True:

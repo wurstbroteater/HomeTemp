@@ -1,10 +1,11 @@
-from core.core_log import get_logger
 from abc import ABC, abstractmethod
 
 import pandas as pd
 from sqlalchemy import create_engine, text, select, update, insert, inspect, exc, Table, Column, MetaData, Integer, \
     DECIMAL, \
     TIMESTAMP
+
+from core.core_log import get_logger
 
 log = get_logger(__name__)
 

@@ -1,4 +1,3 @@
-from core.core_log import setup_logging, get_logger
 import time
 from datetime import datetime, timedelta
 
@@ -6,6 +5,7 @@ import schedule
 
 from core.core_configuration import load_config, database_config, dwd_config, google_config, wettercom_config, \
     hometemp_config
+from core.core_log import setup_logging, get_logger
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler
 from endpoint.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
 

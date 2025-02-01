@@ -1,9 +1,10 @@
-from core.core_log import get_logger
-from core.core_configuration import distribution_config
 from email.utils import parseaddr
 from typing import List, Optional
-from core.distribute import EmailDistributor
+
+from core.core_configuration import distribution_config
 from core.core_configuration import hometemp_config
+from core.core_log import get_logger
+from core.distribute import EmailDistributor
 
 log = get_logger(__name__)
 

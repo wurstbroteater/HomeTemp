@@ -1,18 +1,18 @@
-from core.core_log import setup_logging, get_logger
-from core.core_configuration import load_config, database_config, google_config
+from core.core_configuration import load_config
+from core.core_log import setup_logging
 from core.plotting import *
-from endpoint.fetcher import GoogleFetcher, WetterComFetcher
+
 load_config()
 setup_logging()
-log =  get_logger(__name__)
+log = get_logger(__name__)
 base_time = datetime(2024, 10, 5, 12, 0, 0)
-#base_time = datetime.now()
+# base_time = datetime.now()
 
 # Normal Case DataFrame (main)
 main_df = pd.DataFrame({
     'timestamp': [base_time, base_time + timedelta(minutes=10), base_time + timedelta(minutes=20)],
-    'room_temp': [22.0, 21.8, 22.1], 
-       'humidity': [44.9, 25.5, 16.0]
+    'room_temp': [22.0, 21.8, 22.1],
+    'humidity': [44.9, 25.5, 16.0]
 })
 
 # DataFrame 1: Aligned timestamps
@@ -32,20 +32,15 @@ df2 = pd.DataFrame({
 df3 = pd.DataFrame({
     'timestamp': [base_time, base_time + timedelta(minutes=10), base_time + timedelta(minutes=20)],
     'temp_stat': [13.2, None, 14.0],  # One value is NaN
-    'temp_dyn': [14.0, 15.0, None]    # Another value is NaN
+    'temp_dyn': [14.0, 15.0, None]  # Another value is NaN
 })
 
-
-
-#print(SupportedDataFrames.DWD_DE.temperature_keys)
-#print(SupportedDataFrames.DWD_DE.get_inner_plots_params(df2))
-#print(SupportedDataFrames.WETTER_COM.get_24h_inner_plots_params(df3))
-#test=[PlotData(SupportedDataFrames.Main, main_df, {}),PlotData(SupportedDataFrames.DWD_DE, df2)]
-test =[PlotData(SupportedDataFrames.Main, main_df, True),
-       PlotData(SupportedDataFrames.GOOGLE_COM, df1),
-       PlotData(SupportedDataFrames.DWD_DE, df2)]
-#print(draw_complete_summary(test))
+# print(SupportedDataFrames.DWD_DE.temperature_keys)
+# print(SupportedDataFrames.DWD_DE.get_inner_plots_params(df2))
+# print(SupportedDataFrames.WETTER_COM.get_24h_inner_plots_params(df3))
+# test=[PlotData(SupportedDataFrames.Main, main_df, {}),PlotData(SupportedDataFrames.DWD_DE, df2)]
+test = [PlotData(SupportedDataFrames.Main, main_df, True),
+        PlotData(SupportedDataFrames.GOOGLE_COM, df1),
+        PlotData(SupportedDataFrames.DWD_DE, df2)]
+# print(draw_complete_summary(test))
 print(draw_complete_summary(test, test))
-
-
-

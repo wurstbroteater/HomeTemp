@@ -1,7 +1,9 @@
-from core.core_log import get_logger
-import cv2
 import os
 from datetime import datetime
+
+import cv2
+
+from core.core_log import get_logger
 
 log = get_logger(__name__)
 

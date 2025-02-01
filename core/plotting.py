@@ -1,18 +1,20 @@
-from core.core_log import get_logger
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-from enum import Enum
-from matplotlib.axes import Axes
-from typing import Callable, Tuple, List, Optional, Dict, Any
 from datetime import datetime, timedelta
+from enum import Enum
+from typing import Callable, Tuple, List, Optional
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib.axes import Axes
+
+from core.core_log import get_logger
 
 log = get_logger(__name__)
 
 # ----------------------------------------------------------------------------------------------------------------
 # The visualization module. Provides means to create a plot for sensor data and is able to save them to pdf.
-# A goal of the architecture is to easliy incorporate new plots and and new plot configurations, i.e., 
+# A goal of the architecture is to easily incorporate new plots and new plot configurations, i.e.,
 # plot arrangements, plot theme, label names and seaborn parameters. 
 # See changelog.md 0.5 for class details.
 # ----------------------------------------------------------------------------------------------------------------
@@ -88,8 +90,8 @@ class SupportedDataFrames(Enum):
             return None
         elif self is SupportedDataFrames.WETTER_COM:
             return [MINIMAL_INNER_24(data, self._label(self.temperature_keys[0][1]), self.temperature_keys[0][0]),
-                    MINIMAL_INNER_24(data, self._label(self.temperature_keys[1][1]), self.temperature_keys[1][0]) | 
-                       {"marker": "s"}]
+                    MINIMAL_INNER_24(data, self._label(self.temperature_keys[1][1]), self.temperature_keys[1][0]) |
+                    {"marker": "s"}]
 
         return list(map(lambda temp_keys: MINIMAL_INNER_24(data, self._label(temp_keys[1]), temp_keys[0]),
                         self.temperature_keys))
@@ -328,14 +330,15 @@ class PlotsConfiguration:
     def draw_main_plot(self, ax_in_subplot: plt.Axes):
         plot_dict: dict = self.main_plot
         title = plot_dict['title']
-        xlabel = plot_dict.get('xlabel', plot_dict.get('x'))
-        ylabel = plot_dict.get('ylabel', plot_dict.get('y'))
+        # if there is no label overwrite then use the name of the dataframe column as label
+        x_label = plot_dict.get('xlabel', plot_dict.get('x'))
+        y_label = plot_dict.get('ylabel', plot_dict.get('y'))
 
         self.category(ax_in_subplot, self.main_plot)
 
-        ax_in_subplot.set_xlabel(xlabel)
+        ax_in_subplot.set_xlabel(x_label)
         ax_in_subplot.tick_params(axis="x", rotation=45)
-        ax_in_subplot.set_ylabel(ylabel)
+        ax_in_subplot.set_ylabel(y_label)
 
         ax_in_subplot.set_title(title)
         ax_in_subplot.legend()
@@ -370,7 +373,7 @@ def _create_lineplots(plot_configs: List[PlotsConfiguration],
                       fig_size: Tuple[int, int] = (25, 12),
                       rows: int = 1,
                       cols: int = 1,
-                      theme: Optional[dict] = None) -> Tuple[plt.Figure, List[plt.Axes]]:
+                      theme: Optional[dict] = None) -> Tuple[Optional[plt.Figure], Optional[List[plt.Axes]]]:
     num_plots = len(plot_configs)
     if num_plots == 0:
         log.info("Noting to draw, nothing to return")

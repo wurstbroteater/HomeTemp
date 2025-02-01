@@ -1,24 +1,31 @@
-from core_log import setup_logging, get_logger
-from core_configuration import load_config, backend_config
-import socket
-import time
-import threading
 import queue
+import socket
+import threading
+import time
+from typing import Any, Generator
+
+from core_configuration import load_config, backend_config
+from core_log import setup_logging, get_logger
 
 setup_logging()
 load_config()
 SERVER_HOST = backend_config()["ip"]
 PORT = int(backend_config()["port"])
 MAX_RETRIES = 3
-RETRY_DELAY_S = 2 
+RETRY_DELAY_S = 2
 log = get_logger(__name__)
 
-def simulate_command_processing(command: str) -> str:
+
+####
+## THIS IS WORK IN PROGRESS; NOTHING FOR RELEASE!
+####
+def simulate_command_processing(command: str) -> Generator[str, Any, None]:
     """Simulate processing steps for the given command."""
     for step in ["processing", "command completed"]:
         time.sleep(5)
         log.info(str(step))
         yield step
+
 
 class RequestProcessor:
     _instance: 'RequestProcessor' = None  # Class variable to hold the singleton instance
@@ -46,7 +53,7 @@ class RequestProcessor:
                         self.is_processing = True
                         log.info(f"Processing command: {command}")
                         self.send_status_update(server_socket, "queued")
-                        
+
                         for status in simulate_command_processing(command):
                             self.send_status_update(server_socket, status)
 
@@ -61,6 +68,7 @@ class RequestProcessor:
         except socket.error:
             log.info("Failed to send status update. Server may be disconnected.")
 
+
 def connect_to_server() -> socket.socket:
     """Attempt to connect to the server with retries."""
     attempts = 0
@@ -74,9 +82,10 @@ def connect_to_server() -> socket.socket:
         except (socket.error, ConnectionRefusedError):
             attempts += 1
             log.info(f"Attempt {attempts} failed. Retrying in {RETRY_DELAY_S}s.")
-            time.sleep(RETRY_DELAY_S) 
+            time.sleep(RETRY_DELAY_S)
     log.info("Max attempts reached. Exiting.")
     return None
+
 
 def is_socket_closed(sock: socket.socket) -> bool:
     out = False
@@ -84,17 +93,18 @@ def is_socket_closed(sock: socket.socket) -> bool:
         # this will try to read bytes without blocking and also without removing them from buffer (peek only)
         data = sock.recv(16, socket.MSG_DONTWAIT | socket.MSG_PEEK)
         if len(data) == 0:
-            out= True
+            out = True
     except BlockingIOError:
-        out= False  # socket is open and reading from it would block
+        out = False  # socket is open and reading from it would block
     except ConnectionResetError:
-        out= True  # socket was closed for some other reason
+        out = True  # socket was closed for some other reason
     except Exception as e:
         log.exception("unexpected exception when checking if a socket is closed")
-        out= False
+        out = False
     if not out:
         log.info("Server connection closed")
     return out
+
 
 def main() -> None:
     """Main client function to handle connections and command processing."""
@@ -105,7 +115,7 @@ def main() -> None:
         try:
             if command_thread is None:
                 command_thread = threading.Thread(target=processor.process_commands, args=(server_socket,), daemon=True)
-                command_thread.start() 
+                command_thread.start()
 
             while True:
                 log.info("Checking for commands")
@@ -118,7 +128,7 @@ def main() -> None:
                 except (socket.error):
                     log.info("Error receiving command. Reconnecting...")
                     break
-               
+
                 if is_socket_closed(server_socket):
                     break
         except KeyboardInterrupt:
@@ -126,9 +136,10 @@ def main() -> None:
             break
 
         time.sleep(2)
-        
+
     log.info("Client shutting down.")
     server_socket.close()
+
 
 if __name__ == "__main__":
     main()

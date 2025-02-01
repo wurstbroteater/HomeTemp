@@ -1,19 +1,20 @@
-from core.core_log import setup_logging, get_logger
-from core.core_configuration import load_config, database_config, hometemp_config
 import re
-import schedule
 import threading
 import time
 from datetime import datetime
+from typing import Optional
+
+import schedule
 
 from core.command import CommandService
-from core.distribute import send_visualization_email
+from core.core_configuration import load_config, database_config, hometemp_config
+from core.core_log import setup_logging, get_logger
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
+from core.distribute import send_visualization_email
+from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
 from core.sensors.dht import get_sensor_data
 from core.sensors.util import get_temperature
 from core.virtualization import init_postgres_container
-from core.plotting import PlotData,SupportedDataFrames, draw_complete_summary
-from typing import Callable, Tuple, List, Optional, Dict, Any
 
 # GLOBAL Variables
 log = None
@@ -75,10 +76,10 @@ def _create_visualization(mode: str, save_path_template: str, email_receiver: Op
     ]
     name = datetime.now().strftime("%d-%m-%Y")
     save_path = save_path_template.format(name=name)
-    
+
     draw_complete_summary(plots, merge_subplots_for=plots, save_path=save_path)
     log.info(f"{mode}: Done")
-    
+
     send_visualization_email(
         df=sensor_data,
         ulmde_df=ulmde_df,
@@ -90,11 +91,12 @@ def _create_visualization(mode: str, save_path_template: str, email_receiver: Op
 
 
 def _create_visualization_commanded(commander):
-    _create_visualization(mode="Command",save_path_template="plots/commanded/{name}.pdf",email_receiver=commander)
+    _create_visualization(mode="Command", save_path_template="plots/commanded/{name}.pdf", email_receiver=commander)
 
 
 def create_visualization_timed():
-    _create_visualization(mode="Timed",save_path_template="plots/{name}.pdf")
+    _create_visualization(mode="Timed", save_path_template="plots/{name}.pdf")
+
 
 def run_received_commands():
     log.info("Checking for commands")
