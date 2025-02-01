@@ -21,7 +21,6 @@ picture via commanding.
 - CRUD operations for tables and columns
 - Creating data visualizations using seaborn and matplot
 - Sending emails containing statistic data as text and visualizations as pdf
-- Recovering sensor data from log file
 - Data fetching from various API endpoints/websites
 - Commanding via email
 - Taking pictures (timed or commanded) via camera module (only tested on **Raspberry Pi 4 Model B**)
