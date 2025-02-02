@@ -33,11 +33,13 @@ def hometemp_config() -> SectionProxy:
     _validate_config(used_key)
     return config[used_key]
 
-def get_sensor_type(supported_sensors:list) -> Optional[str]:
-    out:str = hometemp_config().get("sensor_type", "").lower().strip()
+
+def get_sensor_type(supported_sensors: list) -> Optional[str]:
+    out: str = hometemp_config().get("sensor_type", "").lower().strip()
     if out not in supported_sensors:
         raise TypeError(f"Instance is configured with unsupported sensor type {out}")
     return out
+
 
 def database_config() -> SectionProxy:
     used_key = 'db'

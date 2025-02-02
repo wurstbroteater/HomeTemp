@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Callable, Tuple, List, Optional, LiteralString
+from typing import Callable, Tuple, List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,6 +10,7 @@ import seaborn as sns
 from matplotlib.axes import Axes
 
 from core.core_log import get_logger
+from core.database import TIME_FORMAT
 
 log = get_logger(__name__)
 
@@ -36,8 +37,6 @@ custom_theme = {
 }
 
 #@formatter:off
-# postgres expects timestamp ins ISO 8601 format TODO: MOVE TO DATABASE
-TIME_FORMAT:LiteralString = '%Y-%m-%d %H:%M:%S'
 TEMP_TUPLE_DEFAULT = ("temp", None)
 
 # These functions represent direct seaborn plot parameters

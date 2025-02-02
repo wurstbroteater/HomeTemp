@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import LiteralString
 
 import pandas as pd
 from sqlalchemy import create_engine, text, select, update, insert, inspect, exc, Table, Column, MetaData, Integer, \
@@ -14,6 +15,10 @@ log = get_logger(__name__)
 # Database connection module. Defines an abstract class PostgresHandler. Every handler for a database table
 # must implement _create_table which defines the structure of the table.
 # ----------------------------------------------------------------------------------------------------------------
+
+# postgres expects timestamp ins ISO 8601 format
+TIME_FORMAT:LiteralString = '%Y-%m-%d %H:%M:%S'
+
 
 class PostgresHandler(ABC):
     """
