@@ -1,5 +1,6 @@
+from configparser import SectionProxy
+
 from core.core_log import get_logger
-import threading
 import time
 from datetime import datetime
 from typing import List, Optional, Tuple, Type
@@ -9,11 +10,11 @@ import schedule
 from abc import ABC, abstractmethod
 from core.command import CommandService
 from core.sensors.dht import SUPPORTED_SENSORS
-from core.core_configuration import database_config, core_config, get_sensor_type
+from core.core_configuration import database_config, core_config, get_sensor_type, basetemp_config
 
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 
-from core.distribute import send_picture_email, send_visualization_email
+from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
 from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, take_picture
 
@@ -102,12 +103,13 @@ class CoreSkeleton(ABC):
     def create_visualization_timed(self) -> None:
         self._create_visualization(mode="Timed", save_path_template="plots/{name}.pdf")
 
-    def collect_and_save_to_db(self) -> None:
+    def collect_and_save_to_db(self) -> Optional[Tuple]:
         is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
         auth = database_config()
         sensor_pin = int(core_config()["sensor_pin"])
-        retrieve_and_save_sensor_data(auth, sensor_pin, is_dht11)
+        out = retrieve_and_save_sensor_data(auth, sensor_pin, is_dht11)
         log.info("Done")
+        return out
 
 
 class HomeTemp(CoreSkeleton):
@@ -165,6 +167,12 @@ class BaseTemp(CoreSkeleton):
     # TODO: command to switch schedule
 
     ## --- Initialization Part ---
+    def __init__(self, instance_name: str):
+        super().__init__(instance_name)
+        cfg:SectionProxy = basetemp_config()
+        self.max_heat = cfg.get("max_heat", None)
+        self.min_heat = cfg.get("min_heat", None)
+        self.send_temperature_warning = not (self.max_heat is None and self.min_heat is None)
 
     def _add_commands(self) -> None:
         picture_cmd_name = 'pic'
@@ -235,6 +243,22 @@ class BaseTemp(CoreSkeleton):
         else:
             log.info("Command: Taking picture was not successful")
 
+    def collect_and_save_to_db(self) -> Optional[Tuple]:
+        t = super().collect_and_save_to_db()
+        if t is None or not self.send_temperature_warning:
+            return t
+
+        room_temp = t[2]
+        if self.max_heat is not None and room_temp > self.max_heat:
+            indicator, extremum = "above", self.max_heat
+        elif self.min_heat is not None and room_temp < self.min_heat:
+            indicator, extremum = "below", self.min_heat
+        else:
+            return t
+
+        log.warning(f"Sending heat warning because room temp is {indicator} {extremum}°C")
+        send_heat_warning_email(room_temp)
+        return t
 
 # ----------------------------------------------------------------------------------------------------------------
 # Static utility methods

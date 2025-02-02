@@ -90,13 +90,13 @@ def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin: int,
     cpu_temp = get_cpu_temperature()
 
     room_temp, humidity = get_sensor_data(sensor_pin, is_dht11_sensor)
-    timestamp = timestamp = datetime.now().strftime(TIME_FORMAT)
+    timestamp = datetime.now().strftime(TIME_FORMAT)
     if room_temp is not None and humidity is not None:
         log.info("[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
                                                                                        humidity))
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp,
                                             cpu_temp=cpu_temp)
-        return (timestamp, cpu_temp, room_temp, humidity)
+        return timestamp, cpu_temp, room_temp, humidity
 
     log.debug("There was an error in the data to retrieve!")
     return None

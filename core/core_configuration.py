@@ -28,6 +28,16 @@ def load_config(config_file: str = 'config.ini') -> None:
     return None
 
 
+def hometemp_config() -> SectionProxy:
+    used_key = 'hometemp'
+    _validate_config(used_key)
+    return config[used_key]
+
+def basetemp_config() -> SectionProxy:
+    used_key = 'basetemp'
+    _validate_config(used_key)
+    return config[used_key]
+
 def core_config() -> SectionProxy:
     used_key = 'core'
     _validate_config(used_key)
