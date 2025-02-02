@@ -1,4 +1,3 @@
-import re
 import threading
 import time
 from datetime import datetime
@@ -12,9 +11,7 @@ from core.core_log import setup_logging, get_logger
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 from core.distribute import send_visualization_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
-from core.sensors.dht import get_sensor_data
-from core.sensors.util import get_temperature
-from core.usage_util import init_database, get_data_for_plotting
+from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data
 
 # GLOBAL Variables
 log = None
@@ -81,16 +78,8 @@ def run_threaded(job_func):
 def collect_and_save_to_db():
     log.info("Start Measurement Data Collection")
     auth = database_config()
-    handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
-    handler.init_db_connection()
-    cpu_temp = get_temperature()
-    room_temp, humidity, timestamp = get_sensor_data(int(hometemp_config()["sensor_pin"]), False)
-    if room_temp is not None and humidity is not None and timestamp is not None:
-        log.info(
-            "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
-                                                                                  humidity))
-        handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp,
-                                            cpu_temp=cpu_temp)
+    sensor_pin = int(hometemp_config()["sensor_pin"])
+    retrieve_and_save_sensor_data(auth, sensor_pin)
     log.info("Done")
 
 

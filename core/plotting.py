@@ -122,7 +122,7 @@ class SupportedDataFrames(Enum):
         return datetime.strptime(out, TIME_FORMAT)
 
     def prepare_data(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Assures timestamp format and sorts the dataframe by it"""
+        """Assures timestamp format and sorts the dataframe by it. Removes id column if present"""
         t_name = 'timestamp'
 
         parse_options = {
@@ -133,10 +133,11 @@ class SupportedDataFrames(Enum):
             self.ULM_DE: lambda x: self.parse_timestamp(x),
         }
 
-        # Apply correct transformation
         if self in parse_options:
             data[t_name] = data[t_name].map(parse_options[self])
 
+        if 'id' in data.columns:
+            data = data.drop(['id'], axis=1)
         return data.sort_values(by=t_name)
 
 

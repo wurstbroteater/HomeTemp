@@ -209,16 +209,16 @@ def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, pat
     subject = f"HomeTemp v{hometemp_config()['version']} Data Report {today}"
     message = create_sensor_data_message(df)
     message += "\n\n------------- Google Data -------------\n"
-    message += str(google_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
+    message += str(google_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
     message += str(google_df.tail(6))
     message += "\n\n------------- DWD Data -------------\n"
-    message += str(dwd_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
+    message += str(dwd_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
     message += str(dwd_df.tail(6))
     message += "\n\n------------- Wetter.com Data -------------\n"
-    message += str(wettercom_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
+    message += str(wettercom_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
     message += str(wettercom_df.tail(6))
     message += "\n\n------------- Ulm.de Data -------------\n"
-    message += str(ulmde_df.drop(['id', 'timestamp'], axis=1).describe()).format("utf8") + "\n\n"
+    message += str(ulmde_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
     message += str(ulmde_df.tail(6))
 
     distributor = EmailDistributor()

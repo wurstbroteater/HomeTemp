@@ -11,9 +11,7 @@ from core.core_log import setup_logging, get_logger
 from core.database import SensorDataHandler
 from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
-from core.sensors.dht import get_sensor_data
-from core.sensors.util import get_temperature
-from core.usage_util import init_database, _take_picture
+from core.usage_util import init_database, _take_picture, get_data_for_plotting, retrieve_and_save_sensor_data
 
 # GLOBAL Variables
 log = None
@@ -23,15 +21,7 @@ SEND_TEMPERATURE_WARNING = False
 
 def _get__visualization_data():
     auth = database_config()
-    sensor_data_handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'],
-                                            'sensor_data')
-    sensor_data_handler.init_db_connection(check_table=False)
-    # sensor data
-    df = sensor_data_handler.read_data_into_dataframe()
-    df = df.sort_values(by="timestamp")
-    df['timestamp'] = df['timestamp'].map(
-        lambda x: datetime.strptime(str(x).replace("+00:00", "").strip(), '%Y-%m-%d %H:%M:%S'))
-
+    df = get_data_for_plotting(auth, SensorDataHandler, SupportedDataFrames.Main)
     return df
 
 
@@ -95,16 +85,11 @@ def run_threaded(job_func):
 def collect_and_save_to_db():
     log.info("Start Measurement Data Collection")
     auth = database_config()
-    handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'sensor_data')
-    handler.init_db_connection()
-    cpu_temp = get_temperature()
-    room_temp, humidity, timestamp = get_sensor_data(int(hometemp_config()["sensor_pin"]), True)
-    if room_temp is not None or humidity is not None or timestamp is not None:
-        log.info(
-            "[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
-                                                                                  humidity))
-        handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp,
-                                            cpu_temp=cpu_temp)
+    sensor_pin = int(hometemp_config()["sensor_pin"])
+    data_tuple = retrieve_and_save_sensor_data(auth, sensor_pin)
+   
+    if data_tuple is not None:
+        room_temp = data_tuple[2]
         # TODO: make customizable
         # heat warning
         max_heat = 28.9

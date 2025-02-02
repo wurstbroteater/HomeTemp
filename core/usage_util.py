@@ -1,10 +1,10 @@
-from typing import Type
 import time
-from configparser import SectionProxy
-
 import pandas as pd
-
-from core.database import PostgresHandler
+from typing import Optional, Tuple, Type
+from configparser import SectionProxy
+from gpiozero import CPUTemperature
+from core.sensors.dht import get_sensor_data
+from core.database import PostgresHandler, SensorDataHandler
 from core.plotting import SupportedDataFrames
 from core.sensors.camera import RpiCamController
 from core.virtualization import init_postgres_container
@@ -17,6 +17,10 @@ log = get_logger(__name__)
 # The core utility module which provides utility methods for using core functionalities.
 # Should be used if two or more core components need to work together.
 # ----------------------------------------------------------------------------------------------------------------
+
+def get_cpu_temperature() -> float:
+    cpu = CPUTemperature()
+    return float(cpu.temperature)
 
 def init_database(handler_type: Type[PostgresHandler], database_auth: SectionProxy, table_name: str,
                   timelimit_sec: int = 30):
@@ -66,7 +70,6 @@ def _take_picture(name, encoding="png"):
     return rpi_cam.capture_image(file_path=name, encoding=encoding)
 
 
-#  SensorDataHandler, SupportedDataFrames
 def get_data_for_plotting(database_auth: SectionProxy, handler_type: Type[PostgresHandler],
                           transformer: SupportedDataFrames) -> pd.DataFrame:
     handler: PostgresHandler = handler_type(database_auth['db_port'], database_auth['db_host'],
@@ -74,3 +77,18 @@ def get_data_for_plotting(database_auth: SectionProxy, handler_type: Type[Postgr
     handler.init_db_connection(check_table=False)
     data = handler.read_data_into_dataframe()
     return transformer.prepare_data(data)
+
+
+def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin:int) -> Optional[Tuple]:
+    log.info("Start Measurement Data Collection")
+    handler = SensorDataHandler(database_auth['db_port'], database_auth['db_host'], database_auth['db_user'], database_auth['db_pw'], SupportedDataFrames.Main.table_name)
+    handler.init_db_connection()
+    cpu_temp = get_cpu_temperature()
+    room_temp, humidity, timestamp = get_sensor_data(sensor_pin, False)
+    if room_temp is not None and humidity is not None and timestamp is not None:
+        log.info("[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,humidity))
+        handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp, cpu_temp=cpu_temp)
+        return (timestamp, cpu_temp, room_temp, humidity)
+   
+    log.debug("There was an error in the data to retrieve!")
+    return None
