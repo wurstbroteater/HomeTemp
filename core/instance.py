@@ -19,13 +19,13 @@ from core.usage_util import init_database, get_data_for_plotting, retrieve_and_s
 
 log = get_logger(__name__)
 
-# comparisions should always be made with lower case. Casing here is for displaying the name
+# comparison should always be made with lower case. Casing here is for displaying the name
 SUPPORTED_INSTANCES = ["HomeTemp", "BaseTemp"]
 
 
-####
-## Instances must implement abstract methods to guarantee minimal features
-####
+# ----------------------------------------------------------------------------------------------------------------
+# An extension of CoreSkeleton must implement abstract methods to guarantee minimal features.
+# ----------------------------------------------------------------------------------------------------------------
 class CoreSkeleton(ABC):
     def __init__(self, instance_name: str):
         self.instance_name = {i.lower(): i for i in SUPPORTED_INSTANCES}.get(instance_name.lower(), None)
@@ -34,8 +34,8 @@ class CoreSkeleton(ABC):
 
         self.command_service: CommandService = CommandService()
 
-    ## --- Initialiation Part ---
-    def start(self):
+    ## --- Initialization Part ---
+    def start(self) -> None:
         log.info(f"------------------- {self.instance_name} v{core_config()['version']} -------------------")
         self._init_components()
         log.info("finished initialization")
@@ -45,7 +45,7 @@ class CoreSkeleton(ABC):
         log.info("entering main loop")
         self.main_loop()
 
-    def _init_components(self):
+    def _init_components(self) -> None:
         self._init_database()
         self._add_commands()
         self._setup_scheduling()
@@ -61,23 +61,18 @@ class CoreSkeleton(ABC):
     def _setup_scheduling(self) -> None:
         pass
 
-    def _methods_after_init(self):
+    def _methods_after_init(self) -> None:
         self.collect_and_save_to_db()
 
-    def run_received_commands(self):
+    def run_received_commands(self) -> None:
         log.info("Checking for commands")
         self.command_service.receive_and_execute_commands()
         log.info("Done")
 
-    def main_loop(self, check_schedule_delay_s=1):
+    def main_loop(self, check_schedule_delay_s=1) -> None:
         while True:
             schedule.run_pending()
             time.sleep(check_schedule_delay_s)
-
-    @staticmethod
-    def run_threaded(job_func):
-        job_thread = threading.Thread(target=job_func)
-        job_thread.start()
 
     ## --- Minimal Supported Features Part ---
 
@@ -100,14 +95,14 @@ class CoreSkeleton(ABC):
         log.info(f"{mode}: Done")
         self._send_visualization_email(plots, save_path, email_receiver)
 
-    def create_visualization_commanded(self, commander: str):
+    def create_visualization_commanded(self, commander: str) -> None:
         self._create_visualization(mode="Command", save_path_template="plots/commanded/{name}.pdf",
                                    email_receiver=commander)
 
-    def create_visualization_timed(self):
+    def create_visualization_timed(self) -> None:
         self._create_visualization(mode="Timed", save_path_template="plots/{name}.pdf")
 
-    def collect_and_save_to_db(self):
+    def collect_and_save_to_db(self) -> None:
         is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
         auth = database_config()
         sensor_pin = int(core_config()["sensor_pin"])
@@ -117,28 +112,27 @@ class CoreSkeleton(ABC):
 
 class HomeTemp(CoreSkeleton):
 
-    ## --- Initialiation Part ---
+    ## --- Initialization Part ---
 
-    def _add_commands(self):
+    def _add_commands(self) -> None:
         cmd_name = 'plot'
         function_params = ['commander']
         self.command_service.add_new_command((cmd_name, [], self.create_visualization_commanded, function_params))
         pass
 
-    def _setup_scheduling(self):
+    def _setup_scheduling(self) -> None:
         schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
-        # run_threaded assumes that we never have overlapping usage of this method or its components
         schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed())
         schedule.every(10).minutes.do(lambda _: self.run_received_commands())
         pass
 
-    def _methods_after_init(self):
+    def _methods_after_init(self) -> None:
         super()._methods_after_init()
         self.create_visualization_timed()
 
     ## --- Minimal Supported Features Part ---
 
-    def _get_visualization_data(self):
+    def _get_visualization_data(self) -> Tuple[List[PlotData], List[PlotData]]:
         auth = database_config()
         df = get_data_for_plotting(auth, SensorDataHandler, SupportedDataFrames.Main)
         google_df = get_data_for_plotting(auth, GoogleDataHandler, SupportedDataFrames.GOOGLE_COM)
@@ -147,12 +141,11 @@ class HomeTemp(CoreSkeleton):
         ulmde_df = get_data_for_plotting(auth, UlmDeHandler, SupportedDataFrames.ULM_DE)
 
         out = [
-            PlotData(SupportedDataFrames.Main, df, True),  # 0
-            PlotData(SupportedDataFrames.DWD_DE, dwd_df),  # 1
-            PlotData(SupportedDataFrames.GOOGLE_COM, google_df),  # 2
-            PlotData(SupportedDataFrames.WETTER_COM, wettercom_df),  # 3
-            PlotData(SupportedDataFrames.ULM_DE, ulmde_df),  # 4
-        ]
+            PlotData(SupportedDataFrames.Main, df, True),
+            PlotData(SupportedDataFrames.DWD_DE, dwd_df),
+            PlotData(SupportedDataFrames.GOOGLE_COM, google_df),
+            PlotData(SupportedDataFrames.WETTER_COM, wettercom_df),
+            PlotData(SupportedDataFrames.ULM_DE, ulmde_df)]
 
         return out, out
 
@@ -171,9 +164,9 @@ class HomeTemp(CoreSkeleton):
 class BaseTemp(CoreSkeleton):
     # TODO: command to switch schedule
 
-    ## --- Initialiation Part ---
+    ## --- Initialization Part ---
 
-    def _add_commands(self):
+    def _add_commands(self) -> None:
         picture_cmd_name = 'pic'
         picture_fun_params = ['commander']
         self.command_service.add_new_command((picture_cmd_name, [], self.take_picture_commanded, picture_fun_params))
@@ -182,9 +175,8 @@ class BaseTemp(CoreSkeleton):
         self.command_service.add_new_command((vis_cmd_name, [], self.create_visualization_commanded, vis_fun_params))
         pass
 
-    def _setup_scheduling(self):
+    def _setup_scheduling(self) -> None:
         schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
-        # run_threaded assumes that we never have overlapping usage of this method or its components
         schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed())
         schedule.every(10).minutes.do(lambda _: self.run_received_commands())
 
@@ -204,13 +196,13 @@ class BaseTemp(CoreSkeleton):
         schedule.every(10).minutes.do(lambda _: self.run_received_commands())
         pass
 
-    def _methods_after_init(self):
+    def _methods_after_init(self) -> None:
         super()._methods_after_init()
         self.create_visualization_timed()
 
     ## --- Minimal Supported Features Part ---
 
-    def _get_visualization_data(self):
+    def _get_visualization_data(self) -> Tuple[List[PlotData], List[PlotData]]:
         auth = database_config()
         df = get_data_for_plotting(auth, SensorDataHandler, SupportedDataFrames.Main)
         return [PlotData(SupportedDataFrames.Main, df, True)], []
