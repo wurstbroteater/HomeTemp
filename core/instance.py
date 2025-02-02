@@ -282,10 +282,10 @@ class BaseTemp(CoreSkeleton):
         if t is None or not self.send_temperature_warning:
             return t
 
-        room_temp = t[2]
-        if self.max_heat is not None and room_temp > self.max_heat:
+        room_temp:float = float(t[2])
+        if self.max_heat is not None and room_temp > float(self.max_heat):
             indicator, extremum = "above", self.max_heat
-        elif self.min_heat is not None and room_temp < self.min_heat:
+        elif self.min_heat is not None and room_temp < float(self.min_heat):
             indicator, extremum = "below", self.min_heat
         else:
             return t
