@@ -13,7 +13,7 @@ from core.core_log import setup_logging, get_logger
 from core.database import SensorDataHandler
 from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
-from core.usage_util import init_database, _take_picture, get_data_for_plotting, retrieve_and_save_sensor_data
+from core.usage_util import init_database, take_picture, get_data_for_plotting, retrieve_and_save_sensor_data
 
 # GLOBAL Variables
 log: Optional[Logger] = None
@@ -33,7 +33,7 @@ def _get__visualization_data():
 def take_picture_timed():
     log.info("Timed: Taking picture")
     name = f'pictures/{datetime.now().strftime("%Y-%m-%d-%H:%M:%S")}'
-    if _take_picture(name):
+    if take_picture(name):
         log.info("Timed: Taking picture done")
     else:
         log.info("Timed: Taking picture was not successful")
@@ -44,7 +44,7 @@ def _take_picture_commanded(commander):
     name = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
     encoding = "png"
     save_path = f"pictures/commanded/{name}"
-    if _take_picture(save_path, encoding=encoding):
+    if take_picture(save_path, encoding=encoding):
         log.info("Command: Taking picture done")
         sensor_data = _get__visualization_data()
         send_picture_email(picture_path=f"{save_path}.{encoding}", df=sensor_data, receiver=commander)

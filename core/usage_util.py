@@ -66,7 +66,7 @@ def init_database(handler_type: Type[PostgresHandler], database_auth: SectionPro
     handler.close()
 
 
-def _take_picture(name, encoding="png"):
+def take_picture(name, encoding="png"):
     rpi_cam = RpiCamController()
     # file name is set in capture_image to filepath.encoding which is png on default
     return rpi_cam.capture_image(file_path=name, encoding=encoding)
