@@ -4,6 +4,10 @@
 
 TBD
 
+- **BREAKING CHANGE**: Removed `basetemp.py` and `hometemp.py`.
+    - Now, the instance to run depends on parameter `core.instance` in configuration file.
+    - Added module `core.instance` which includes class `HomeTemp` and `BaseTemp`
+    - Now, just use `python start.py`!
 - Optimized `RpiCamController._rotate_image` to update an image only if the rotation parameter is not 0
 - Added timelapse video creation of a set of pictures with the name format '%Y-%m-%d-%H:%M:%S'
 - Updated `requirements.txt` to only contain top level dependencies
@@ -24,7 +28,6 @@ TBD
 - Added `core.usage_util` providing utilities for several core functionalities.
 - **BREAKING CHANGE**: Removed `core.sensors.util` and moved method to `core.usage_util.get_cput_temperature()`.
 - **BREAKING CHANGE**: Refactored and renamed `default_hometemp.ini` to `default_configuration.ini`.
-- Optimized BaseTemp and HomeTemp to wait for database to be ready decreased lines of code.
 
 ## 0.4
 

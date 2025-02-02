@@ -1,0 +1,257 @@
+from core.core_log import get_logger
+import threading
+import time
+from datetime import datetime
+from typing import List, Optional, Tuple, Type
+
+import schedule
+
+from abc import ABC, abstractmethod
+from core.command import CommandService
+from core.sensors.dht import SUPPORTED_SENSORS
+from core.core_configuration import database_config, core_config, get_sensor_type
+
+from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
+
+from core.distribute import send_picture_email, send_visualization_email
+from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
+from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, take_picture
+
+log = get_logger(__name__)
+
+# comparisions should always be made with lower case. Casing here is for displaying the name
+SUPPORTED_INSTANCES = ["HomeTemp", "BaseTemp"]
+
+####
+## Instances must implement abstract methods to guarantee minimal features
+####
+class CoreSkeleton(ABC):
+    def __init__(self, instance_name: str):
+        self.instance_name =  {i.lower(): i for i in SUPPORTED_INSTANCES}.get(instance_name.lower(), None)
+        if self.instance_name is None:
+            log.error(f"CoreSkeleton got unsupported initializer {instance_name}")
+
+        self.command_service: CommandService = CommandService()
+
+    ## --- Initialiation Part ---
+    def start(self):
+        log.info(f"------------------- {self.instance_name} v{core_config()['version']} -------------------")
+        self._init_components()
+        log.info("finished initialization")
+        self._methods_after_init()
+        time.sleep(1)
+        self.run_received_commands()
+        log.info("entering main loop")
+        self.main_loop()
+    
+    def _init_components(self):
+        self._init_database()
+        self._add_commands()
+        self._setup_scheduling()
+
+    def _init_database(self):
+        init_database(SensorDataHandler, database_config(), SupportedDataFrames.Main.table_name)
+
+    @abstractmethod
+    def _add_commands(self) -> None:
+        pass
+
+    @abstractmethod
+    def _setup_scheduling(self) -> None:
+        pass
+    
+    def _methods_after_init(self):
+        self.collect_and_save_to_db()
+
+    def run_received_commands(self):
+        log.info("Checking for commands")
+        self.command_service.receive_and_execute_commands()
+        log.info("Done")
+
+    def main_loop(self, check_schedule_delay_s=1):
+        while True:
+            schedule.run_pending()
+            time.sleep(check_schedule_delay_s)
+
+    @staticmethod
+    def run_threaded(job_func):
+        job_thread = threading.Thread(target=job_func)
+        job_thread.start()
+
+
+    ## --- Minimal Supported Features Part ---
+
+    @abstractmethod
+    def _get_visualization_data(self) -> Tuple[List[PlotData], List[PlotData]]:
+        # first list is plots and second list is merge subplots for
+        pass
+    
+    @abstractmethod
+    def _send_visualization_email(self, data:List[PlotData], save_path:str, email_receiver: Optional[str] = None) -> None:
+        pass
+
+    def _create_visualization(self, mode: str, save_path_template: str, email_receiver: Optional[str] = None) -> None:
+        log.info(f"{mode}: Creating Measurement Data Visualization")
+        plots, merge_subplots_for = self._get_visualization_data()
+        name = datetime.now().strftime("%d-%m-%Y")
+        save_path = save_path_template.format(name=name)
+        draw_complete_summary(plots, merge_subplots_for=merge_subplots_for, save_path=save_path)
+        log.info(f"{mode}: Done")
+        self._send_visualization_email(plots, save_path, email_receiver)
+
+    def create_visualization_commanded(self, commander:str):
+        self._create_visualization(mode="Command", save_path_template="plots/commanded/{name}.pdf", email_receiver=commander)
+
+
+    def create_visualization_timed(self):
+        self._create_visualization(mode="Timed", save_path_template="plots/{name}.pdf")
+
+
+    def collect_and_save_to_db(self):
+        is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
+        auth = database_config()
+        sensor_pin = int(core_config()["sensor_pin"])
+        retrieve_and_save_sensor_data(auth, sensor_pin, is_dht11)
+        log.info("Done")
+
+
+class HomeTemp(CoreSkeleton):
+    
+    ## --- Initialiation Part ---
+
+    def _add_commands(self):
+        cmd_name = 'plot'
+        function_params = ['commander']
+        self.command_service.add_new_command((cmd_name, [], self.create_visualization_commanded, function_params))
+        pass
+
+    def _setup_scheduling(self):
+        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
+        # run_threaded assumes that we never have overlapping usage of this method or its components
+        schedule.every().day.at("06:00").do(lambda _ : self.create_visualization_timed())
+        schedule.every(10).minutes.do(lambda _ : self.run_received_commands())
+        pass
+
+    def _methods_after_init(self):
+        super()._methods_after_init()
+        self.create_visualization_timed()
+
+     ## --- Minimal Supported Features Part ---
+
+    def _get_visualization_data(self):
+        auth = database_config()
+        df = get_data_for_plotting(auth, SensorDataHandler, SupportedDataFrames.Main)
+        google_df = get_data_for_plotting(auth, GoogleDataHandler, SupportedDataFrames.GOOGLE_COM)
+        dwd_df = get_data_for_plotting(auth, DwDDataHandler, SupportedDataFrames.DWD_DE)
+        wettercom_df = get_data_for_plotting(auth, WetterComHandler, SupportedDataFrames.WETTER_COM)
+        ulmde_df = get_data_for_plotting(auth, UlmDeHandler, SupportedDataFrames.ULM_DE)
+    
+        out =  [
+        PlotData(SupportedDataFrames.Main, df, True),            # 0
+        PlotData(SupportedDataFrames.DWD_DE, dwd_df),            # 1
+        PlotData(SupportedDataFrames.GOOGLE_COM, google_df),     # 2
+        PlotData(SupportedDataFrames.WETTER_COM, wettercom_df),  # 3
+        PlotData(SupportedDataFrames.ULM_DE, ulmde_df),          # 4
+        ]
+
+        return out, out
+    
+    def _send_visualization_email(self, data:List[PlotData], save_path:str, email_receiver: Optional[str] = None) -> None:
+        send_visualization_email(
+            df=data[0].data,
+            ulmde_df=data[4].data,
+            google_df=data[2].data,
+            dwd_df=data[1].data,
+            wettercom_df=data[3].data,
+            path_to_pdf=save_path,
+            receiver=email_receiver)
+        
+
+class BaseTemp(CoreSkeleton):
+    # TODO: command to switch schedule
+
+    ## --- Initialiation Part ---
+
+    def _add_commands(self):
+        picture_cmd_name = 'pic'
+        picture_fun_params = ['commander']
+        self.command_service.add_new_command((picture_cmd_name, [], self.take_picture_commanded, picture_fun_params))
+        vis_cmd_name = 'plot'
+        vis_fun_params = ['commander']
+        self.command_service.add_new_command((vis_cmd_name, [],self.create_visualization_commanded, vis_fun_params))
+        pass
+
+    def _setup_scheduling(self):
+        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
+        # run_threaded assumes that we never have overlapping usage of this method or its components
+        schedule.every().day.at("06:00").do(lambda _ : self.create_visualization_timed())
+        schedule.every(10).minutes.do(lambda _ : self.run_received_commands())
+
+        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
+        # Phase 1
+        # schedule.every().day.at("11:45").do(lambda _: self.create_visualization_timed())
+        # schedule.every().day.at("19:00").do(lambda _: self.create_visualization_timed())
+        # schedule.every().day.at("03:00").do(lambda _: self.create_visualization_timed())
+        # schedule.every().day.at("10:30").do(lambda _: self.create_visualization_timed())
+        # Phase 2
+        schedule.every().day.at("08:00").do(lambda _: self.create_visualization_timed())
+        # schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed())
+        # schedule.every().day.at("02:00").do(lambda _: self.create_visualization_timed())
+        # schedule.every().day.at("20:00").do(lambda _: self.create_visualization_timed())
+
+        # Common
+        schedule.every(10).minutes.do(lambda _ : self.run_received_commands())
+        pass
+
+    def _methods_after_init(self):
+        super()._methods_after_init()
+        self.create_visualization_timed()
+
+    ## --- Minimal Supported Features Part ---
+
+    def _get_visualization_data(self):
+        auth = database_config()
+        df = get_data_for_plotting(auth, SensorDataHandler, SupportedDataFrames.Main)
+        return [PlotData(SupportedDataFrames.Main, df, True)], []
+    
+    def _send_visualization_email(self, data:List[PlotData], save_path:str, email_receiver: Optional[str] = None) -> None:
+        send_visualization_email(df=data[0].data, path_to_pdf=save_path, receiver=email_receiver)
+
+    ## --- Instance Specific Features Part ---
+
+    def take_picture_timed(self) -> None:
+        log.info("Timed: Taking picture")
+        name = f'pictures/{datetime.now().strftime("%Y-%m-%d-%H:%M:%S")}'
+        if take_picture(name):
+            log.info("Timed: Taking picture done")
+        else:
+            log.info("Timed: Taking picture was not successful")
+
+
+    def take_picture_commanded(self, commander:str) -> None:
+        log.info("Command: Taking picture")
+        name = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
+        encoding = "png"
+        save_path = f"pictures/commanded/{name}"
+        if take_picture(save_path, encoding=encoding):
+            log.info("Command: Taking picture done")
+            plots, _ = self._get_visualization_data()
+            sensor_data = plots[0].data
+            send_picture_email(picture_path=f"{save_path}.{encoding}", df=sensor_data, receiver=commander)
+            log.info("Command: Done")
+        else:
+            log.info("Command: Taking picture was not successful")
+
+
+# ----------------------------------------------------------------------------------------------------------------
+# Static utility methods
+# ----------------------------------------------------------------------------------------------------------------
+
+def get_supported_instance_type(instance_name:str) -> Type[CoreSkeleton]:
+    # see comment on SUPPORTED_INSTANCES for details
+    if instance_name == SUPPORTED_INSTANCES[0].lower():
+        return HomeTemp
+    elif instance_name == SUPPORTED_INSTANCES[1].lower():
+        return BaseTemp
+    log.error(f"Unsupported Instance {instance_name}")
+    exit(1)
