@@ -88,7 +88,7 @@ def collect_and_save_to_db():
 def main(instance_name: str):
     instance_name = instance_name.replace("h", "H").replace("t", "T")
     log.info(f"------------------- {instance_name} v{core_config()['version']} -------------------")
-    init_database(SensorDataHandler, database_config(), 'sensor_data')
+    init_database(SensorDataHandler, database_config(), SupportedDataFrames.Main.table_name)
 
     cmd_name = 'plot'
     function_params = ['commander']
