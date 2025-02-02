@@ -22,12 +22,13 @@ log = get_logger(__name__)
 # comparisions should always be made with lower case. Casing here is for displaying the name
 SUPPORTED_INSTANCES = ["HomeTemp", "BaseTemp"]
 
+
 ####
 ## Instances must implement abstract methods to guarantee minimal features
 ####
 class CoreSkeleton(ABC):
     def __init__(self, instance_name: str):
-        self.instance_name =  {i.lower(): i for i in SUPPORTED_INSTANCES}.get(instance_name.lower(), None)
+        self.instance_name = {i.lower(): i for i in SUPPORTED_INSTANCES}.get(instance_name.lower(), None)
         if self.instance_name is None:
             log.error(f"CoreSkeleton got unsupported initializer {instance_name}")
 
@@ -43,7 +44,7 @@ class CoreSkeleton(ABC):
         self.run_received_commands()
         log.info("entering main loop")
         self.main_loop()
-    
+
     def _init_components(self):
         self._init_database()
         self._add_commands()
@@ -59,7 +60,7 @@ class CoreSkeleton(ABC):
     @abstractmethod
     def _setup_scheduling(self) -> None:
         pass
-    
+
     def _methods_after_init(self):
         self.collect_and_save_to_db()
 
@@ -78,16 +79,16 @@ class CoreSkeleton(ABC):
         job_thread = threading.Thread(target=job_func)
         job_thread.start()
 
-
     ## --- Minimal Supported Features Part ---
 
     @abstractmethod
     def _get_visualization_data(self) -> Tuple[List[PlotData], List[PlotData]]:
         # first list is plots and second list is merge subplots for
         pass
-    
+
     @abstractmethod
-    def _send_visualization_email(self, data:List[PlotData], save_path:str, email_receiver: Optional[str] = None) -> None:
+    def _send_visualization_email(self, data: List[PlotData], save_path: str,
+                                  email_receiver: Optional[str] = None) -> None:
         pass
 
     def _create_visualization(self, mode: str, save_path_template: str, email_receiver: Optional[str] = None) -> None:
@@ -99,13 +100,12 @@ class CoreSkeleton(ABC):
         log.info(f"{mode}: Done")
         self._send_visualization_email(plots, save_path, email_receiver)
 
-    def create_visualization_commanded(self, commander:str):
-        self._create_visualization(mode="Command", save_path_template="plots/commanded/{name}.pdf", email_receiver=commander)
-
+    def create_visualization_commanded(self, commander: str):
+        self._create_visualization(mode="Command", save_path_template="plots/commanded/{name}.pdf",
+                                   email_receiver=commander)
 
     def create_visualization_timed(self):
         self._create_visualization(mode="Timed", save_path_template="plots/{name}.pdf")
-
 
     def collect_and_save_to_db(self):
         is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
@@ -116,7 +116,7 @@ class CoreSkeleton(ABC):
 
 
 class HomeTemp(CoreSkeleton):
-    
+
     ## --- Initialiation Part ---
 
     def _add_commands(self):
@@ -128,15 +128,15 @@ class HomeTemp(CoreSkeleton):
     def _setup_scheduling(self):
         schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
         # run_threaded assumes that we never have overlapping usage of this method or its components
-        schedule.every().day.at("06:00").do(lambda _ : self.create_visualization_timed())
-        schedule.every(10).minutes.do(lambda _ : self.run_received_commands())
+        schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed())
+        schedule.every(10).minutes.do(lambda _: self.run_received_commands())
         pass
 
     def _methods_after_init(self):
         super()._methods_after_init()
         self.create_visualization_timed()
 
-     ## --- Minimal Supported Features Part ---
+    ## --- Minimal Supported Features Part ---
 
     def _get_visualization_data(self):
         auth = database_config()
@@ -145,18 +145,19 @@ class HomeTemp(CoreSkeleton):
         dwd_df = get_data_for_plotting(auth, DwDDataHandler, SupportedDataFrames.DWD_DE)
         wettercom_df = get_data_for_plotting(auth, WetterComHandler, SupportedDataFrames.WETTER_COM)
         ulmde_df = get_data_for_plotting(auth, UlmDeHandler, SupportedDataFrames.ULM_DE)
-    
-        out =  [
-        PlotData(SupportedDataFrames.Main, df, True),            # 0
-        PlotData(SupportedDataFrames.DWD_DE, dwd_df),            # 1
-        PlotData(SupportedDataFrames.GOOGLE_COM, google_df),     # 2
-        PlotData(SupportedDataFrames.WETTER_COM, wettercom_df),  # 3
-        PlotData(SupportedDataFrames.ULM_DE, ulmde_df),          # 4
+
+        out = [
+            PlotData(SupportedDataFrames.Main, df, True),  # 0
+            PlotData(SupportedDataFrames.DWD_DE, dwd_df),  # 1
+            PlotData(SupportedDataFrames.GOOGLE_COM, google_df),  # 2
+            PlotData(SupportedDataFrames.WETTER_COM, wettercom_df),  # 3
+            PlotData(SupportedDataFrames.ULM_DE, ulmde_df),  # 4
         ]
 
         return out, out
-    
-    def _send_visualization_email(self, data:List[PlotData], save_path:str, email_receiver: Optional[str] = None) -> None:
+
+    def _send_visualization_email(self, data: List[PlotData], save_path: str,
+                                  email_receiver: Optional[str] = None) -> None:
         send_visualization_email(
             df=data[0].data,
             ulmde_df=data[4].data,
@@ -165,7 +166,7 @@ class HomeTemp(CoreSkeleton):
             wettercom_df=data[3].data,
             path_to_pdf=save_path,
             receiver=email_receiver)
-        
+
 
 class BaseTemp(CoreSkeleton):
     # TODO: command to switch schedule
@@ -178,14 +179,14 @@ class BaseTemp(CoreSkeleton):
         self.command_service.add_new_command((picture_cmd_name, [], self.take_picture_commanded, picture_fun_params))
         vis_cmd_name = 'plot'
         vis_fun_params = ['commander']
-        self.command_service.add_new_command((vis_cmd_name, [],self.create_visualization_commanded, vis_fun_params))
+        self.command_service.add_new_command((vis_cmd_name, [], self.create_visualization_commanded, vis_fun_params))
         pass
 
     def _setup_scheduling(self):
         schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
         # run_threaded assumes that we never have overlapping usage of this method or its components
-        schedule.every().day.at("06:00").do(lambda _ : self.create_visualization_timed())
-        schedule.every(10).minutes.do(lambda _ : self.run_received_commands())
+        schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed())
+        schedule.every(10).minutes.do(lambda _: self.run_received_commands())
 
         schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
         # Phase 1
@@ -200,7 +201,7 @@ class BaseTemp(CoreSkeleton):
         # schedule.every().day.at("20:00").do(lambda _: self.create_visualization_timed())
 
         # Common
-        schedule.every(10).minutes.do(lambda _ : self.run_received_commands())
+        schedule.every(10).minutes.do(lambda _: self.run_received_commands())
         pass
 
     def _methods_after_init(self):
@@ -213,8 +214,9 @@ class BaseTemp(CoreSkeleton):
         auth = database_config()
         df = get_data_for_plotting(auth, SensorDataHandler, SupportedDataFrames.Main)
         return [PlotData(SupportedDataFrames.Main, df, True)], []
-    
-    def _send_visualization_email(self, data:List[PlotData], save_path:str, email_receiver: Optional[str] = None) -> None:
+
+    def _send_visualization_email(self, data: List[PlotData], save_path: str,
+                                  email_receiver: Optional[str] = None) -> None:
         send_visualization_email(df=data[0].data, path_to_pdf=save_path, receiver=email_receiver)
 
     ## --- Instance Specific Features Part ---
@@ -227,8 +229,7 @@ class BaseTemp(CoreSkeleton):
         else:
             log.info("Timed: Taking picture was not successful")
 
-
-    def take_picture_commanded(self, commander:str) -> None:
+    def take_picture_commanded(self, commander: str) -> None:
         log.info("Command: Taking picture")
         name = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
         encoding = "png"
@@ -247,7 +248,7 @@ class BaseTemp(CoreSkeleton):
 # Static utility methods
 # ----------------------------------------------------------------------------------------------------------------
 
-def get_supported_instance_type(instance_name:str) -> Type[CoreSkeleton]:
+def get_supported_instance_type(instance_name: str) -> Type[CoreSkeleton]:
     # see comment on SUPPORTED_INSTANCES for details
     if instance_name == SUPPORTED_INSTANCES[0].lower():
         return HomeTemp

@@ -17,11 +17,11 @@ fi
 # starts detached screens for hometemp or basetemp
 case "$1" in
     hometemp)
-        start_screen "temps" "python hometemp.py"
+        start_screen "temps" "python start.py"
         start_screen "dwd" "python fetch_forecasts.py"
         ;;
     basetemp)
-        start_screen "base" "python basetemp.py"
+        start_screen "base" "python start.py"
         ;;
     *)
         echo "Invalid option: $1"

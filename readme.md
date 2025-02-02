@@ -70,7 +70,8 @@ pip install opencv-python pillow rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero dock
 
 ### Create config.ini
 
-At first, rename `default_config.ini` to `config.ini` and assign values to all variables.
+At first, rename `default_config.ini` to `config.ini` and assign values to all variables. The field `instance` defines
+to start `HomeTemp` (hometemp) or `BaseTemp` (basetemp).
 
 ### Install Chromedriver
 
@@ -87,7 +88,8 @@ sudo chmod -R 755 /usr/bin/chromedriver
 
 ## Start Instructions
 
-The following sections provide information and tips for starting the related services and dependencies.
+When everything is set up as intended, it should be enough to run `./start.sh [basetemp|hometemp]`. In case it didn't
+work, the following sections provide information and tips for starting the related services and dependencies.
 
 ### Start Docker Container
 
@@ -105,8 +107,7 @@ docker.errors.DockerException: Error while fetching server API version: ('Connec
 ```
 
 It is also possible to start the container via the following command. HomeTemp will use this container if the name of
-the container
-matches the name specified in `config.ini`.
+the container matches the name specified in `config.ini`.
 
 ```sh
 docker run --name postgres-db -e POSTGRES_PASSWORD=<ENTER PASSWORD HERE> -d -p 5432:5432 postgres:latest

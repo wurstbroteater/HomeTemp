@@ -10,14 +10,13 @@ from core.core_log import get_logger
 
 log = get_logger(__name__)
 
-
 # ----------------------------------------------------------------------------------------------------------------
 # Database connection module. Defines an abstract class PostgresHandler. Every handler for a database table
 # must implement _create_table which defines the structure of the table.
 # ----------------------------------------------------------------------------------------------------------------
 
 # postgres expects timestamp ins ISO 8601 format
-TIME_FORMAT:LiteralString = '%Y-%m-%d %H:%M:%S'
+TIME_FORMAT: LiteralString = '%Y-%m-%d %H:%M:%S'
 
 
 class PostgresHandler(ABC):

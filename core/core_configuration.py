@@ -33,6 +33,7 @@ def core_config() -> SectionProxy:
     _validate_config(used_key)
     return config[used_key]
 
+
 def get_instance_name() -> str:
     return core_config()['instance'].lower().strip()
 
