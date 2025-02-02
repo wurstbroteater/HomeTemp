@@ -81,8 +81,8 @@ def get_data_for_plotting(database_auth: SectionProxy, handler_type: Type[Postgr
     return transformer.prepare_data(data)
 
 
-def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin: int, is_dht11_sensor: bool) \
-        -> Optional[Tuple]:
+def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin: int,
+                                  is_dht11_sensor: bool) -> Optional[Tuple]:
     log.info("Start Measurement Data Collection")
     handler = SensorDataHandler(database_auth['db_port'], database_auth['db_host'], database_auth['db_user'],
                                 database_auth['db_pw'], SupportedDataFrames.Main.table_name)
