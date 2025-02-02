@@ -1,4 +1,5 @@
 from datetime import datetime
+from logging import Logger
 from typing import Optional
 
 import schedule
@@ -7,7 +8,7 @@ import time
 
 from core.command import CommandService
 from core.sensors.dht import SUPPORTED_SENSORS
-from core.core_configuration import load_config, database_config, hometemp_config, get_sensor_type
+from core.core_configuration import load_config, database_config, core_config, get_sensor_type, get_instance_name
 from core.core_log import setup_logging, get_logger
 from core.database import SensorDataHandler
 from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
@@ -15,9 +16,9 @@ from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
 from core.usage_util import init_database, _take_picture, get_data_for_plotting, retrieve_and_save_sensor_data
 
 # GLOBAL Variables
-log = None
-command_service = None
-SEND_TEMPERATURE_WARNING = False
+log: Optional[Logger] = None
+command_service: Optional[CommandService] = None
+SEND_TEMPERATURE_WARNING: bool = False
 
 
 def _get__visualization_data():
@@ -86,7 +87,7 @@ def run_threaded(job_func):
 def collect_and_save_to_db():
     is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
     auth = database_config()
-    sensor_pin = int(hometemp_config()["sensor_pin"])
+    sensor_pin = int(core_config()["sensor_pin"])
     data_tuple = retrieve_and_save_sensor_data(auth, sensor_pin, is_dht11)
 
     if data_tuple is not None:
@@ -105,8 +106,8 @@ def collect_and_save_to_db():
     log.info("Done")
 
 
-def main():
-    log.info(f"------------------- HomeTemp v{hometemp_config()['version']} -------------------")
+def main(instance_name: str):
+    log.info(f"------------------- {instance_name} v{core_config()['version']} -------------------")
     init_database(SensorDataHandler, database_config(), 'sensor_data')
 
     picture_cmd_name = 'pic'
@@ -144,10 +145,19 @@ def main():
         time.sleep(1)
 
 
-if __name__ == "__main__":
-    setup_logging(log_file='basetemp.log')
+def init():
     load_config()
+    instance_name = get_instance_name()
+    setup_logging(log_file=f"{instance_name}.log")
     # Define all global variables
+    global log, command_service
     log = get_logger(__name__)
+    if instance_name not in ["hometemp", "basetemp"]:
+        log.error(f"Unsupported instance configuration found: {instance_name}")
+        exit(1)
     command_service = CommandService()
-    main()
+    main(instance_name)
+
+
+if __name__ == "__main__":
+    init()

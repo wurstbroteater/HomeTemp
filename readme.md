@@ -68,9 +68,9 @@ pip install opencv-python pillow rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero dock
 
 ```
 
-### Configure Hometemp.ini
+### Create config.ini
 
-At first, rename `default_hometemp.ini` to `hometemp.ini` and assign values to all variables.
+At first, rename `default_config.ini` to `config.ini` and assign values to all variables.
 
 ### Install Chromedriver
 
@@ -106,7 +106,7 @@ docker.errors.DockerException: Error while fetching server API version: ('Connec
 
 It is also possible to start the container via the following command. HomeTemp will use this container if the name of
 the container
-matches the name specified in `hometemp.ini`.
+matches the name specified in `config.ini`.
 
 ```sh
 docker run --name postgres-db -e POSTGRES_PASSWORD=<ENTER PASSWORD HERE> -d -p 5432:5432 postgres:latest

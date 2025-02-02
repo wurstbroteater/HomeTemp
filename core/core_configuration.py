@@ -10,12 +10,12 @@ from typing import Optional
 config: Optional[configparser.ConfigParser] = None
 
 
-def load_config(config_file: str = 'hometemp.ini') -> None:
+def load_config(config_file: str = 'config.ini') -> None:
     """
     Load the configuration from the specified file.
 
     Args:
-        config_file (str): Path to the configuration file. Defaults to 'hometemp.ini'.
+        config_file (str): Path to the configuration file. Defaults to 'config.ini'.
 
     Raises:
         FileNotFoundError: If the configuration file does not exist.
@@ -28,14 +28,17 @@ def load_config(config_file: str = 'hometemp.ini') -> None:
     return None
 
 
-def hometemp_config() -> SectionProxy:
-    used_key = 'hometemp'
+def core_config() -> SectionProxy:
+    used_key = 'core'
     _validate_config(used_key)
     return config[used_key]
 
+def get_instance_name() -> str:
+    return core_config()['instance'].lower().strip()
+
 
 def get_sensor_type(supported_sensors: list) -> Optional[str]:
-    out: str = hometemp_config().get("sensor_type", "").lower().strip()
+    out: str = core_config().get('sensor_type', '').lower().strip()
     if out not in supported_sensors:
         raise TypeError(f"Instance is configured with unsupported sensor type {out}")
     return out

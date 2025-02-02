@@ -9,7 +9,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import List, Optional, Tuple
 
-from core.core_configuration import distribution_config, hometemp_config
+from core.core_configuration import distribution_config, core_config
 from core.core_log import get_logger
 
 log = get_logger(__name__)
@@ -176,7 +176,7 @@ def _send_base_temp_vis(df, path_to_pdf=None, receiver=None):
 
     log.info(f"Sending Measurement Data Visualization to {receiver}")
 
-    subject = f"BaseTemp v{hometemp_config()['version']} Data Report {today}"
+    subject = f"BaseTemp v{core_config()['version']} Data Report {today}"
     message = create_sensor_data_message(df)
 
     distributor = EmailDistributor()
@@ -206,7 +206,7 @@ def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, pat
 
     log.info(f"Sending Measurement Data Visualization to {receiver}")
 
-    subject = f"HomeTemp v{hometemp_config()['version']} Data Report {today}"
+    subject = f"HomeTemp v{core_config()['version']} Data Report {today}"
     message = create_sensor_data_message(df)
     message += "\n\n------------- Google Data -------------\n"
     message += str(google_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
@@ -232,7 +232,7 @@ def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, pat
 def send_picture_email(picture_path, df, receiver):
     today = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
     log.info(f"Sending picture to {receiver}")
-    subject = f"BaseTemp v{hometemp_config()['version']} Live Picture of {today}"
+    subject = f"BaseTemp v{core_config()['version']} Live Picture of {today}"
     message = create_sensor_data_message(df)
 
     email_config = distribution_config()
@@ -248,7 +248,7 @@ def send_picture_email(picture_path, df, receiver):
 def send_heat_warning_email(current_temp):
     distributor = EmailDistributor()
     msg = create_message(
-        subject=f"BaseTemp v{hometemp_config()['version']} HEAT WARNING OF {current_temp}°C",
+        subject=f"BaseTemp v{core_config()['version']} HEAT WARNING OF {current_temp}°C",
         content="Its the heat of the moment")
     email_config = distribution_config()
     from_email = email_config["from_email"]

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import schedule
 
 from core.core_configuration import load_config, database_config, dwd_config, google_config, wettercom_config, \
-    hometemp_config
+    core_config
 from core.core_log import setup_logging, get_logger
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler
 from core.usage_util import init_database
@@ -113,7 +113,7 @@ def ulmde_fetch_and_save():
 
 
 def main():
-    log.info(f"------------------- Fetch DWD Measurements v{hometemp_config()['version']} -------------------")
+    log.info(f"------------------- Fetch DWD Measurements v{core_config()['version']} -------------------")
     init_database(UlmDeHandler, database_config(), 'ulmde_data')
     schedule.every(10).minutes.do(ulmde_fetch_and_save)
     schedule.every(10).minutes.do(dwd_fetch_and_save)

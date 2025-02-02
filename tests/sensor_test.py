@@ -1,4 +1,4 @@
-from core.core_configuration import hometemp_config
+from core.core_configuration import core_config
 import sys
 import time
 

@@ -2,7 +2,7 @@ from email.utils import parseaddr
 from typing import List, Optional
 
 from core.core_configuration import distribution_config
-from core.core_configuration import hometemp_config
+from core.core_configuration import core_config
 from core.core_log import get_logger
 from core.distribute import EmailDistributor
 
@@ -111,7 +111,7 @@ class CommandParser:
     def __init__(self):
         # always treat prefix as case-insensitive
         self.valid_command_prefixes = list(
-            map(lambda p: str(p).lower(), eval(hometemp_config()['valid_command_prefix'])))
+            map(lambda p: str(p).lower(), eval(core_config()['valid_command_prefix'])))
         # TODO: should be Set
         self.valid_commands = []
 
