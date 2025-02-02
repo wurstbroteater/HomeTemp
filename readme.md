@@ -120,6 +120,8 @@ database.
 Use the following commands to import and export database:
 
 ```sh
+# Just open pqsql console (leave \q)
+docker exec -it base-postgres-db bash -c "PGPASSWORD='<DB_PASSWORD>' psql -U <DB_USER> -d <DB_NAME>"
 # Export
 docker exec -t postgres-db sh -c 'PGPASSWORD=<DB_PASSWORD> pg_dump -U <DB_USER> <DB_NAME>' > backup.sql
 

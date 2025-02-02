@@ -6,7 +6,8 @@ import threading
 import time
 
 from core.command import CommandService
-from core.core_configuration import load_config, database_config, hometemp_config
+from core.sensors.dht import SUPPORTED_SENSORS
+from core.core_configuration import load_config, database_config, hometemp_config, get_sensor_type
 from core.core_log import setup_logging, get_logger
 from core.database import SensorDataHandler
 from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
@@ -83,10 +84,10 @@ def run_threaded(job_func):
 
 
 def collect_and_save_to_db():
-    log.info("Start Measurement Data Collection")
+    is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
     auth = database_config()
     sensor_pin = int(hometemp_config()["sensor_pin"])
-    data_tuple = retrieve_and_save_sensor_data(auth, sensor_pin)
+    data_tuple = retrieve_and_save_sensor_data(auth, sensor_pin, is_dht11)
 
     if data_tuple is not None:
         room_temp = data_tuple[2]

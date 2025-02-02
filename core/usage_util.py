@@ -1,3 +1,4 @@
+from datetime import datetime
 import time
 import pandas as pd
 from typing import Optional, Tuple, Type
@@ -5,7 +6,7 @@ from configparser import SectionProxy
 from gpiozero import CPUTemperature
 from core.sensors.dht import get_sensor_data
 from core.database import PostgresHandler, SensorDataHandler
-from core.plotting import SupportedDataFrames
+from core.plotting import TIME_FORMAT, SupportedDataFrames
 from core.sensors.camera import RpiCamController
 from core.virtualization import init_postgres_container
 from core.core_log import get_logger
@@ -80,14 +81,16 @@ def get_data_for_plotting(database_auth: SectionProxy, handler_type: Type[Postgr
     return transformer.prepare_data(data)
 
 
-def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin: int) -> Optional[Tuple]:
+def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin: int, is_dht11_sensor: bool) -> Optional[Tuple]:
     log.info("Start Measurement Data Collection")
     handler = SensorDataHandler(database_auth['db_port'], database_auth['db_host'], database_auth['db_user'],
                                 database_auth['db_pw'], SupportedDataFrames.Main.table_name)
     handler.init_db_connection()
     cpu_temp = get_cpu_temperature()
-    room_temp, humidity, timestamp = get_sensor_data(sensor_pin, False)
-    if room_temp is not None and humidity is not None and timestamp is not None:
+
+    room_temp, humidity = get_sensor_data(sensor_pin, is_dht11_sensor)
+    timestamp = timestamp = datetime.now().strftime(TIME_FORMAT)
+    if room_temp is not None and humidity is not None:
         log.info("[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
                                                                                        humidity))
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp,

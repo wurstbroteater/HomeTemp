@@ -23,6 +23,7 @@ TBD
   - Added `is_db_ready()` which returns true if the database is currently ready to accept transactions else false. By default, it initializes the database before checking for ready.
 - Added `core.usage_util` providing utilities for several core functionalities.
 - **BREAKING CHANGE**: Removed `core.sensors.util` and moved method to `core.usage_util.get_cput_temperature()`.
+- **BREAKING CHANGE**: Refactored and renamed `default_hometemp.ini` to `default_configuration.ini`.
 - Optimized BaseTemp and HomeTemp to wait for database to be ready decreased lines of code.
 
 ## 0.4

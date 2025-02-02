@@ -36,6 +36,7 @@ custom_theme = {
 }
 
 #@formatter:off
+# postgres expects timestamp ins ISO 8601 format TODO: MOVE TO DATABASE
 TIME_FORMAT:LiteralString = '%Y-%m-%d %H:%M:%S'
 TEMP_TUPLE_DEFAULT = ("temp", None)
 
