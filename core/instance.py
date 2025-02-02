@@ -124,9 +124,9 @@ class HomeTemp(CoreSkeleton):
         pass
 
     def _setup_scheduling(self) -> None:
-        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
-        schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed())
-        schedule.every(10).minutes.do(lambda _: self.run_received_commands())
+        schedule.every(10).minutes.do(lambda: self.collect_and_save_to_db())
+        schedule.every().day.at("06:00").do(lambda: self.create_visualization_timed())
+        schedule.every(10).minutes.do(lambda: self.run_received_commands())
         pass
 
     def _methods_after_init(self) -> None:
@@ -201,9 +201,9 @@ class BaseTemp(CoreSkeleton):
 
     def _get_current_schedule(self) -> List[schedule.Job]:
         if self.active_schedule == 'common':
-            return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()),
-                    schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()),
-                    schedule.every().day.at("08:00").do(lambda _: self.create_visualization_timed())]
+            return [schedule.every(10).minutes.do(lambda: self.run_received_commands()),
+                    schedule.every(10).minutes.do(lambda: self.collect_and_save_to_db()),
+                    schedule.every().day.at("08:00").do(lambda: self.create_visualization_timed())]
         elif self.active_schedule == 'phase1':
             # return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()),
             #        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()),
