@@ -9,6 +9,7 @@ picture via commanding.
 
 ## Requirements
 
+- screen
 - Docker
 - libpq-dev
 - xvfb
@@ -42,7 +43,7 @@ Install **docker**, e.g., as described [here for raspberry-pi](https://docs.dock
 
 ```sh
 sudo apt update
-sudo apt install libpq-dev xvfb
+sudo apt install screen libpq-dev xvfb
 ```
 
 #### Setup Virtual Environment
