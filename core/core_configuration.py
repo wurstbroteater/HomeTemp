@@ -28,15 +28,29 @@ def load_config(config_file: str = 'config.ini') -> None:
     return None
 
 
+def update_config(section: str, key: str, value: str, filename: str = "config.ini") -> None:
+    """Updates the value and saves it in the ini file"""
+    config[section][key] = value
+    with open(filename, "w") as configfile:
+        config.write(configfile)
+    load_config(filename)
+
+
 def hometemp_config() -> SectionProxy:
     used_key = 'hometemp'
     _validate_config(used_key)
     return config[used_key]
 
+
 def basetemp_config() -> SectionProxy:
     used_key = 'basetemp'
     _validate_config(used_key)
     return config[used_key]
+
+
+def update_active_schedule(new_value: str) -> None:
+    update_config('basetemp', 'active_schedule', new_value)
+
 
 def core_config() -> SectionProxy:
     used_key = 'core'

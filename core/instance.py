@@ -10,7 +10,8 @@ import schedule
 from abc import ABC, abstractmethod
 from core.command import CommandService
 from core.sensors.dht import SUPPORTED_SENSORS
-from core.core_configuration import database_config, core_config, get_sensor_type, basetemp_config
+from core.core_configuration import database_config, core_config, get_sensor_type, basetemp_config, \
+    update_active_schedule
 
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 
@@ -169,10 +170,25 @@ class BaseTemp(CoreSkeleton):
     ## --- Initialization Part ---
     def __init__(self, instance_name: str):
         super().__init__(instance_name)
-        cfg:SectionProxy = basetemp_config()
+        cfg: SectionProxy = basetemp_config()
         self.max_heat = cfg.get("max_heat", None)
         self.min_heat = cfg.get("min_heat", None)
         self.send_temperature_warning = not (self.max_heat is None and self.min_heat is None)
+        self.active_schedule = cfg.get("active_schedule", "").lower()
+        # comparison should always be made lower case
+        self.supported_schedules = ['phase1', 'phase2', 'common']
+
+    def set_schedule(self, s_name: str) -> None:
+        self._set_schedule(s_name)
+        update_active_schedule(self.active_schedule)
+
+    def _set_schedule(self, new_schedule: str) -> None:
+        new_schedule = new_schedule.lower().strip()
+        if new_schedule not in self.supported_schedules:
+            log.warning(f"Unsupported schedule {new_schedule}")
+        else:
+            log.info(f"Setting new schedule: {new_schedule}")
+        self.active_schedule = new_schedule
 
     def _add_commands(self) -> None:
         picture_cmd_name = 'pic'
@@ -183,25 +199,43 @@ class BaseTemp(CoreSkeleton):
         self.command_service.add_new_command((vis_cmd_name, [], self.create_visualization_commanded, vis_fun_params))
         pass
 
+    def _get_current_schedule(self) -> List[schedule.Job]:
+        if self.active_schedule == 'common':
+            return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()),
+                    schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()),
+                    schedule.every().day.at("08:00").do(lambda _: self.create_visualization_timed())]
+        elif self.active_schedule == 'phase1':
+            # return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()),
+            #        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()),
+            #        schedule.every().day.at("11:45").do(lambda _: self.create_visualization_timed()),
+            #        schedule.every().day.at("19:00").do(lambda _: self.create_visualization_timed()),
+            #        schedule.every().day.at("03:00").do(lambda _: self.create_visualization_timed()),
+            #        schedule.every().day.at("10:30").do(lambda _: self.create_visualization_timed())]
+            pass
+        elif self.active_schedule == 'phase2':
+            # return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()),
+            #        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()),
+            #        schedule.every().day.at("08:00").do(lambda _: self.create_visualization_timed()),
+            #        schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed()),
+            #        schedule.every().day.at("02:00").do(lambda _: self.create_visualization_timed()),
+            #       schedule.every().day.at("20:00").do(lambda _: self.create_visualization_timed())]
+            pass
+        else:
+            log.warning(f"Unsupported schedule {self.active_schedule}")
+
+        return []
+
     def _setup_scheduling(self) -> None:
-        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
-        schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed())
-        schedule.every(10).minutes.do(lambda _: self.run_received_commands())
+        self._get_current_schedule()
+        log.info(f"Initialized schedule: {self.active_schedule}")
+        pass
 
-        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db())
-        # Phase 1
-        # schedule.every().day.at("11:45").do(lambda _: self.create_visualization_timed())
-        # schedule.every().day.at("19:00").do(lambda _: self.create_visualization_timed())
-        # schedule.every().day.at("03:00").do(lambda _: self.create_visualization_timed())
-        # schedule.every().day.at("10:30").do(lambda _: self.create_visualization_timed())
-        # Phase 2
-        schedule.every().day.at("08:00").do(lambda _: self.create_visualization_timed())
-        # schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed())
-        # schedule.every().day.at("02:00").do(lambda _: self.create_visualization_timed())
-        # schedule.every().day.at("20:00").do(lambda _: self.create_visualization_timed())
-
-        # Common
-        schedule.every(10).minutes.do(lambda _: self.run_received_commands())
+    def switch_schedule(self, new_schedule: str) -> None:
+        # TODO: Figure out how to reset active schedule instqnce
+        # old_tasks = self._get_current_schedule()
+        # for job in old_tasks:
+        #    job.cancel()
+        # self._set_schedule(new_schedule)
         pass
 
     def _methods_after_init(self) -> None:
@@ -259,6 +293,7 @@ class BaseTemp(CoreSkeleton):
         log.warning(f"Sending heat warning because room temp is {indicator} {extremum}°C")
         send_heat_warning_email(room_temp)
         return t
+
 
 # ----------------------------------------------------------------------------------------------------------------
 # Static utility methods
