@@ -107,7 +107,7 @@ def collect_and_save_to_db():
 
 
 def main(instance_name: str):
-    log.info(f"------------------- {instance_name} v{core_config()['version']} -------------------")
+    log.info(f"------------------- {instance_name.title()} v{core_config()['version']} -------------------")
     init_database(SensorDataHandler, database_config(), 'sensor_data')
 
     picture_cmd_name = 'pic'
