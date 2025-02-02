@@ -107,6 +107,7 @@ def collect_and_save_to_db():
 
 
 def main(instance_name: str):
+    instance_name = instance_name.replace("b", "B").replace("t", "T")
     log.info(f"------------------- {instance_name.title()} v{core_config()['version']} -------------------")
     init_database(SensorDataHandler, database_config(), 'sensor_data')
 
@@ -152,7 +153,7 @@ def init():
     # Define all global variables
     global log, command_service
     log = get_logger(__name__)
-    if instance_name not in ["hometemp", "basetemp"]:
+    if instance_name not in ["basetemp"]:
         log.error(f"Unsupported instance configuration found: {instance_name}")
         exit(1)
     command_service = CommandService()
