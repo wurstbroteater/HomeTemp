@@ -87,7 +87,7 @@ def collect_and_save_to_db():
     auth = database_config()
     sensor_pin = int(hometemp_config()["sensor_pin"])
     data_tuple = retrieve_and_save_sensor_data(auth, sensor_pin)
-   
+
     if data_tuple is not None:
         room_temp = data_tuple[2]
         # TODO: make customizable

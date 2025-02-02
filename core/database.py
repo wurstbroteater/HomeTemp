@@ -52,12 +52,12 @@ class PostgresHandler(ABC):
         try:
             with self.connection.connect() as con:
                 con.execute(text("SELECT 1"))
-            log.debug("Database is ready")  
+            log.debug("Database is ready")
             return True
         except exc.SQLAlchemyError as e:
             log.debug("Database is not ready: " + str(e))
             return False
-        
+
     def close(self):
         """Closes the database connection."""
         if self.connection:
