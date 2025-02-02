@@ -80,7 +80,7 @@ class CommandService:
                 requests.append(CommandRequest(email_id=email_id, commander=commander, command=received_command))
         return requests
 
-    def add_new_command(self, cmd_syntax: str):
+    def add_new_command(self, cmd_syntax: tuple):
         if len(cmd_syntax) == 4:
             self.parser.add_command_syntax(
                 Command(id=cmd_syntax[0], params=cmd_syntax[1], function=cmd_syntax[2], function_params=cmd_syntax[3]))
