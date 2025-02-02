@@ -14,7 +14,7 @@ from core.distribute import send_visualization_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
 from core.sensors.dht import get_sensor_data
 from core.sensors.util import get_temperature
-from core.usage_util import init_database
+from core.usage_util import init_database, get_data_for_plotting
 
 # GLOBAL Variables
 log = None
@@ -23,42 +23,11 @@ command_service = None
 
 def _get__visualization_data():
     auth = database_config()
-    sensor_data_handler = SensorDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'],
-                                            'sensor_data')
-    sensor_data_handler.init_db_connection(check_table=False)
-    # sensor data
-    df = sensor_data_handler.read_data_into_dataframe()
-    df = df.sort_values(by="timestamp")
-    df['timestamp'] = df['timestamp'].map(
-        lambda x: datetime.strptime(str(x).replace("+00:00", "").strip(), '%Y-%m-%d %H:%M:%S'))
-    # Google weather data
-    google_handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
-    google_handler.init_db_connection(check_table=False)
-    google_df = google_handler.read_data_into_dataframe()
-    google_df['timestamp'] = google_df['timestamp'].map(
-        lambda x: datetime.strptime(re.sub('\..*', '', str(x).strip()), '%Y-%m-%d %H:%M:%S'))
-    google_df = google_df.sort_values(by="timestamp")
-    # DWD weather data
-    dwd_handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
-    dwd_handler.init_db_connection(check_table=False)
-    dwd_df = dwd_handler.read_data_into_dataframe()
-    dwd_df['timestamp'] = dwd_df['timestamp'].map(
-        lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
-    dwd_df = dwd_df.sort_values(by="timestamp")
-    # Wetter.com data
-    wettercom_handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'],
-                                         'wettercom_data')
-    wettercom_handler.init_db_connection()
-    wettercom_df = wettercom_handler.read_data_into_dataframe()
-    wettercom_df['timestamp'] = wettercom_df['timestamp'].map(
-        lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
-    # Ulm.de data
-    ulmde_handler = UlmDeHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'ulmde_data')
-    ulmde_handler.init_db_connection()
-    ulmde_df = ulmde_handler.read_data_into_dataframe()
-    ulmde_df['timestamp'] = ulmde_df['timestamp'].map(
-        lambda x: datetime.strptime(str(x).strip().replace('+00:00', ''), '%Y-%m-%d %H:%M:%S'))
-
+    df = get_data_for_plotting(auth, SensorDataHandler, SupportedDataFrames.Main)
+    google_df = get_data_for_plotting(auth, GoogleDataHandler, SupportedDataFrames.GOOGLE_COM)
+    dwd_df = get_data_for_plotting(auth, DwDDataHandler, SupportedDataFrames.DWD_DE)
+    wettercom_df = get_data_for_plotting(auth, WetterComHandler, SupportedDataFrames.WETTER_COM)
+    ulmde_df = get_data_for_plotting(auth, UlmDeHandler, SupportedDataFrames.ULM_DE)
     return (df, google_df, dwd_df, wettercom_df, ulmde_df)
 
 

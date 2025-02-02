@@ -1,18 +1,25 @@
 from typing import Type
 import time
 from configparser import SectionProxy
+
+import pandas as pd
+
 from core.database import PostgresHandler
+from core.plotting import SupportedDataFrames
+from core.sensors.camera import RpiCamController
 from core.virtualization import init_postgres_container
 from core.core_log import get_logger
 
 log = get_logger(__name__)
+
 
 # ----------------------------------------------------------------------------------------------------------------
 # The core utility module which provides utility methods for using core functionalities.
 # Should be used if two or more core components need to work together.
 # ----------------------------------------------------------------------------------------------------------------
 
-def init_database(handler_type: Type[PostgresHandler], database_auth: SectionProxy, table_name: str, timelimit_sec: int = 30):
+def init_database(handler_type: Type[PostgresHandler], database_auth: SectionProxy, table_name: str,
+                  timelimit_sec: int = 30):
     """
     Initializes a PostgreSQL database handler and waits until the database is ready for transactions.
 
@@ -30,7 +37,8 @@ def init_database(handler_type: Type[PostgresHandler], database_auth: SectionPro
         log.error("Postgres container startup error! Shutting down ...")
         exit(1)
 
-    handler: PostgresHandler = handler_type(database_auth['db_port'], database_auth['db_host'], database_auth['db_user'], database_auth['db_pw'], table_name)
+    handler: PostgresHandler = handler_type(database_auth['db_port'], database_auth['db_host'],
+                                            database_auth['db_user'], database_auth['db_pw'], table_name)
     is_ready = handler.is_db_ready()
 
     passed_seconds = 0
@@ -50,3 +58,19 @@ def init_database(handler_type: Type[PostgresHandler], database_auth: SectionPro
 
     log.info(f"Database ready after {passed_seconds}s")
     handler.close()
+
+
+def _take_picture(name, encoding="png"):
+    rpi_cam = RpiCamController()
+    # file name is set in capture_image to filepath.encoding which is png on default
+    return rpi_cam.capture_image(file_path=name, encoding=encoding)
+
+
+#  SensorDataHandler, SupportedDataFrames
+def get_data_for_plotting(database_auth: SectionProxy, handler_type: Type[PostgresHandler],
+                          transformer: SupportedDataFrames) -> pd.DataFrame:
+    handler: PostgresHandler = handler_type(database_auth['db_port'], database_auth['db_host'],
+                                            database_auth['db_user'], database_auth['db_pw'], transformer.table_name)
+    handler.init_db_connection(check_table=False)
+    data = handler.read_data_into_dataframe()
+    return transformer.prepare_data(data)

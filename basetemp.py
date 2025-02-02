@@ -11,10 +11,9 @@ from core.core_log import setup_logging, get_logger
 from core.database import SensorDataHandler
 from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
-from core.sensors.camera import RpiCamController
 from core.sensors.dht import get_sensor_data
 from core.sensors.util import get_temperature
-from core.usage_util import init_database
+from core.usage_util import init_database, _take_picture
 
 # GLOBAL Variables
 log = None
@@ -37,11 +36,6 @@ def _get__visualization_data():
 
 
 # ------------------------------- Main  ----------------------------------------------
-
-def _take_picture(name, encoding="png"):
-    rpi_cam = RpiCamController()
-    # file name is set in capture_image to filepath.encoding which is png on default
-    return rpi_cam.capture_image(file_path=name, encoding=encoding)
 
 
 def take_picture_timed():

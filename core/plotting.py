@@ -1,6 +1,7 @@
+import re
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Callable, Tuple, List, Optional
+from typing import Callable, Tuple, List, Optional, LiteralString
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +17,15 @@ log = get_logger(__name__)
 # The visualization module. Provides means to create a plot for sensor data and is able to save them to pdf.
 # A goal of the architecture is to easily incorporate new plots and new plot configurations, i.e.,
 # plot arrangements, plot theme, label names and seaborn parameters. 
-# See changelog.md 0.5 for class details.
+# - Use SupportedDataFrames contains domain knowledge for defining how to enrich known dataframes with plotting information
+#   - Knows how to transform dataframes for plotting
+# - Use PlotData to combine dataframe with SupportedDataFrames
+# - Use PlotDataSelector to specify which data has to be selected from a PlotData instances
+# - Use DefaultPlotCategory.DISTINCT for multi-lineplots. Use with an PlotDataSelector.*ALL
+# - Use DefaultPlotCategory.DISTINCT24 for 24h-multi-lineplots. Use with an PlotDataSelector.*24
+# - Use DefaultPlotCategory.MERGED for lineplots with merged subplots. Currently, only supports temperature!
+# - Use DefaultPlotCategory.MERGED24 for 24h-lineplots with merged subplots. Currently, only supports temperature!
+# - Use DefaultPlotCategory for combining DefaultPlotCategory with the main plot parameter configuration
 # ----------------------------------------------------------------------------------------------------------------
 
 
@@ -27,6 +36,7 @@ custom_theme = {
 }
 
 #@formatter:off
+TIME_FORMAT:LiteralString = '%Y-%m-%d %H:%M:%S'
 TEMP_TUPLE_DEFAULT = ("temp", None)
 
 # These functions represent direct seaborn plot parameters
@@ -34,24 +44,25 @@ MINIMAL_INNER = lambda df, label, y: {"data": df, "label": label, "x": "timestam
 MINIMAL_INNER_24 = lambda df, label, y: {"data": df, "label": label, "x": "timestamp", "y": y, "alpha": 0.6, "marker": "o", "markersize": 6}
 
 NOT_DIRECT_PARAMS = ["title", "xlabel", "ylabel"]
-# These functions represent seaborn plot configurations, i.e., direct seaborn plot parameters and some for configurinig main plot, see NOT_DIRECT_PARAMS
+# These functions represent seaborn plot configurations, i.e., direct seaborn plot parameters and some for configuring main plot, see NOT_DIRECT_PARAMS
 MINIMAL_MAIN = lambda title, ylabel, y: {"title": title, "xlabel": "Time", "ylabel": ylabel, "label": "Home", "x": "timestamp", "y": y}
 MINIMAL_MAIN_24 = lambda title, ylabel, y: {"title": title, "xlabel": "Time", "ylabel": ylabel, "label": "Home", "x": "timestamp", "y": y, "marker": "o", "markersize": 6}
 # @formatter:on
 
 class SupportedDataFrames(Enum):
-    # enumIdx, name, temperature keys list of tuple (df key, plot label with None for default see _label) , humidity key
-    Main = 1, "Room", [("room_temp", None)], "humidity"
-    DWD_DE = 2, "DWD", [TEMP_TUPLE_DEFAULT], None
-    GOOGLE_COM = 3, "Google.de", [TEMP_TUPLE_DEFAULT], "humidity"
-    WETTER_COM = 4, "Wetter.com", [("temp_stat", "Forecast"), ("temp_dyn", "Live")], None
-    ULM_DE = 5, "Ulm.de", [TEMP_TUPLE_DEFAULT], None
+    # enumIdx, name, temperature keys list of tuple (df key, plot label with None for default see _label) , humidity key, database table name
+    Main = 1, "Room", [("room_temp", None)], "humidity", "sensor_data"
+    DWD_DE = 2, "DWD", [TEMP_TUPLE_DEFAULT], None, "dwd_data"
+    GOOGLE_COM = 3, "Google.de", [TEMP_TUPLE_DEFAULT], "humidity", "google_data"
+    WETTER_COM = 4, "Wetter.com", [("temp_stat", "Forecast"), ("temp_dyn", "Live")], None, "wettercom_data"
+    ULM_DE = 5, "Ulm.de", [TEMP_TUPLE_DEFAULT], None, "ulmde_data"
 
-    def __init__(self, enum_idx: int, display_name: str, temperature_keys: list, humidity_key: str):
+    def __init__(self, enum_idx: int, display_name: str, temperature_keys: list, humidity_key: str, table_name: str):
         self.enum_idx = enum_idx
         self.display_name = display_name
         self.temperature_keys = temperature_keys
         self.humidity_key = humidity_key
+        self.table_name = table_name
 
     def _label(self, label_overwrite: Optional[str] = None) -> str:
         if label_overwrite is None:
@@ -85,7 +96,7 @@ class SupportedDataFrames(Enum):
         return None
 
     def get_temp_24h_inner_plots_params(self, data: pd.DataFrame) -> Optional[list]:
-        # TODO: ASSURE 24 h ?
+        """This method does not assure that the data has the correct time frame. It only supplies the needed parameters."""
         if self is SupportedDataFrames.Main:
             return None
         elif self is SupportedDataFrames.WETTER_COM:
@@ -100,6 +111,33 @@ class SupportedDataFrames(Enum):
         if self.humidity_key is not None:
             return [MINIMAL_INNER_24(data, self._label(), self.humidity_key) | {"alpha": 1}]
         return None
+
+    @staticmethod
+    def parse_timestamp(value: str, remove_microseconds: bool = False) -> datetime:
+        """Helper to parse timestamps uniformly"""
+        out = str(value).strip().replace("+00:00", "")
+        if remove_microseconds:
+            # Remove microseconds
+            out = re.sub(r'\..*', '', out)
+        return datetime.strptime(out, TIME_FORMAT)
+
+    def prepare_data(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Assures timestamp format and sorts the dataframe by it"""
+        t_name = 'timestamp'
+
+        parse_options = {
+            self.Main: lambda x: self.parse_timestamp(x),
+            self.DWD_DE: lambda x: self.parse_timestamp(x),
+            self.GOOGLE_COM: lambda x: self.parse_timestamp(x, remove_microseconds=True),
+            self.WETTER_COM: lambda x: self.parse_timestamp(x),
+            self.ULM_DE: lambda x: self.parse_timestamp(x),
+        }
+
+        # Apply correct transformation
+        if self in parse_options:
+            data[t_name] = data[t_name].map(parse_options[self])
+
+        return data.sort_values(by=t_name)
 
 
 class PlotData:
