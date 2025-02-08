@@ -52,7 +52,7 @@ def web_access_available(host: str = "8.8.8.8", port: int = 53, timeout_s: float
     try:
         socket.setdefaulttimeout(timeout_s) 
         with socket.create_connection((host,port)):
-            return False
+            return True
     except (OSError, socket.timeout, socket.error):
         return False
 
