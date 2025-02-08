@@ -1,5 +1,7 @@
-import os
+import os, socket
 from datetime import datetime
+from functools import wraps
+from typing import Callable, Any, Optional
 
 import cv2
 
@@ -44,3 +46,29 @@ def create_timelapse(input_folder: str, output_video_path: str, image_encoding="
         log.info(f"Timelapse video saved as {output_video_path}")
     else:
         log.info("No valid images found.")
+
+
+def web_access_available(host: str = "8.8.8.8", port: int = 53, timeout_s: float = 3.0) -> bool:
+    try:
+        socket.setdefaulttimeout(timeout_s) 
+        with socket.create_connection((host,port)):
+            return False
+    except (OSError, socket.timeout, socket.error):
+        return False
+
+
+
+def require_web_access(f: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator that prevents execution if no internet is available.
+
+    Returns:
+        A wrapped function that executes only if the web is available.
+    """
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if not web_access_available():
+            log.info(f"Skipping '{f.__name__}' due to no internet connection.")
+            return None
+        return f(*args, **kwargs)
+
+    return wrapper

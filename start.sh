@@ -3,7 +3,7 @@
 start_screen() {
     SCREEN_NAME=$1
     COMMAND=$2
-    screen -dmS "$SCREEN_NAME" bash -c "source .venv/bin/activate && $COMMAND"
+    screen -dmS "$SCREEN_NAME" bash -c "source .venv/bin/activate && exec $COMMAND"
     echo "Started screen '$SCREEN_NAME' running: $COMMAND"
 }
 
@@ -17,11 +17,11 @@ fi
 # starts detached screens for hometemp or basetemp
 case "$1" in
     hometemp)
-        start_screen "temps" "python start.py"
-        start_screen "dwd" "python fetch_forecasts.py"
+        start_screen "dwd" "python -u fetch_forecasts.py 2>&1 | tee -a fetching.log"
+        start_screen "temps" "python -u start.py 2>&1 | tee -a hometemp.log"
         ;;
     basetemp)
-        start_screen "base" "python start.py"
+        start_screen "base" "python -u start.py 2>&1 | tee -a basetemp.log"
         ;;
     *)
         echo "Invalid option: $1"

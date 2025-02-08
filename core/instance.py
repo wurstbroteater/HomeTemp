@@ -18,6 +18,7 @@ from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, Senso
 from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
 from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, take_picture
+from core.util import require_web_access
 
 log = get_logger(__name__)
 
@@ -66,6 +67,7 @@ class CoreSkeleton(ABC):
     def _methods_after_init(self) -> None:
         self.collect_and_save_to_db()
 
+    @require_web_access
     def run_received_commands(self) -> None:
         log.info("Checking for commands")
         self.command_service.receive_and_execute_commands()
@@ -83,6 +85,7 @@ class CoreSkeleton(ABC):
         # first list is plots and second list is merge subplots for
         pass
 
+    @require_web_access
     @abstractmethod
     def _send_visualization_email(self, data: List[PlotData], save_path: str,
                                   email_receiver: Optional[str] = None) -> None:
@@ -152,6 +155,7 @@ class HomeTemp(CoreSkeleton):
 
         return out, out
 
+    @require_web_access  
     def _send_visualization_email(self, data: List[PlotData], save_path: str,
                                   email_receiver: Optional[str] = None) -> None:
         send_visualization_email(

@@ -3,7 +3,8 @@
 ## 0.5
 
 TBD
-
+- Added `./start.sh [hometemp|basetemp]` to start all components for an instance.
+- Moved log file creation to `start.sh`.
 - **BREAKING CHANGE**: Removed `basetemp.py` and `hometemp.py`.
     - Now, the instance to run depends on parameter `core.instance` in configuration file.
     - Added module `core.instance` which includes class `HomeTemp` and `BaseTemp`
@@ -28,6 +29,7 @@ TBD
 - Added `core.usage_util` providing utilities for several core functionalities.
 - **BREAKING CHANGE**: Removed `core.sensors.util` and moved method to `core.usage_util.get_cput_temperature()`.
 - **BREAKING CHANGE**: Refactored and renamed `default_hometemp.ini` to `default_configuration.ini`.
+- Added decorater `require_web_access` for checking if internet connection is available or skipps the annotated method.
 
 ## 0.4
 

@@ -1,4 +1,4 @@
-import time
+import socket, time
 from datetime import datetime, timedelta
 
 import schedule
@@ -8,12 +8,14 @@ from core.core_configuration import load_config, database_config, dwd_config, go
 from core.core_log import setup_logging, get_logger
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler
 from core.usage_util import init_database
+from core.util import require_web_access
 from endpoint.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
 
 # GLOBAL Variables
 log = None
 
 
+@require_web_access
 def dwd_fetch_and_save():
     auth = database_config()
     fetcher = DWDFetcher(dwd_config()["station"])
@@ -60,6 +62,7 @@ def dwd_fetch_and_save():
                     timestamp_to_update -= time_diff
 
 
+@require_web_access
 def google_fetch_and_save():
     auth = database_config()
     fetcher = GoogleFetcher()
@@ -80,6 +83,7 @@ def google_fetch_and_save():
         handler.insert_google_data(timestamp=c_time, temp=c_temp, humidity=c_hum, precipitation=c_per, wind=c_wind)
 
 
+@require_web_access
 def wettercom_fetch_and_save():
     # dyn is allowed to be null in database
     wettercom_temp_static = WetterComFetcher().get_data_static(wettercom_config()["url"][1:-1])
@@ -98,6 +102,7 @@ def wettercom_fetch_and_save():
     handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
 
 
+@require_web_access
 def ulmde_fetch_and_save():
     auth = database_config()
     ulm_temp = UlmDeFetcher.get_data()
@@ -126,13 +131,14 @@ def main():
     google_fetch_and_save()
     wettercom_fetch_and_save()
 
+    log.info("entering main loop")
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 
 if __name__ == "__main__":
-    setup_logging(log_file='fetching.log')
+    setup_logging()
     load_config()
     # Define all global variables
     log = get_logger(__name__)

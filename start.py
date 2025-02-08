@@ -6,7 +6,7 @@ from core.instance import get_supported_instance_type
 def init():
     load_config()
     instance_name = get_instance_name()
-    setup_logging(log_file=f"{instance_name}.log")
+    setup_logging()
     instance_type = get_supported_instance_type(instance_name)
     instance = instance_type(instance_name)
     instance.start()
