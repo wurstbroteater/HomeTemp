@@ -62,7 +62,8 @@ class CommandService:
     def _get_emails_with_valid_prefix(self):
         found_email_with_command = []
 
-        for email_id, received_message in self.email_service.get_emails(which_emails='ALL'):
+        mails = self.email_service.get_emails(which_emails='ALL')
+        for email_id, received_message in [] if mails is None else mails:
             sender = str(parseaddr(received_message['From'])[1])
             subject = received_message['Subject']
             body = received_message.get_payload()
