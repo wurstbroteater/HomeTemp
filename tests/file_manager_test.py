@@ -8,7 +8,7 @@ log = get_logger(__name__)
 if __name__ == "__main__":
     fm = FileManager("./testFolderStructure")
 
-    fm.create_default_structure(["logs/la", "data", "configs"])
+    fm.create_structure(["logs/la", "data", "configs"])
     # default: overwrite existing file
     fm.create_file("data/foo/bar/sample.txt", "Hello, World!asdasdasdsad")
     # This won't change the content

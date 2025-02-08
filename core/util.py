@@ -46,7 +46,7 @@ class FileManager:
         else:
             log.info(f"Skipped creating folder: {folder_path} (does not exist)")
 
-    def create_default_structure(self, structure: List[str]) -> None:
+    def create_structure(self, structure: List[str]) -> None:
         """Creates a default folder structure."""
         for folder in structure:
             self.create_folder(folder, create_if_not_exists=True)
