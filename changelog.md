@@ -5,10 +5,14 @@
 TBD
 - Added `./start.sh [hometemp|basetemp]` to start all components for an instance.
 - Moved log file creation to `start.sh`.
-- **BREAKING CHANGE**: Removed `basetemp.py` and `hometemp.py`.
+- **BREAKING CHANGE**: Removed `basetemp.py` and `hometemp.py`:
     - Now, the instance to run depends on parameter `core.instance` in configuration file.
-    - Added module `core.instance` which includes class `HomeTemp` and `BaseTemp`
+    - Added module `core.instance` which includes class `HomeTemp` and `BaseTemp`.
     - Now, just use `python start.py`!
+- **BREAKING CHANGE**: Removed `fetch_forecasts.py`:
+    - Moved its core functionality to `endpoint.usage_util`.
+    - Added module `endpoint.instance` which includes class `FetchTemp`.
+    - Now, just use `python start.py --instance FetchTemp`!
 - Optimized `RpiCamController._rotate_image` to update an image only if the rotation parameter is not 0
 - Added timelapse video creation of a set of pictures with the name format '%Y-%m-%d-%H:%M:%S'
 - Updated `requirements.txt` to only contain top level dependencies

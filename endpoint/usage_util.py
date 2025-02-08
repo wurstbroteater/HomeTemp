@@ -1,24 +1,16 @@
-import socket, time
+from configparser import SectionProxy
 from datetime import datetime, timedelta
-
-import schedule
-
-from core.core_configuration import load_config, database_config, dwd_config, google_config, wettercom_config, \
-    core_config
-from core.core_log import setup_logging, get_logger
+from core.core_log import  get_logger
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler
-from core.usage_util import init_database
 from core.util import require_web_access
 from endpoint.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
 
-# GLOBAL Variables
-log = None
-
+log = get_logger(__name__)
 
 @require_web_access
-def dwd_fetch_and_save():
-    auth = database_config()
-    fetcher = DWDFetcher(dwd_config()["station"])
+def dwd_fetch_and_save(database_auth: SectionProxy, dwd_config: SectionProxy) -> None:
+    auth = database_auth
+    fetcher = DWDFetcher(dwd_config["station"])
     c_time, c_temp, dev = fetcher.get_dwd_data()
     if c_time is None or c_temp is None or dev is None:
         log.error(f"[DWD] Could not receive DWD data")
@@ -63,10 +55,10 @@ def dwd_fetch_and_save():
 
 
 @require_web_access
-def google_fetch_and_save():
-    auth = database_config()
+def google_fetch_and_save(database_auth: SectionProxy, google_config: SectionProxy) -> None:
+    auth = database_auth
     fetcher = GoogleFetcher()
-    google_data = fetcher.get_weather_data(google_config()["location"])
+    google_data = fetcher.get_weather_data(google_config["location"])
     if google_data is None:
         log.error("[Google] Could not receive google data")
     else:
@@ -84,27 +76,27 @@ def google_fetch_and_save():
 
 
 @require_web_access
-def wettercom_fetch_and_save():
+def wettercom_fetch_and_save(database_auth: SectionProxy, wettercom_config: SectionProxy) -> None:
     # dyn is allowed to be null in database
-    wettercom_temp_static = WetterComFetcher().get_data_static(wettercom_config()["url"][1:-1])
+    wettercom_temp_static = WetterComFetcher().get_data_static(wettercom_config["url"][1:-1])
     if wettercom_temp_static is None:
         log.error("[Wetter.com] Failed to fetch static temp data. Skipping!")
         return
-    wettercom_temp_dyn = WetterComFetcher.get_data_dynamic(wettercom_config()["url"][1:-1])
+    wettercom_temp_dyn = WetterComFetcher.get_data_dynamic(wettercom_config["url"][1:-1])
     c_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if wettercom_temp_dyn is None:
         log.warning("[Wetter.com] Failed to fetch dynamic temp data.")
     log.info(
         f"[Wetter.com] Static vs Dynamic Temperature at {c_time} is {wettercom_temp_static}°C vs {wettercom_temp_dyn}°C")
-    auth = database_config()
+    auth = database_auth
     handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
     handler.init_db_connection()
     handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
 
 
 @require_web_access
-def ulmde_fetch_and_save():
-    auth = database_config()
+def ulmde_fetch_and_save(database_auth: SectionProxy) -> None:
+    auth = database_auth
     ulm_temp = UlmDeFetcher.get_data()
     if ulm_temp is None:
         log.error("[Ulm] Could not receive google data")
@@ -116,30 +108,3 @@ def ulmde_fetch_and_save():
         handler.init_db_connection()
         handler.insert_ulmde_data(timestamp=c_time, temp=ulm_temp)
 
-
-def main():
-    log.info(f"------------------- Fetch DWD Measurements v{core_config()['version']} -------------------")
-    init_database(UlmDeHandler, database_config(), 'ulmde_data')
-    schedule.every(10).minutes.do(ulmde_fetch_and_save)
-    schedule.every(10).minutes.do(dwd_fetch_and_save)
-    schedule.every(10).minutes.do(google_fetch_and_save)
-    schedule.every(10).minutes.do(wettercom_fetch_and_save)
-
-    log.info("finished initialization")
-    ulmde_fetch_and_save()
-    dwd_fetch_and_save()
-    google_fetch_and_save()
-    wettercom_fetch_and_save()
-
-    log.info("entering main loop")
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
-
-if __name__ == "__main__":
-    setup_logging()
-    load_config()
-    # Define all global variables
-    log = get_logger(__name__)
-    main()

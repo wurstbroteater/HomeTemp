@@ -17,7 +17,7 @@ fi
 # starts detached screens for hometemp or basetemp
 case "$1" in
     hometemp)
-        start_screen "dwd" "python -u fetch_forecasts.py 2>&1 | tee -a fetching.log"
+        start_screen "dwd" "python -u start.py --instance FetchTemp 2>&1 | tee -a fetching.log"
         start_screen "temps" "python -u start.py 2>&1 | tee -a hometemp.log"
         ;;
     basetemp)
