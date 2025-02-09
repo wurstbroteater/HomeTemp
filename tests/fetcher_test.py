@@ -1,11 +1,13 @@
 from core.core_configuration import dwd_config
 import pandas as pd
+
+from core.database import TIME_FORMAT
 from endpoint.fetcher import DWDFetcher
 
 fetcher = DWDFetcher(dwd_config()["station"])
 print(fetcher)
 c_time, c_temp = fetcher.get_dwd_data()
-print(f"DWD forecast temperature data for Ulm is: {c_time.strftime('%Y-%m-%d %H:%M:%S')} {c_temp}°C")
+print(f"DWD forecast temperature data for Ulm is: {c_time.strftime(TIME_FORMAT)} {c_temp}°C")
 dwd_data = fetcher.data
 # 241 elements
 df_temp = pd.DataFrame({
