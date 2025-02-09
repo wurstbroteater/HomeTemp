@@ -287,7 +287,7 @@ class FileManager:
         """
         Returns the absolute path to store a png file (default).
         filename is just name without extension.
-        encoding is the target file exenstion.
+        encoding is the target file extension.
         """
         root_path = str(self.base_path)
         filename = datetime.now().strftime(PICTURE_NAME_FORMAT) if filename == "" else filename
@@ -312,10 +312,10 @@ _file_manager: Optional[FileManager] = None
 
 
 ## ----------------------------------------------------------------------------------------------------------------
-# Main Methods for initialization. This is a crucial part, as every module may depends on information
+# Main Methods for initialization. This is a crucial part, as every module may depend on information
 # from the config file and FileManager. As FileManger is coupled to the config file, the initialization()
 # method assures the correct setup. However, it is crucial that core_log.setup_logging() was called 
-# before accessing the initialization() metho
+# before accessing the initialization() method.
 # -----------------------------------------------------------------------------------------------------------------
 
 
