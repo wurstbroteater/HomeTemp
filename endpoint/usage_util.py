@@ -1,11 +1,12 @@
 from configparser import SectionProxy
 from datetime import datetime, timedelta
-from core.core_log import  get_logger
+from core.core_log import get_logger
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler
 from core.util import require_web_access
 from endpoint.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
 
 log = get_logger(__name__)
+
 
 @require_web_access
 def dwd_fetch_and_save(database_auth: SectionProxy, dwd_config: SectionProxy) -> None:
@@ -107,4 +108,3 @@ def ulmde_fetch_and_save(database_auth: SectionProxy) -> None:
         handler = UlmDeHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'ulmde_data')
         handler.init_db_connection()
         handler.insert_ulmde_data(timestamp=c_time, temp=ulm_temp)
-

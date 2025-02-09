@@ -310,6 +310,7 @@ class FileManager:
 
 _file_manager: Optional[FileManager] = None
 
+
 ## ----------------------------------------------------------------------------------------------------------------
 # Main Methods for initialization. This is a crucial part, as every module may depends on information
 # from the config file and FileManager. As FileManger is coupled to the config file, the initialization()

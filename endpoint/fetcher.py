@@ -32,7 +32,8 @@ class UlmDeFetcher:
             # set connect and read timeout to 5 seconds
             response = requests.get('https://www.ulm.de/', timeout=(5, 5))
         except (
-        requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                requests.exceptions.TooManyRedirects, requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError) as e:
             log.error(f"Ulm.de connection problem: " + str(e))
             return None
 
@@ -72,7 +73,8 @@ class WetterComFetcher:
             # set connect and read timeout to 5 seconds
             response = requests.get(url, timeout=(5, 5))
         except (
-        requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                requests.exceptions.TooManyRedirects, requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError) as e:
             log.error(f"Wetter.com connection problem: " + str(e))
             return None
 
@@ -98,7 +100,7 @@ class WetterComFetcher:
 
         Fetches the dynamic temperature data from Wetter.com link for a city/region
         """
-        display = Display(visible=0, size=(1600, 1200))
+        display = Display(visible=False, size=(1600, 1200))
         display.start()
         options = Options()
         options.add_argument('--disable-blink-features=AutomationControlled')
@@ -133,7 +135,7 @@ class GoogleFetcher:
         """
 
         url = "https://www.google.com/search?lr=lang_en&ie=UTF-8&q=weather%20" + location
-        display = Display(visible=0, size=(1600, 1200))
+        display = Display(visible=False, size=(1600, 1200))
         display.start()
         options = Options()
         options.add_argument('--disable-blink-features=AutomationControlled')
@@ -199,7 +201,8 @@ class Fetcher:
             else:
                 return self._handle_bad_status_code(code)
         except (
-        requests.exceptions.TooManyRedirects, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                requests.exceptions.TooManyRedirects, requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError) as e:
             log.error(f"Creating the connection failed with error: {e}")
             return None
 
