@@ -8,6 +8,5 @@ __pycache__
 **/config.ini
 **/*.png
 **/*.mp4
-plots
-pictures
+data
 **/*.log

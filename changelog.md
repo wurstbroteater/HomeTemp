@@ -34,6 +34,8 @@ TBD
 - **BREAKING CHANGE**: Removed `core.sensors.util` and moved method to `core.usage_util.get_cput_temperature()`.
 - **BREAKING CHANGE**: Refactored and renamed `default_hometemp.ini` to `default_configuration.ini`.
 - Added decorater `require_web_access` for checking if internet connection is available or skipps the annotated method.
+- Added `FileManager` to handle file reading/writing and file path management.
+    - Added `data_path` in `config.ini` which defaults to `./data`
 
 ## 0.4
 

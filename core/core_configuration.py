@@ -7,7 +7,9 @@ from pathlib import Path
 from time import sleep
 from typing import Optional, List, Literal, Tuple
 
-from core.util import log
+from core.core_log import get_logger
+
+log = get_logger(__name__)
 
 # ----------------------------------------------------------------------------------------------------------------
 # Configuration management module
@@ -135,7 +137,7 @@ def _validate_config(used_key: str, used_key_present_error: bool = True) -> None
 
 ## ----------------------------------------------------------------------------------------------------------------
 # The FileManager is coupled to the configuration as it reads the root dir from the config.ini
-# ----------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
 PICTURE_NAME_FORMAT = "%Y-%m-%d-%H:%M:%S"
 PLOT_NAME_FORMAT = "%d-%m-%Y"
 
@@ -282,6 +284,11 @@ class FileManager:
             self.create_folder(folder, create_if_not_exists=True)
 
     def picture_file_name(self, timed: bool, filename="", encoding="png") -> Tuple[str, str]:
+        """
+        Returns the absolute path to store a png file (default).
+        filename is just name without extension.
+        encoding is the target file exenstion.
+        """
         root_path = str(self.base_path)
         filename = datetime.now().strftime(PICTURE_NAME_FORMAT) if filename == "" else filename
         if timed:
@@ -290,16 +297,25 @@ class FileManager:
 
     def plot_file_name(self, timed: bool, filename="") -> str:
         """
+        Returns the absolute path to store a pdf file.
         filename is just name without extension.
         """
         root_path = str(self.base_path)
         filename = datetime.now().strftime(PLOT_NAME_FORMAT) if filename == "" else filename
+        encoding = ".pdf"
         if timed:
-            return f"{root_path}/{self.TIMED_PICTURES}/{filename}"
-        return f"{root_path}/{self.COMMANDED_PICTURES}/{filename}"
+            return f"{root_path}/{self.TIMED_PICTURES}/{filename}{encoding}"
+        return f"{root_path}/{self.COMMANDED_PICTURES}/{filename}{encoding}"
 
 
 _file_manager: Optional[FileManager] = None
+
+## ----------------------------------------------------------------------------------------------------------------
+# Main Methods for initialization. This is a crucial part, as every module may depends on information
+# from the config file and FileManager. As FileManger is coupled to the config file, the initialization()
+# method assures the correct setup. However, it is crucial that core_log.setup_logging() was called 
+# before accessing the initialization() metho
+# -----------------------------------------------------------------------------------------------------------------
 
 
 def set_file_manager(file_manager: FileManager) -> None:
@@ -322,12 +338,13 @@ def get_file_manager() -> FileManager:
             sleep(1)
 
         log.info(f"File manager initialized after {max_attempts} attempts")
-        return _file_manager
+    return _file_manager
 
 
 def initialize() -> FileManager:
     """
     Loads the config.ini and sets up the file manager.
+    core_log.setup_logging() has to be called before using this method!
     """
     load_config()
     set_file_manager(FileManager(get_data_root()))

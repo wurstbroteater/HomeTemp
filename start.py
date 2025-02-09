@@ -30,4 +30,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     init(instance_name=args.instance)
-    init()
