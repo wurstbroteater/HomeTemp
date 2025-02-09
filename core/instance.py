@@ -168,7 +168,6 @@ class HomeTemp(CoreSkeleton):
 
 
 class BaseTemp(CoreSkeleton):
-    # TODO: command to switch schedule
 
     ## --- Initialization Part ---
     def __init__(self, instance_name: str):
@@ -193,6 +192,13 @@ class BaseTemp(CoreSkeleton):
             log.info(f"Setting new schedule: {new_schedule}")
         self.active_schedule = new_schedule
 
+    # TODO REMOVE OVERWRITE
+    def _methods_after_init(self) -> None:
+        pass
+
+    def foo(self, commander: str, phase:str) -> None:
+        log.info(f"Executing command: {commander} {phase}")
+
     def _add_commands(self) -> None:
         picture_cmd_name = 'pic'
         picture_fun_params = ['commander']
@@ -200,29 +206,31 @@ class BaseTemp(CoreSkeleton):
         vis_cmd_name = 'plot'
         vis_fun_params = ['commander']
         self.command_service.add_new_command((vis_cmd_name, [], self.create_visualization_commanded, vis_fun_params))
+        self.command_service.add_new_command(('phase', [], self.foo, ['commander', 'phase']))
         pass
+
 
     def _get_current_schedule(self) -> List[schedule.Job]:
         if self.active_schedule == 'common':
-            return [schedule.every(10).minutes.do(lambda: self.run_received_commands()),
-                    schedule.every(10).minutes.do(lambda: self.collect_and_save_to_db()),
-                    schedule.every().day.at("08:00").do(lambda: self.create_visualization_timed())]
+            return [schedule.every(10).minutes.do(lambda: self.run_received_commands()).tag(self.active_schedule),
+                    schedule.every(10).minutes.do(lambda: self.collect_and_save_to_db()).tag(self.active_schedule),
+                    schedule.every().day.at("08:00").do(lambda: self.create_visualization_timed()).tag(self.active_schedule)]
         elif self.active_schedule == 'phase1':
-            # return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()),
-            #        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()),
-            #        schedule.every().day.at("11:45").do(lambda _: self.create_visualization_timed()),
-            #        schedule.every().day.at("19:00").do(lambda _: self.create_visualization_timed()),
-            #        schedule.every().day.at("03:00").do(lambda _: self.create_visualization_timed()),
-            #        schedule.every().day.at("10:30").do(lambda _: self.create_visualization_timed())]
-            pass
+             return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule),
+                    schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule),
+                    schedule.every().day.at("11:45").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
+                    schedule.every().day.at("19:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
+                    schedule.every().day.at("03:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
+                    schedule.every().day.at("10:30").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)]
+
         elif self.active_schedule == 'phase2':
-            # return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()),
-            #        schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()),
-            #        schedule.every().day.at("08:00").do(lambda _: self.create_visualization_timed()),
-            #        schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed()),
-            #        schedule.every().day.at("02:00").do(lambda _: self.create_visualization_timed()),
-            #       schedule.every().day.at("20:00").do(lambda _: self.create_visualization_timed())]
-            pass
+             return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule),
+                    schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule),
+                    schedule.every().day.at("08:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
+                    schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
+                    schedule.every().day.at("02:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
+                   schedule.every().day.at("20:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)]
+
         else:
             log.warning(f"Unsupported schedule {self.active_schedule}")
 
@@ -231,15 +239,13 @@ class BaseTemp(CoreSkeleton):
     def _setup_scheduling(self) -> None:
         self._get_current_schedule()
         log.info(f"Initialized schedule: {self.active_schedule}")
-        pass
+        log.info(f"Active jobs: {schedule.get_jobs()}")
 
     def switch_schedule(self, new_schedule: str) -> None:
-        # TODO: Figure out how to reset active schedule instance
-        # old_tasks = self._get_current_schedule()
-        # for job in old_tasks:
-        #    job.cancel()
-        # self._set_schedule(new_schedule)
-        pass
+         old_tasks = self._get_current_schedule()
+         for job in old_tasks:
+            schedule.cancel_job(job)
+         self._set_schedule(new_schedule)
 
     def _methods_after_init(self) -> None:
         super()._methods_after_init()

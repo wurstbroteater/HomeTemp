@@ -27,7 +27,6 @@ class FetchTemp(CoreSkeleton):
         if self.instance_name is None:
             log.error(f"FetchTemp got unsupported initializer {instance_name}")
 
-    # overwrite
     def _setup_scheduling(self) -> None:
         schedule.every(10).minutes.do(lambda: self.collect_and_save_to_db())
 
