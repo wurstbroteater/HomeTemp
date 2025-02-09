@@ -1,6 +1,5 @@
-from core.core_configuration import load_config
+from core.core_configuration import load_config, FileManager
 from core.core_log import setup_logging, get_logger
-from core.util import FileManager
 
 load_config()
 setup_logging()

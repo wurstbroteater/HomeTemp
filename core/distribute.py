@@ -9,7 +9,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import List, Optional, Tuple
 
-from core.core_configuration import distribution_config, core_config
+from core.core_configuration import distribution_config, core_config, PICTURE_NAME_FORMAT, PLOT_NAME_FORMAT
 from core.core_log import get_logger
 
 log = get_logger(__name__)
@@ -147,7 +147,7 @@ def create_message(subject: str, content: str, attachment_paths=None) -> MIMEMul
     return message
 
 
-def send_visualization_email(df, google_df=None, dwd_df=None, ulmde_df=None, wettercom_df=None, path_to_pdf=None,
+def send_visualization_email(df, path_to_pdf: str, google_df=None, dwd_df=None, ulmde_df=None, wettercom_df=None,
                              receiver=None):
     hometemp_params_not_set = google_df is None or dwd_df is None or ulmde_df is None or wettercom_df is None
     if hometemp_params_not_set:
@@ -157,18 +157,11 @@ def send_visualization_email(df, google_df=None, dwd_df=None, ulmde_df=None, wet
                                   wettercom_df=wettercom_df, path_to_pdf=path_to_pdf, receiver=receiver)
 
 
-def _send_base_temp_vis(df, path_to_pdf=None, receiver=None):
+def _send_base_temp_vis(df, path_to_pdf: str, receiver=None):
     """
     Creates and sends an email with a description for each dataframe
     and attaches the pdf file created for the current day if the file is present.
     """
-    today = datetime.now().strftime("%d-%m-%Y")
-    if path_to_pdf is None:
-        file_name = today + ".pdf"
-        # TODO: change hardcoded link
-        path_to_pdf = f"/home/ericl/BaseTemp/plots/{file_name}"
-    else:
-        file_name = os.path.basename(path_to_pdf)
 
     email_config = distribution_config()
     from_email = email_config["from_email"]
@@ -176,7 +169,7 @@ def _send_base_temp_vis(df, path_to_pdf=None, receiver=None):
 
     log.info(f"Sending Measurement Data Visualization to {receiver}")
 
-    subject = f"BaseTemp v{core_config()['version']} Data Report {today}"
+    subject = f"BaseTemp v{core_config()['version']} Data Report {datetime.now().strftime(PLOT_NAME_FORMAT)}"
     message = create_sensor_data_message(df)
 
     distributor = EmailDistributor()
@@ -187,18 +180,11 @@ def _send_base_temp_vis(df, path_to_pdf=None, receiver=None):
     _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
 
 
-def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, path_to_pdf=None, receiver=None):
+def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, path_to_pdf: str, receiver=None):
     """
     Creates and sends an email with a description for each dataframe
     and attaches the pdf file created for the current day if the file is present.
     """
-    today = datetime.now().strftime("%d-%m-%Y")
-    if path_to_pdf is None:
-        file_name = today + ".pdf"
-        # TODO: change hardcoded link
-        path_to_pdf = f"/home/ericl/HomeTemp/plots/{file_name}"
-    else:
-        file_name = os.path.basename(path_to_pdf)
 
     email_config = distribution_config()
     from_email = email_config["from_email"]
@@ -206,7 +192,7 @@ def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, pat
 
     log.info(f"Sending Measurement Data Visualization to {receiver}")
 
-    subject = f"HomeTemp v{core_config()['version']} Data Report {today}"
+    subject = f"HomeTemp v{core_config()['version']} Data Report {datetime.now().strftime(PLOT_NAME_FORMAT)}"
     message = create_sensor_data_message(df)
     message += "\n\n------------- Google Data -------------\n"
     message += str(google_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
@@ -230,7 +216,7 @@ def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, pat
 
 
 def send_picture_email(picture_path, df, receiver):
-    today = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
+    today = datetime.now().strftime(PICTURE_NAME_FORMAT)
     log.info(f"Sending picture to {receiver}")
     subject = f"BaseTemp v{core_config()['version']} Live Picture of {today}"
     message = create_sensor_data_message(df)

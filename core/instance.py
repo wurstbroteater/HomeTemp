@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from core.command import CommandService
 from core.sensors.dht import SUPPORTED_SENSORS
 from core.core_configuration import database_config, core_config, get_sensor_type, basetemp_config, \
-    update_active_schedule
+    update_active_schedule, PICTURE_NAME_FORMAT, get_file_manager, FileManager
 
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 
@@ -36,6 +36,7 @@ class CoreSkeleton(ABC):
             log.error(f"CoreSkeleton got unsupported initializer {instance_name}")
 
         self.command_service: CommandService = CommandService()
+        self.fm: FileManager = get_file_manager()
 
     ## --- Initialization Part ---
     def start(self) -> None:
@@ -91,21 +92,19 @@ class CoreSkeleton(ABC):
                                   email_receiver: Optional[str] = None) -> None:
         pass
 
-    def _create_visualization(self, mode: str, save_path_template: str, email_receiver: Optional[str] = None) -> None:
+    def _create_visualization(self, mode: str, email_receiver: Optional[str] = None) -> None:
         log.info(f"{mode}: Creating Measurement Data Visualization")
         plots, merge_subplots_for = self._get_visualization_data()
-        name = datetime.now().strftime("%d-%m-%Y")
-        save_path = save_path_template.format(name=name)
+        save_path = self.fm.plot_file_name(mode.lower() == "timed")
         draw_complete_summary(plots, merge_subplots_for=merge_subplots_for, save_path=save_path)
         log.info(f"{mode}: Done")
         self._send_visualization_email(plots, save_path, email_receiver)
 
     def create_visualization_commanded(self, commander: str) -> None:
-        self._create_visualization(mode="Command", save_path_template="plots/commanded/{name}.pdf",
-                                   email_receiver=commander)
+        self._create_visualization(mode="Command", email_receiver=commander)
 
     def create_visualization_timed(self) -> None:
-        self._create_visualization(mode="Timed", save_path_template="plots/{name}.pdf")
+        self._create_visualization(mode="Timed")
 
     def collect_and_save_to_db(self) -> Optional[Tuple]:
         is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
@@ -155,7 +154,7 @@ class HomeTemp(CoreSkeleton):
 
         return out, out
 
-    @require_web_access  
+    @require_web_access
     def _send_visualization_email(self, data: List[PlotData], save_path: str,
                                   email_receiver: Optional[str] = None) -> None:
         send_visualization_email(
@@ -235,7 +234,7 @@ class BaseTemp(CoreSkeleton):
         pass
 
     def switch_schedule(self, new_schedule: str) -> None:
-        # TODO: Figure out how to reset active schedule instqnce
+        # TODO: Figure out how to reset active schedule instance
         # old_tasks = self._get_current_schedule()
         # for job in old_tasks:
         #    job.cancel()
@@ -261,22 +260,20 @@ class BaseTemp(CoreSkeleton):
 
     def take_picture_timed(self) -> None:
         log.info("Timed: Taking picture")
-        name = f'pictures/{datetime.now().strftime("%Y-%m-%d-%H:%M:%S")}'
-        if take_picture(name):
+        name, encoding = self.fm.picture_file_name(True)
+        if take_picture(name, encoding):
             log.info("Timed: Taking picture done")
         else:
             log.info("Timed: Taking picture was not successful")
 
     def take_picture_commanded(self, commander: str) -> None:
         log.info("Command: Taking picture")
-        name = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
-        encoding = "png"
-        save_path = f"pictures/commanded/{name}"
-        if take_picture(save_path, encoding=encoding):
+        name, encoding = self.fm.picture_file_name(False)
+        if take_picture(name, encoding=encoding):
             log.info("Command: Taking picture done")
             plots, _ = self._get_visualization_data()
             sensor_data = plots[0].data
-            send_picture_email(picture_path=f"{save_path}.{encoding}", df=sensor_data, receiver=commander)
+            send_picture_email(picture_path=f"{name}.{encoding}", df=sensor_data, receiver=commander)
             log.info("Command: Done")
         else:
             log.info("Command: Taking picture was not successful")
@@ -286,7 +283,7 @@ class BaseTemp(CoreSkeleton):
         if t is None or not self.send_temperature_warning:
             return t
 
-        room_temp:float = float(t[2])
+        room_temp: float = float(t[2])
         if self.max_heat is not None and room_temp > float(self.max_heat):
             indicator, extremum = "above", self.max_heat
         elif self.min_heat is not None and room_temp < float(self.min_heat):

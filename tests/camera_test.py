@@ -1,3 +1,4 @@
+from core.core_configuration import PICTURE_NAME_FORMAT
 from core.sensors.camera import RpiCamController
 from datetime import datetime
 from typing import Callable
@@ -27,7 +28,7 @@ rpi_cam = RpiCamController()
 version_result = rpi_cam.get_version()
 # print(version_result)
 print("start taking picture")
-name = f'pictures/{datetime.now().strftime("%Y-%m-%d-%H:%M:%S")}'
+name = f'pictures/{datetime.now().strftime(PICTURE_NAME_FORMAT)}'
 print(f"BLOCKING Was sucessfull? {rpi_cam.capture_image(file_path=name)}")
 # name = name + ".png"
 # image = Image.open(name)
@@ -37,6 +38,6 @@ print(f"BLOCKING Was sucessfull? {rpi_cam.capture_image(file_path=name)}")
 
 ## Problem: when two threads run at the same time, only one finishes
 # future = run_in_background(RpiCamController().capture_image, filename=name)
-# name1 = f'pictures/commanded/{datetime.now().strftime("%Y-%m-%d-%H:%M:%S")}'
+# name1 = f'pictures/commanded/{datetime.now().strftime(PICTURE_NAME_FORMAT)}'
 # future1 = run_in_background(RpiCamController().capture_image, filename=name1)
 # print("The image is being captured in the background...")
