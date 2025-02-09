@@ -40,9 +40,12 @@ reworked plotting module is now **\~90\%** faster and supports merged and distin
 - **BREAKING CHANGE**: Refactored and renamed `default_hometemp.ini` to `default_configuration.ini`.
 - Added decorator `require_web_access` for checking if internet connection is available or skips the annotated method.
 - Added `FileManager` to handle file reading/writing and file path management.
-    - Added `data_path` in `config.ini` which defaults to `./data`
+    - Added `data_path` in `config.ini` which defaults to `./data`.
+- BaseTemp: Added `phase` command to switch between scheduler plans. Currently supported: `common`, `phase1`, `phase2`.
+- Improved command handling in `core.command`.
 - Fixed incorrect temperature for DHT 11 when below zero.
 - Improved timestamp handling across modules. Now, all data stored in database uses `core.database.TIME_FORMAT`.
+
 
 ## 0.4
 

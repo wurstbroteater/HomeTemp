@@ -53,8 +53,7 @@ class CommandRequest:
         self.cmd_tokens = cmd_tokens
 
     def __str__(self):
-        return f"CommandRequest[email: {self.email_id}, commander: {self.commander}, tokens: {self.cmd_tokens}, command: {self.command}]"
-
+        return f"CommandRequest[id: {self.email_id}, commander: {self.commander}, tokens: {self.cmd_tokens}, command: {self.command}"
 
 
 class CommandService:
@@ -90,7 +89,7 @@ class CommandService:
         if len(cmd_syntax) == 4:
             c = Command(id_=cmd_syntax[0], params=cmd_syntax[1], function=cmd_syntax[2], function_params=cmd_syntax[3])
             self.parser.add_command_syntax(c)
-            log.info(f"Added command: {c}")
+            log.debug(f"Added command: {c}")
         else:
             log.warning("Tried to add command with invalid syntax!")
 
@@ -108,13 +107,13 @@ class CommandService:
                     function_params[param_key] = command_request.commander
                 if command.id == 'phase' and param_key == 'phase':
                     tokens = command_request.cmd_tokens
-                    if len(tokens) == 0:
-                        log.warning(f"Commander '{command_request.commander}' requested phase but didnt specify which.")
+                    if len(tokens) <= 1:
+                        log.info(f"Commander '{command_request.commander}' requested phase but didnt specify which.")
                         return
-                    if len(tokens) > 1:
-                        log.info(f"Commander '{command_request.commander}' requested phase with too many parameters")
-                    function_params[param_key] = tokens[0]
-                # Add more command parameters here
+                    if len(tokens) > 2:
+                        log.info(f"Commander '{command_request.commander}' requested phase with too many parameters.")
+                    function_params[param_key] = tokens[1]
+                # Add more command parameters here   
             try:
                 command.function(**function_params)
             except Exception as e:
@@ -127,7 +126,7 @@ class CommandParser:
         # always treat prefix as case-insensitive
         self.valid_command_prefixes = list(
             map(lambda p: str(p).lower(), eval(core_config()['valid_command_prefix'])))
-        # TODO: should be Set
+        # should be treated as Set
         self.valid_commands = []
 
     # ------- start command parsing -------
@@ -155,9 +154,10 @@ class CommandParser:
 
     # ------- start public methods -------
 
-    def parse_received_command(self, commander, header, body) -> Optional[Command, Tuple[List[str]]]:
+    def parse_received_command(self, commander, header, body) -> Optional[Tuple[Command, List[str]]]:
         """
-        parse received tokens and returns command if found
+        parse received tokens and returns command if found.
+        command_tokens if found, it contains all received tokens, including command name at index 0.
         """
         command_tokens = self._validate_header_prefix(header)
         command = None

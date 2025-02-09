@@ -37,6 +37,7 @@ class CoreSkeleton(ABC):
 
         self.command_service: CommandService = CommandService()
         self.fm: FileManager = get_file_manager()
+        self.scheduler = schedule.Scheduler()
 
     ## --- Initialization Part ---
     def start(self) -> None:
@@ -76,7 +77,7 @@ class CoreSkeleton(ABC):
 
     def main_loop(self, check_schedule_delay_s=1) -> None:
         while True:
-            schedule.run_pending()
+            self.scheduler.run_pending()
             time.sleep(check_schedule_delay_s)
 
     ## --- Minimal Supported Features Part ---
@@ -126,9 +127,9 @@ class HomeTemp(CoreSkeleton):
         pass
 
     def _setup_scheduling(self) -> None:
-        schedule.every(10).minutes.do(lambda: self.collect_and_save_to_db())
-        schedule.every().day.at("06:00").do(lambda: self.create_visualization_timed())
-        schedule.every(10).minutes.do(lambda: self.run_received_commands())
+        self.scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db())
+        self.scheduler.every().day.at("06:00").do(lambda: self.create_visualization_timed())
+        self.scheduler.every(10).minutes.do(lambda: self.run_received_commands())
         pass
 
     def _methods_after_init(self) -> None:
@@ -176,13 +177,13 @@ class BaseTemp(CoreSkeleton):
         self.max_heat = cfg.get("max_heat", None)
         self.min_heat = cfg.get("min_heat", None)
         self.send_temperature_warning = not (self.max_heat is None and self.min_heat is None)
-        self.active_schedule = cfg.get("active_schedule", "").lower()
+        self.active_schedule = cfg.get("active_schedule", "common").lower()
         # comparison should always be made lower case
         self.supported_schedules = ['phase1', 'phase2', 'common']
 
     def set_schedule(self, s_name: str) -> None:
         self._set_schedule(s_name)
-        update_active_schedule(self.active_schedule)
+        update_active_schedule(s_name)
 
     def _set_schedule(self, new_schedule: str) -> None:
         new_schedule = new_schedule.lower().strip()
@@ -192,64 +193,66 @@ class BaseTemp(CoreSkeleton):
             log.info(f"Setting new schedule: {new_schedule}")
         self.active_schedule = new_schedule
 
-    # TODO REMOVE OVERWRITE
-    def _methods_after_init(self) -> None:
-        pass
 
-    def foo(self, commander: str, phase:str) -> None:
-        log.info(f"Executing command: {commander} {phase}")
+    def switch_schedule_commanded(self, commander: str, phase:str) -> None:
+        phase = phase.lower().strip()
+        if phase in self.supported_schedules:
+            log.info(f"Commander {commander} requested schedule switch from {self.active_schedule} to {phase}")
+            self.switch_schedule(phase)
+        else:
+            log.info(f"Commander {commander} requested to switch to unknown phase {phase}")
+        
 
     def _add_commands(self) -> None:
-        picture_cmd_name = 'pic'
-        picture_fun_params = ['commander']
-        self.command_service.add_new_command((picture_cmd_name, [], self.take_picture_commanded, picture_fun_params))
-        vis_cmd_name = 'plot'
-        vis_fun_params = ['commander']
-        self.command_service.add_new_command((vis_cmd_name, [], self.create_visualization_commanded, vis_fun_params))
-        self.command_service.add_new_command(('phase', [], self.foo, ['commander', 'phase']))
+        commander_params = ['commander']
+        self.command_service.add_new_command(('pic', [], self.take_picture_commanded, commander_params))
+        self.command_service.add_new_command(('plot', [], self.create_visualization_commanded, commander_params))
+        self.command_service.add_new_command(('phase', ['phase'], self.switch_schedule_commanded, ['commander', 'phase']))
         pass
 
 
-    def _get_current_schedule(self) -> List[schedule.Job]:
+    def _get_new_schedule(self) -> schedule.Scheduler:
+        new_scheduler = schedule.Scheduler()
         if self.active_schedule == 'common':
-            return [schedule.every(10).minutes.do(lambda: self.run_received_commands()).tag(self.active_schedule),
-                    schedule.every(10).minutes.do(lambda: self.collect_and_save_to_db()).tag(self.active_schedule),
-                    schedule.every().day.at("08:00").do(lambda: self.create_visualization_timed()).tag(self.active_schedule)]
+            new_scheduler.every(10).minutes.do(lambda: self.run_received_commands()).tag(self.active_schedule)
+            new_scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db()).tag(self.active_schedule)
+            new_scheduler.every().day.at("08:00").do(lambda: self.create_visualization_timed()).tag(self.active_schedule)
         elif self.active_schedule == 'phase1':
-             return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule),
-                    schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule),
-                    schedule.every().day.at("11:45").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
-                    schedule.every().day.at("19:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
-                    schedule.every().day.at("03:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
-                    schedule.every().day.at("10:30").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)]
+            new_scheduler.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule)
+            new_scheduler.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule)
+            new_scheduler.every().day.at("11:45").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
+            new_scheduler.every().day.at("19:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
+            new_scheduler.every().day.at("03:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
+            new_scheduler.every().day.at("10:30").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
 
         elif self.active_schedule == 'phase2':
-             return [schedule.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule),
-                    schedule.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule),
-                    schedule.every().day.at("08:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
-                    schedule.every().day.at("06:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
-                    schedule.every().day.at("02:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule),
-                   schedule.every().day.at("20:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)]
+            new_scheduler.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule)
+            new_scheduler.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule)
+            new_scheduler.every().day.at("08:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
+            new_scheduler.every().day.at("06:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
+            new_scheduler.every().day.at("02:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
+            new_scheduler.every().day.at("20:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
 
         else:
             log.warning(f"Unsupported schedule {self.active_schedule}")
 
-        return []
+        return new_scheduler
 
+    #Abstract
     def _setup_scheduling(self) -> None:
-        self._get_current_schedule()
-        log.info(f"Initialized schedule: {self.active_schedule}")
-        log.info(f"Active jobs: {schedule.get_jobs()}")
+        self.scheduler = self._get_new_schedule()
+        jobs = self.scheduler.get_jobs()
+        log.info(f"Initialized schedule: {self.active_schedule} with {len(jobs)} active jobs.")
 
     def switch_schedule(self, new_schedule: str) -> None:
-         old_tasks = self._get_current_schedule()
-         for job in old_tasks:
-            schedule.cancel_job(job)
-         self._set_schedule(new_schedule)
+        self.scheduler.clear()
+        self.set_schedule(new_schedule)
+        self._setup_scheduling()
 
     def _methods_after_init(self) -> None:
         super()._methods_after_init()
         self.create_visualization_timed()
+        pass
 
     ## --- Minimal Supported Features Part ---
 
