@@ -211,33 +211,29 @@ class BaseTemp(CoreSkeleton):
 
     def _get_new_schedule(self) -> schedule.Scheduler:
         new_scheduler = schedule.Scheduler()
+        new_scheduler.every(10).minutes.do(lambda: self.run_received_commands()).tag(self.active_schedule)
+        new_scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db()).tag(self.active_schedule)
         if self.active_schedule == 'common':
-            new_scheduler.every(10).minutes.do(lambda: self.run_received_commands()).tag(self.active_schedule)
-            new_scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db()).tag(self.active_schedule)
             new_scheduler.every().day.at("08:00").do(lambda: self.create_visualization_timed()).tag(
                 self.active_schedule)
         elif self.active_schedule == 'phase1':
-            new_scheduler.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule)
-            new_scheduler.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule)
-            new_scheduler.every().day.at("11:45").do(lambda _: self.create_visualization_timed()).tag(
+            new_scheduler.every().day.at("11:45").do(lambda: self.create_visualization_timed()).tag(
                 self.active_schedule)
-            new_scheduler.every().day.at("19:00").do(lambda _: self.create_visualization_timed()).tag(
+            new_scheduler.every().day.at("19:00").do(lambda: self.take_picture_timed()).tag(
                 self.active_schedule)
-            new_scheduler.every().day.at("03:00").do(lambda _: self.create_visualization_timed()).tag(
+            new_scheduler.every().day.at("03:00").do(lambda: self.take_picture_timed()).tag(
                 self.active_schedule)
-            new_scheduler.every().day.at("10:30").do(lambda _: self.create_visualization_timed()).tag(
+            new_scheduler.every().day.at("10:30").do(lambda: self.take_picture_timed()).tag(
                 self.active_schedule)
 
         elif self.active_schedule == 'phase2':
-            new_scheduler.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule)
-            new_scheduler.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule)
-            new_scheduler.every().day.at("08:00").do(lambda _: self.create_visualization_timed()).tag(
+            new_scheduler.every().day.at("07:15").do(lambda: self.create_visualization_timed()).tag(
                 self.active_schedule)
-            new_scheduler.every().day.at("06:00").do(lambda _: self.create_visualization_timed()).tag(
+            new_scheduler.every().day.at("06:00").do(lambda: self.take_picture_timed()).tag(
                 self.active_schedule)
-            new_scheduler.every().day.at("02:00").do(lambda _: self.create_visualization_timed()).tag(
+            new_scheduler.every().day.at("02:00").do(lambda: self.take_picture_timed()).tag(
                 self.active_schedule)
-            new_scheduler.every().day.at("20:00").do(lambda _: self.create_visualization_timed()).tag(
+            new_scheduler.every().day.at("20:00").do(lambda: self.take_picture_timed()).tag(
                 self.active_schedule)
 
         else:
