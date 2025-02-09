@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # default: overwrite existing file
     fm.create_file("data/foo/bar/sample.txt", "Hello, World!asdasdasdsad")
     # This won't change the content
-    fm.create_file("data/foo/bar/sample.txt", "Should not overwrite", exist_behavior="skip") 
+    fm.create_file("data/foo/bar/sample.txt", "Should not overwrite", exist_behavior="skip")
     print(fm.read_file("data/foo/bar/sample.txt"))
     print(fm.list_files("data"))
-    #fm.delete_file("data/foo/bar/sample.txt")
+    # fm.delete_file("data/foo/bar/sample.txt")

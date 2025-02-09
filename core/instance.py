@@ -193,52 +193,59 @@ class BaseTemp(CoreSkeleton):
             log.info(f"Setting new schedule: {new_schedule}")
         self.active_schedule = new_schedule
 
-
-    def switch_schedule_commanded(self, commander: str, phase:str) -> None:
+    def switch_schedule_commanded(self, commander: str, phase: str) -> None:
         phase = phase.lower().strip()
         if phase in self.supported_schedules:
             log.info(f"Commander {commander} requested schedule switch from {self.active_schedule} to {phase}")
             self.switch_schedule(phase)
         else:
             log.info(f"Commander {commander} requested to switch to unknown phase {phase}")
-        
 
     def _add_commands(self) -> None:
         commander_params = ['commander']
         self.command_service.add_new_command(('pic', [], self.take_picture_commanded, commander_params))
         self.command_service.add_new_command(('plot', [], self.create_visualization_commanded, commander_params))
-        self.command_service.add_new_command(('phase', ['phase'], self.switch_schedule_commanded, ['commander', 'phase']))
+        self.command_service.add_new_command(
+            ('phase', ['phase'], self.switch_schedule_commanded, ['commander', 'phase']))
         pass
-
 
     def _get_new_schedule(self) -> schedule.Scheduler:
         new_scheduler = schedule.Scheduler()
         if self.active_schedule == 'common':
             new_scheduler.every(10).minutes.do(lambda: self.run_received_commands()).tag(self.active_schedule)
             new_scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db()).tag(self.active_schedule)
-            new_scheduler.every().day.at("08:00").do(lambda: self.create_visualization_timed()).tag(self.active_schedule)
+            new_scheduler.every().day.at("08:00").do(lambda: self.create_visualization_timed()).tag(
+                self.active_schedule)
         elif self.active_schedule == 'phase1':
             new_scheduler.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule)
             new_scheduler.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule)
-            new_scheduler.every().day.at("11:45").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
-            new_scheduler.every().day.at("19:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
-            new_scheduler.every().day.at("03:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
-            new_scheduler.every().day.at("10:30").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
+            new_scheduler.every().day.at("11:45").do(lambda _: self.create_visualization_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("19:00").do(lambda _: self.create_visualization_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("03:00").do(lambda _: self.create_visualization_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("10:30").do(lambda _: self.create_visualization_timed()).tag(
+                self.active_schedule)
 
         elif self.active_schedule == 'phase2':
             new_scheduler.every(10).minutes.do(lambda _: self.run_received_commands()).tag(self.active_schedule)
             new_scheduler.every(10).minutes.do(lambda _: self.collect_and_save_to_db()).tag(self.active_schedule)
-            new_scheduler.every().day.at("08:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
-            new_scheduler.every().day.at("06:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
-            new_scheduler.every().day.at("02:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
-            new_scheduler.every().day.at("20:00").do(lambda _: self.create_visualization_timed()).tag(self.active_schedule)
+            new_scheduler.every().day.at("08:00").do(lambda _: self.create_visualization_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("06:00").do(lambda _: self.create_visualization_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("02:00").do(lambda _: self.create_visualization_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("20:00").do(lambda _: self.create_visualization_timed()).tag(
+                self.active_schedule)
 
         else:
             log.warning(f"Unsupported schedule {self.active_schedule}")
 
         return new_scheduler
 
-    #Abstract
+    # Abstract
     def _setup_scheduling(self) -> None:
         self.scheduler = self._get_new_schedule()
         jobs = self.scheduler.get_jobs()

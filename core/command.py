@@ -46,7 +46,7 @@ class Command:
 
 class CommandRequest:
 
-    def __init__(self, email_id: str, commander: str,cmd_tokens:List[str], command: Command):
+    def __init__(self, email_id: str, commander: str, cmd_tokens: List[str], command: Command):
         self.email_id = email_id
         self.commander = commander
         self.command = command
@@ -80,9 +80,11 @@ class CommandService:
     def _parse_emails_with_command(self, emails_with_command) -> List[CommandRequest]:
         requests = []
         for email_id, commander, subject, body in emails_with_command:
-            received_command, tokens = self.parser.parse_received_command(commander=commander, header=subject, body=body)
+            received_command, tokens = self.parser.parse_received_command(commander=commander, header=subject,
+                                                                          body=body)
             if received_command is not None:
-                requests.append(CommandRequest(email_id=email_id, commander=commander, command=received_command, cmd_tokens=tokens))
+                requests.append(
+                    CommandRequest(email_id=email_id, commander=commander, command=received_command, cmd_tokens=tokens))
         return requests
 
     def add_new_command(self, cmd_syntax: tuple):

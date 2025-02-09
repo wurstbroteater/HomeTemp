@@ -46,7 +46,6 @@ reworked plotting module is now **\~90\%** faster and supports merged and distin
 - Fixed incorrect temperature for DHT 11 when below zero.
 - Improved timestamp handling across modules. Now, all data stored in database uses `core.database.TIME_FORMAT`.
 
-
 ## 0.4
 
 This version adds the ability to create, receive and execute commands from external, introduces new instance `BaseTemp`
