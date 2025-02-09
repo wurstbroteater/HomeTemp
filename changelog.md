@@ -2,7 +2,10 @@
 
 ## 0.5
 
-TBD
+This release overhauls the start process by introducing `start.sh` and renaming the config file to `config.ini`. Files,
+e.g., plots and pictures are stored like previously but the root folder is defined in `data_path` (config.ini), now. The
+reworked plotting module is now **\~90\%** faster and supports merged and distinct visualizations.
+
 - Added `./start.sh [hometemp|basetemp]` to start all components for an instance.
 - Moved log file creation to `start.sh`.
 - **BREAKING CHANGE**: Removed `basetemp.py` and `hometemp.py`:
@@ -13,29 +16,33 @@ TBD
     - Moved its core functionality to `endpoint.usage_util`.
     - Added module `endpoint.instance` which includes class `FetchTemp`.
     - Now, just use `python start.py --instance FetchTemp`!
-- Optimized `RpiCamController._rotate_image` to update an image only if the rotation parameter is not 0
-- Added timelapse video creation of a set of pictures with the name format '%Y-%m-%d-%H:%M:%S'
-- Updated `requirements.txt` to only contain top level dependencies
-- Updated `GoogleFetcher` to new javascript-enabled browser fetcher (uses Selenium now)
-- **BREAKING CHANGE**: Removed `draw_plots` from plotting and replaced it with `draw_complete_summary`
-- Refactored `core.plotting` to be more flexible and extendable
-    - Added `SupportedDataFrames` for defining how to enrich known dataframes with plotting information
-    - Added `PlotData` to combine dataframe with `SupportedDataFrames`
-    - Added `PlotDataSelector` to specify which data has to be selected from a `PlotData` instances
-    - Added `DefaultPlotCategory.DISTINCT` for multi-lineplots. Use with an `PlotDataSelector.*ALL`
-    - Added `DefaultPlotCategory.DISTINCT24` for 24h-multi-lineplots. Use with an `PlotDataSelector.*24`
+- Optimized `RpiCamController._rotate_image` to update an image only if the rotation parameter is not zero.
+- Added timelapse video creation of a set of pictures with the name format '%Y-%m-%d-%H:%M:%S'.
+- Updated `requirements.txt` to only contain top level dependencies.
+- Updated `GoogleFetcher` to new javascript-enabled browser fetcher (uses Selenium now).
+- **BREAKING CHANGE**: Removed `draw_plots` from plotting and replaced it with `draw_complete_summary`.
+- Refactored `core.plotting` to be more flexible and extendable:
+    - Added `SupportedDataFrames` for defining how to enrich known dataframes with plotting information.
+    - Added `PlotData` to combine dataframe with `SupportedDataFrames`.
+    - Added `PlotDataSelector` to specify which data has to be selected from a `PlotData` instances.
+    - Added `DefaultPlotCategory.DISTINCT` for multi-lineplots. Use with an `PlotDataSelector.*ALL`.
+    - Added `DefaultPlotCategory.DISTINCT24` for 24h-multi-lineplots. Use with an `PlotDataSelector.*24`.
     - Added `DefaultPlotCategory.MERGED` for lineplots with merged subplots. Currently, only supports temperature!
     - Added `DefaultPlotCategory.MERGED24` for 24h-lineplots with merged subplots. Currently, only supports temperature!
-    - Added `DefaultPlotCategory` for combining `DefaultPlotCategory` with the main plot parameter configuration
+    - Added `DefaultPlotCategory` for combining `DefaultPlotCategory` with the main plot parameter configuration.
 - Added new functionality to `core.database.PostgresHandler`:
-  - Added `close()` to close the current database connection. If the handler instance is reused, the `init_db_connection` has to  be called before doing something with the instance!
-  - Added `is_db_ready()` which returns true if the database is currently ready to accept transactions else false. By default, it initializes the database before checking for ready.
+    - Added `close()` to close the current database connection. If the handler instance is reused, the
+      `init_db_connection` has to be called before doing something with the instance!
+    - Added `is_db_ready()` which returns true if the database is currently ready to accept transactions else false. By
+      default, it initializes the database before checking for ready.
 - Added `core.usage_util` providing utilities for several core functionalities.
 - **BREAKING CHANGE**: Removed `core.sensors.util` and moved method to `core.usage_util.get_cput_temperature()`.
 - **BREAKING CHANGE**: Refactored and renamed `default_hometemp.ini` to `default_configuration.ini`.
-- Added decorater `require_web_access` for checking if internet connection is available or skipps the annotated method.
+- Added decorator `require_web_access` for checking if internet connection is available or skips the annotated method.
 - Added `FileManager` to handle file reading/writing and file path management.
     - Added `data_path` in `config.ini` which defaults to `./data`
+- Fixed incorrect temperature for DHT 11 when below zero.
+- Improved timestamp handling across modules. Now, all data stored in database uses `core.database.TIME_FORMAT`.
 
 ## 0.4
 
