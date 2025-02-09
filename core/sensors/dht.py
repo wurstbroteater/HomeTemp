@@ -103,7 +103,12 @@ class DHT:
         humidity = -1
         if (self.__isDht11):
             # DHT11
-            temperature = the_bytes[2] + float(the_bytes[3]) / 10
+            # return 1 in MSB of the_bytes[3] when sub-zero temperature.
+            if not bits[24]:
+                temperature = the_bytes[2] + float(the_bytes[3]) / 10
+            else:
+                temperature = 0.0 - the_bytes[2] - float(the_bytes[3] - 128) / 10
+            
             humidity = the_bytes[0] + float(the_bytes[1]) / 10
         else:
             # DHT22
