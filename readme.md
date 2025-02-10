@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.5-DEV
+# Project: HomeTemp v0.5
 
 The original idea of `HomeTemp` was to automatically measure the temperature and humidity of a room and create plots
 visualizing the data. Currently supported temperature and humidity sensors are `AM2302`. `DHT11` and `DHT22` sensor,
@@ -45,6 +45,8 @@ Install **docker**, e.g., as described [here for raspberry-pi](https://docs.dock
 sudo apt update
 sudo apt install screen libpq-dev xvfb
 ```
+
+In case data fetching from endpoints is a desired feature, chromedriver has to be installed as well (see below).
 
 #### Setup Virtual Environment
 
@@ -122,7 +124,7 @@ Use the following commands to import and export database:
 
 ```sh
 # Just open pqsql console (leave \q)
-docker exec -it base-postgres-db bash -c "PGPASSWORD='<DB_PASSWORD>' psql -U <DB_USER> -d <DB_NAME>"
+docker exec -it postgres-db bash -c "PGPASSWORD='<DB_PASSWORD>' psql -U <DB_USER> -d <DB_NAME>"
 # Export
 docker exec -t postgres-db sh -c 'PGPASSWORD=<DB_PASSWORD> pg_dump -U <DB_USER> <DB_NAME>' > backup.sql
 

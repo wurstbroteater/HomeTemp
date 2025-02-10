@@ -21,12 +21,10 @@ class FetchTemp(CoreSkeleton):
 
     ## --- Initialization Part ---
 
-    # overwrite
-    def __init__(self, instance_name: str):
-        self.instance_name = {i.lower(): i for i in SUPPORTED_INSTANCES}.get(instance_name.lower(), None)
-        if self.instance_name is None:
-            log.error(f"FetchTemp got unsupported initializer {instance_name}")
-
+    # extending constructor
+    def __init__(self, instance_name: str,  core_instance_validation: List[str] = SUPPORTED_INSTANCES):
+        super().__init__(instance_name=instance_name, core_instance_validation=core_instance_validation)
+        
     def _setup_scheduling(self) -> None:
         schedule.every(10).minutes.do(lambda: self.collect_and_save_to_db())
 

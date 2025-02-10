@@ -30,8 +30,8 @@ SUPPORTED_INSTANCES = ["HomeTemp", "BaseTemp"]
 # An extension of CoreSkeleton must implement abstract methods to guarantee minimal features.
 # ----------------------------------------------------------------------------------------------------------------
 class CoreSkeleton(ABC):
-    def __init__(self, instance_name: str):
-        self.instance_name = {i.lower(): i for i in SUPPORTED_INSTANCES}.get(instance_name.lower(), None)
+    def __init__(self, instance_name: str, core_instance_validation: List[str] = SUPPORTED_INSTANCES):
+        self.instance_name = {i.lower(): i for i in core_instance_validation}.get(instance_name.lower(), None)
         if self.instance_name is None:
             log.error(f"CoreSkeleton got unsupported initializer {instance_name}")
 
