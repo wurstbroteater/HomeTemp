@@ -26,7 +26,7 @@ class FetchTemp(CoreSkeleton):
         super().__init__(instance_name=instance_name, core_instance_validation=core_instance_validation)
         
     def _setup_scheduling(self) -> None:
-        schedule.every(10).minutes.do(lambda: self.collect_and_save_to_db())
+        self.scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db())
 
     def _add_commands(self) -> None:
         pass
