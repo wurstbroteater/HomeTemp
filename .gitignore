@@ -1,12 +1,12 @@
 .venv
 venv
+keys
 .idea
 __pycache__
 .ipynb_checkpoints
 
-**/hometemp.ini
-**/basetemp.ini
+**/config.ini
 **/*.png
-plots
-pictures
+**/*.mp4
+data
 **/*.log

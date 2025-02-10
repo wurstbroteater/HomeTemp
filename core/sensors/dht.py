@@ -14,10 +14,12 @@
 # ----------------------------------------------------------------------------------------------------------------
 
 from core.core_log import get_logger
-from datetime import datetime
 import time
 
 import RPi.GPIO as GPIO
+
+# Do not change order, only append!
+SUPPORTED_SENSORS = ["dht11", "dht22", "am2302"]
 
 log = get_logger(__name__)
 GPIO.setwarnings(False)
@@ -101,7 +103,12 @@ class DHT:
         humidity = -1
         if (self.__isDht11):
             # DHT11
-            temperature = the_bytes[2] + float(the_bytes[3]) / 10
+            # return 1 in MSB of the_bytes[3] when sub-zero temperature.
+            if not bits[24]:
+                temperature = the_bytes[2] + float(the_bytes[3]) / 10
+            else:
+                temperature = 0.0 - the_bytes[2] - float(the_bytes[3] - 128) / 10
+            
             humidity = the_bytes[0] + float(the_bytes[1]) / 10
         else:
             # DHT22
@@ -254,7 +261,7 @@ class DHT:
 
 def get_sensor_data(used_pin, is_dht11_sensor):
     """
-    Returns temperature and humidity data measures by AM2302 Sensor and the measurement timestamp.
+    Returns temperature and humidity data measures by AM2302 Sensor.
     """
     max_tries = 15
     tries = 0
@@ -276,8 +283,6 @@ def get_sensor_data(used_pin, is_dht11_sensor):
                 log.warning(f"({tries}/{max_tries}) Sensor data invalid")
                 continue
             elif result.is_valid() and result.error_code == DHTResult.ERR_NO_ERROR:
-                # postgres expects timestamp ins ISO 8601 format
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                return result.temperature, result.humidity, timestamp
+                return result.temperature, result.humidity
 
-    return None, None, None
+    return None, None

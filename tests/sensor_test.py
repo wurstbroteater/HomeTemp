@@ -1,8 +1,9 @@
-from core.core_configuration import hometemp_config
+from core.core_configuration import core_config
 import sys
 import time
 
 from core.sensors.dht import DHT, DHTResult
+from core.database import TIME_FORMAT
 
 # Parse command line parameters
 if len(sys.argv) == 3:
@@ -44,6 +45,6 @@ while True:
             continue
         elif result.is_valid() and result.error_code == DHTResult.ERR_NO_ERROR:
             # postgres expects timestamp ins ISO 8601 format
-            # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # timestamp = datetime.now().strftime(TIME_FORMAT)
             print('Temp: {0:0.1f} C  Humidity: {1:0.1f} %'.format(result.temperature, result.humidity))
             break
