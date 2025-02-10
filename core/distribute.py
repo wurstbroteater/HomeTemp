@@ -27,7 +27,7 @@ class EmailDistributor:
 
     def _get_imap_connection(self) -> Optional[imaplib.IMAP4_SSL]:
         """
-        has to be closed after usage!!!
+        has to be closed after usage!!! -> _handle_connection_close
         """
         imap_server = self.config["imap_server"]
         imap_port = int(self.config["imap_port"])
@@ -41,6 +41,14 @@ class EmailDistributor:
             log.error(f"Error while connecting to {imap_server}:{imap_port} : {str(e)}")
 
         return server
+    
+    def _handle_connection_close(self, server: imaplib.IMAP4_SSL) -> None:
+        try:
+            server.close()
+            server.logout()
+        except (OSError, Exception) as socket_e:
+            log.error(f"Follow up error while trying to close socket: {str(socket_e)}")
+
 
     def get_emails(self, which_emails='UNSEEN') -> Optional[List[Tuple[str, Message]]]:
         """
@@ -66,8 +74,7 @@ class EmailDistributor:
         except Exception as e:
             log.error(f"Error occurred while fetching emails: {str(e)}")
         finally:
-            server.close()
-            server.logout()
+            self._handle_connection_close(server)
 
         return received_emails
 
@@ -86,9 +93,7 @@ class EmailDistributor:
         except Exception as e:
             log.error(f"Error occurred while deleting email: {str(e)}")
         finally:
-            server.close()
-            server.logout()
-
+            self._handle_connection_close(server)
         return was_successful
 
     def send_email(self, from_email: str, to_email: str, message: MIMEMultipart) -> bool:
