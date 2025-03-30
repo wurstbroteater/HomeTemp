@@ -18,6 +18,8 @@ import time
 
 import RPi.GPIO as GPIO
 
+from core.monitoring import PrometheusManager
+
 # Do not change order, only append!
 SUPPORTED_SENSORS = ["dht11", "dht22", "am2302"]
 
@@ -266,6 +268,7 @@ def get_sensor_data(used_pin, is_dht11_sensor):
     max_tries = 15
     tries = 0
     used_sensor = DHT(used_pin, is_dht11_sensor)
+    metric_publisher = PrometheusManager()
     while True:
         if tries >= max_tries:
             log.error(f"Failed to retrieve data from AM2302 sensor: Maximum retries reached.")
@@ -276,13 +279,15 @@ def get_sensor_data(used_pin, is_dht11_sensor):
             # Different errors while reading the sensor data can happen often, just retry.
             if result.error_code == DHTResult.ERR_NOT_FOUND:
                 tries += 1
+                metric_publisher.inc_failed_temp_senor_read()
                 log.warning(f"({tries}/{max_tries}) Sensor could not be found. Using correct pin?")
                 continue
             elif not result.is_valid():
                 tries += 1
+                metric_publisher.inc_failed_temp_senor_read()
                 log.warning(f"({tries}/{max_tries}) Sensor data invalid")
                 continue
             elif result.is_valid() and result.error_code == DHTResult.ERR_NO_ERROR:
+                metric_publisher.measure_room_values(result.temperature, result.humidity)
                 return result.temperature, result.humidity
-
     return None, None

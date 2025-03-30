@@ -27,6 +27,7 @@ picture via commanding.
 - Commanding via email
 - Taking pictures (timed or commanded) via camera module (only tested on **Raspberry Pi 4 Model B**)
 - Create timelapse video of a set of pictures
+- Grafana Web Frontend
 
 ## Installation Instructions
 
@@ -86,6 +87,15 @@ sudo chmod -R 755 /usr/lib/chromium-browser
 # or if not existing
 sudo chmod -R 755 /usr/bin/chromedriver
 
+```
+
+### Frontend Accessibility
+
+Once started, it should be accessible via `http://<pi-ip>:3000/`. If not, assure port is allowed in firewall on raspberry pi:
+```sh
+sudo ufw status
+sudo ufw allow 3000/tcp
+sudo ufw reload
 ```
 
 ## Start Instructions

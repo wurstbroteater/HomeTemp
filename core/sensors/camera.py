@@ -2,6 +2,8 @@ from core.core_log import get_logger
 from PIL import Image
 import subprocess
 
+from core.monitoring import PrometheusManager
+
 log = get_logger(__name__)
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -82,6 +84,7 @@ class RpiCamController:
             # 'expand' to resize for the whole image
             rotated_image = image.rotate(rotation, expand=True)
             rotated_image.save(image_path)
+        PrometheusManager().inc_picture_taken()
         return True
 
     def capture_image(self, file_path: str = "test", encoding: str = "png", rotation: int = 0,

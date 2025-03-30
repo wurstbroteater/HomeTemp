@@ -9,6 +9,7 @@ import schedule
 
 from abc import ABC, abstractmethod
 from core.command import CommandService
+from core.monitoring import PrometheusManager
 from core.sensors.dht import SUPPORTED_SENSORS
 from core.core_configuration import database_config, core_config, get_sensor_type, basetemp_config, \
     update_active_schedule, PICTURE_NAME_FORMAT, get_file_manager, FileManager
@@ -38,10 +39,12 @@ class CoreSkeleton(ABC):
         self.command_service: CommandService = CommandService()
         self.fm: FileManager = get_file_manager()
         self.scheduler = schedule.Scheduler()
+        self.prometheus_publisher = PrometheusManager()
 
     ## --- Initialization Part ---
     def start(self) -> None:
         log.info(f"------------------- {self.instance_name} v{core_config()['version']} -------------------")
+        self.prometheus_publisher.publish_metdata(self.generate_metadata())
         self._init_components()
         log.info("finished initialization")
         self._methods_after_init()
@@ -49,6 +52,15 @@ class CoreSkeleton(ABC):
         self.run_received_commands()
         log.info("entering main loop")
         self.main_loop()
+
+    def generate_metadata(self) -> Optional[dict]:
+        cfg = core_config()
+        v = 'version'
+        dp = 'data_path'
+        cmd_prefixes = 'valid_command_prefix'
+        sp = 'sensor_pin'
+        st = 'sensor_type'
+        return {"instance_name": self.instance_name, v:cfg[v], dp: cfg[dp], sp:cfg[sp], st:cfg[st], cmd_prefixes:cfg[cmd_prefixes]}
 
     def _init_components(self) -> None:
         self._init_database()
@@ -78,6 +90,7 @@ class CoreSkeleton(ABC):
     def main_loop(self, check_schedule_delay_s=1) -> None:
         while True:
             self.scheduler.run_pending()
+            self.prometheus_publisher.update_general_system_metrics()
             time.sleep(check_schedule_delay_s)
 
     ## --- Minimal Supported Features Part ---

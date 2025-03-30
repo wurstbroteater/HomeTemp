@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple
 
 from core.core_configuration import distribution_config, core_config, PICTURE_NAME_FORMAT, PLOT_NAME_FORMAT
 from core.core_log import get_logger
+from core.monitoring import PrometheusManager
 
 log = get_logger(__name__)
 
@@ -109,6 +110,7 @@ class EmailDistributor:
             server.sendmail(from_email, to_email, message.as_string())
             server.quit()
             log.info("Email sent successfully.")
+            PrometheusManager().inc_sent_email()
             return True
         except Exception as e:
             log.error(f"Error sending email: {str(e)}")

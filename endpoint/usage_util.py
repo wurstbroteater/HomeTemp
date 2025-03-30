@@ -2,11 +2,18 @@ from configparser import SectionProxy
 from datetime import datetime, timedelta
 from core.core_log import get_logger
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler, TIME_FORMAT
+from core.monitoring import PrometheusManager
 from core.util import require_web_access
 from endpoint.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
 
 log = get_logger(__name__)
 
+
+dwd_fetcher_id = "dwd_fetcher"
+google_fetcher_id = "google_fetcher"
+wettercom_stat_fetcher_id = "wettercom_stat_fetcher"
+wettercom_dyn_fetcher_id = "wettercom_dyn_fetcher"
+ulm_fetcher_id = "ulm_fetcher"
 
 @require_web_access
 def dwd_fetch_and_save(database_auth: SectionProxy, dwd_config: SectionProxy) -> None:
@@ -17,6 +24,7 @@ def dwd_fetch_and_save(database_auth: SectionProxy, dwd_config: SectionProxy) ->
         log.error(f"[DWD] Could not receive DWD data")
     else:
         log.info(f"[DWD] Forecast for Ulm is: {c_time.strftime(TIME_FORMAT)} temp={c_temp}°C dev={dev}")
+        PrometheusManager().measure_outside_temperature(dwd_fetcher_id, c_temp)
         handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
         handler.init_db_connection()
         if not handler.row_exists_with_timestamp(c_time.strftime(TIME_FORMAT)):
@@ -71,6 +79,7 @@ def google_fetch_and_save(database_auth: SectionProxy, google_config: SectionPro
         c_region = google_data["region"]
         msg = f"[Google] Forecast for {c_region} is: {c_time} temp={c_temp}°C hum={c_hum}% per={c_per}% wind={c_wind} km/h"
         log.info(msg)
+        PrometheusManager().measure_outside_temperature(google_fetcher_id, c_temp)
         handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
         handler.init_db_connection()
         handler.insert_google_data(timestamp=c_time, temp=c_temp, humidity=c_hum, precipitation=c_per, wind=c_wind)
@@ -89,6 +98,10 @@ def wettercom_fetch_and_save(database_auth: SectionProxy, wettercom_config: Sect
         log.warning("[Wetter.com] Failed to fetch dynamic temp data.")
     log.info(
         f"[Wetter.com] Static vs Dynamic Temperature at {c_time} is {wettercom_temp_static}°C vs {wettercom_temp_dyn}°C")
+    metric_publisher = PrometheusManager()
+    metric_publisher.measure_outside_temperature(wettercom_stat_fetcher_id, wettercom_temp_static)    
+    if wettercom_temp_dyn is not None:
+        metric_publisher.measure_outside_temperature(wettercom_dyn_fetcher_id, wettercom_temp_dyn)  
     auth = database_auth
     handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
     handler.init_db_connection()
@@ -105,6 +118,7 @@ def ulmde_fetch_and_save(database_auth: SectionProxy) -> None:
         c_time = datetime.now().strftime(TIME_FORMAT)
         msg = f"[Ulm] Forecast is: {c_time} temp={ulm_temp}°C"
         log.info(msg)
+        PrometheusManager().measure_outside_temperature(ulm_fetcher_id, ulm_temp)    
         handler = UlmDeHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'ulmde_data')
         handler.init_db_connection()
         handler.insert_ulmde_data(timestamp=c_time, temp=ulm_temp)
