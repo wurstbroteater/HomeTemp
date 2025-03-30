@@ -304,8 +304,8 @@ class FileManager:
         filename = datetime.now().strftime(PLOT_NAME_FORMAT) if filename == "" else filename
         encoding = ".pdf"
         if timed:
-            return f"{root_path}/{self.TIMED_PICTURES}/{filename}{encoding}"
-        return f"{root_path}/{self.COMMANDED_PICTURES}/{filename}{encoding}"
+            return f"{root_path}/{self.TIMED_PLOTS}/{filename}{encoding}"
+        return f"{root_path}/{self.COMMANDED_PLOTS}/{filename}{encoding}"
 
 
 _file_manager: Optional[FileManager] = None
