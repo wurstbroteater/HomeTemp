@@ -294,6 +294,24 @@ class FileManager:
         if timed:
             return f"{root_path}/{self.TIMED_PICTURES}/{filename}", encoding
         return f"{root_path}/{self.COMMANDED_PICTURES}/{filename}", encoding
+    
+    def _update_symlink(self, target_path: str, link_path: str) -> None:
+        """Remove existing file or symlink and create the new symlink."""
+        try:
+            symlink_exists = os.path.islink(link_path) or os.path.exists(link_path)
+            if symlink_exists:
+                os.remove(link_path)
+            # create new symlink: target -> my symlink 
+            os.symlink(target_path, link_path)
+            log.info(f"Created symlink: {link_path} -> {target_path}")
+        except Exception as e:
+            log.error(f"Error creating symlink: {e}")
+
+    def update_latest_picture(self, timed:bool, target_path:str, encoding="png") -> None:
+       """Updates latest picture symbolic link for timed = true, commanded = false picutres. Picture encoding is per default png, so name is always latest.{endcoding}"""
+       path,_ = self.picture_file_name(timed)
+       self._update_symlink(target_path, f"{path}/latest.{encoding}")
+       return None
 
     def plot_file_name(self, timed: bool, filename="") -> str:
         """

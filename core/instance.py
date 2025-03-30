@@ -288,6 +288,7 @@ class BaseTemp(CoreSkeleton):
         name, encoding = self.fm.picture_file_name(True)
         if take_picture(name, encoding):
             log.info("Timed: Taking picture done")
+            self.fm.update_latest_picture(True, name)
         else:
             log.info("Timed: Taking picture was not successful")
 
@@ -296,6 +297,7 @@ class BaseTemp(CoreSkeleton):
         name, encoding = self.fm.picture_file_name(False)
         if take_picture(name, encoding=encoding):
             log.info("Command: Taking picture done")
+            self.fm.update_latest_picture(False, name)
             plots, _ = self._get_visualization_data()
             sensor_data = plots[0].data
             send_picture_email(picture_path=f"{name}.{encoding}", df=sensor_data, receiver=commander)
