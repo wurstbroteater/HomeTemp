@@ -303,14 +303,22 @@ class FileManager:
                 os.remove(link_path)
             # create new symlink: target -> my symlink 
             os.symlink(target_path, link_path)
-            log.info(f"Created symlink: {link_path} -> {target_path}")
+            log.debug(f"Created symlink: {link_path} -> {target_path}")
         except Exception as e:
             log.error(f"Error creating symlink: {e}")
 
     def update_latest_picture(self, timed:bool, target_path:str, encoding="png") -> None:
        """Updates latest picture symbolic link for timed = true, commanded = false picutres. Picture encoding is per default png, so name is always latest.{endcoding}"""
-       path,_ = self.picture_file_name(timed)
-       self._update_symlink(target_path, f"{path}/latest.{encoding}")
+       path_for_latest,_ = self.picture_file_name(timed, filename=" ")
+       # remove space from name and / sign
+       path_for_latest = path_for_latest[:-2]
+
+       # get file name or commanded/filename
+       file_parts= target_path.split("/")
+       new_file_in_docker = file_parts[-1] if timed else f"{file_parts[-2]}/{file_parts[-1]}"
+       new_file_in_docker = f"/usr/share/grafana/public/img/_hometempuser/{new_file_in_docker}.{encoding}"
+
+       self._update_symlink(new_file_in_docker, f"{path_for_latest}/latest.{encoding}")
        return None
 
     def plot_file_name(self, timed: bool, filename="") -> str:

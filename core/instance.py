@@ -39,7 +39,7 @@ class CoreSkeleton(ABC):
         self.command_service: CommandService = CommandService()
         self.fm: FileManager = get_file_manager()
         self.scheduler = schedule.Scheduler()
-        self.prometheus_publisher = PrometheusManager()
+        self.prometheus_publisher:PrometheusManager = PrometheusManager()
 
     ## --- Initialization Part ---
     def start(self) -> None:
@@ -289,6 +289,7 @@ class BaseTemp(CoreSkeleton):
         if take_picture(name, encoding):
             log.info("Timed: Taking picture done")
             self.fm.update_latest_picture(True, name)
+            self.prometheus_publisher.inc_picture_taken()
         else:
             log.info("Timed: Taking picture was not successful")
 
@@ -298,6 +299,7 @@ class BaseTemp(CoreSkeleton):
         if take_picture(name, encoding=encoding):
             log.info("Command: Taking picture done")
             self.fm.update_latest_picture(False, name)
+            self.prometheus_publisher.inc_picture_taken()
             plots, _ = self._get_visualization_data()
             sensor_data = plots[0].data
             send_picture_email(picture_path=f"{name}.{encoding}", df=sensor_data, receiver=commander)

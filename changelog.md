@@ -1,5 +1,12 @@
 # Project: HomeTemp
 
+
+## 0.6
+
+- Introduce Grafana as local frontend
+- Updated python dependencies (e.g. Pillow, requests)
+- Fixed plots are saved in picture folder
+
 ## 0.5
 
 This release overhauls the start process by introducing `start.sh` and renaming the config file to `config.ini`. Files,
