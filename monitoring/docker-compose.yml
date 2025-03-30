@@ -14,6 +14,7 @@ services:
       - ./grafana/dashboards/:/var/lib/grafana/dashboards
       - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboard.yaml
       - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./../data/pictures/:/usr/share/grafana/public/img/_hometempuser 
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin  
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
