@@ -35,7 +35,8 @@ class PrometheusManager:
     ROOM_TEMP_READ_FAILS:str = "sensor_read_errors_total"
     ROOM_HUM:str ="humidity_room"
     #BaseTemp
-    PICTURES:str = "taken_pictures"
+    LATEST_PICTURE_TIMED:str = "latest_picture_timed"
+    LATEST_PICTURE_COMMANDED:str = "latest_picture_commanded"
     #Fetcher
     ALL_WEATHER_TIME:str = "weather_fetch_duration_seconds"
     All_OUTSIDE_TEMP:str = "current_weather_data"
@@ -77,7 +78,8 @@ class PrometheusManager:
             self.ROOM_TEMP_READ_FAILS: Counter(self.ROOM_TEMP_READ_FAILS, 'Number of failed sensor readings', self.label_instance),
             self.ROOM_HUM: Gauge(self.ROOM_HUM, 'Current room humidity', self.label_instance),
             # BaseTemp
-            self.PICTURES: Counter(self.PICTURES, "Total pictures taken", self.label_instance),
+            self.LATEST_PICTURE_TIMED: Info(self.LATEST_PICTURE_TIMED, "Filename of latest timed picture", self.label_instance),
+            self.LATEST_PICTURE_COMMANDED: Info(self.LATEST_PICTURE_COMMANDED, "Filename of latest commandedf picture", self.label_instance),
             # Weather
             # TODO: Summary instead of histogram
             self.ALL_WEATHER_TIME: Histogram(self.ALL_WEATHER_TIME, 'Time to fetch online weather data', self.label_instance),
@@ -113,6 +115,12 @@ class PrometheusManager:
                 log.error(f"Could fetcher metric for instance {self.instance_name} and fetcher {fetcher_id}.")
 
         return out
+    
+    def publish_latest_picture_name(self, latest_picture_name:str, timed:bool) -> None:
+        metric = self._get_instance_metric(self.LATEST_PICTURE_TIMED if timed else self.LATEST_PICTURE_COMMANDED)
+        if metric is not None and latest_picture_name is not None:
+            metric.info({"latest_picture_name": latest_picture_name})
+        return None
 
     def publish_metdata(self, meta_data:dict) -> None:
         metric = self._get_instance_metric(self.META)
@@ -120,6 +128,7 @@ class PrometheusManager:
             #i = Info('my_build', 'Description of info')
             #i.info({'version': '1.2.3', 'buildhost': 'foo@bar'})
             metric.info(meta_data)
+        return None
 
     def update_general_system_metrics(self) -> None:
         """Update uptime gauge."""
@@ -153,6 +162,7 @@ class PrometheusManager:
                 m_temp.set(temperature)
         else:
             log.warning("Unable to publish measured outside temperature because at least one parameter is None")
+        return None
 
     def observe_fetch_duration(self, duration: float) -> None:
         if duration is None:
@@ -180,10 +190,3 @@ class PrometheusManager:
         if metric is not None:
             metric.inc()
         return None
-    
-    def inc_picture_taken(self) -> None:
-        metric = self._get_instance_metric(self.PICTURES)
-        if metric is not None:
-            metric.inc()
-        return None
-    

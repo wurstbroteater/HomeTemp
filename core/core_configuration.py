@@ -294,32 +294,6 @@ class FileManager:
         if timed:
             return f"{root_path}/{self.TIMED_PICTURES}/{filename}", encoding
         return f"{root_path}/{self.COMMANDED_PICTURES}/{filename}", encoding
-    
-    def _update_symlink(self, target_path: str, link_path: str) -> None:
-        """Remove existing file or symlink and create the new symlink."""
-        try:
-            symlink_exists = os.path.islink(link_path) or os.path.exists(link_path)
-            if symlink_exists:
-                os.remove(link_path)
-            # create new symlink: target -> my symlink 
-            os.symlink(target_path, link_path)
-            log.debug(f"Created symlink: {link_path} -> {target_path}")
-        except Exception as e:
-            log.error(f"Error creating symlink: {e}")
-
-    def update_latest_picture(self, timed:bool, target_path:str, encoding="png") -> None:
-       """Updates latest picture symbolic link for timed = true, commanded = false picutres. Picture encoding is per default png, so name is always latest.{endcoding}"""
-       path_for_latest,_ = self.picture_file_name(timed, filename=" ")
-       # remove space from name and / sign
-       path_for_latest = path_for_latest[:-2]
-
-       # get file name or commanded/filename
-       file_parts= target_path.split("/")
-       new_file_in_docker = file_parts[-1] if timed else f"{file_parts[-2]}/{file_parts[-1]}"
-       new_file_in_docker = f"/usr/share/grafana/public/img/_hometempuser/{new_file_in_docker}.{encoding}"
-
-       self._update_symlink(new_file_in_docker, f"{path_for_latest}/latest.{encoding}")
-       return None
 
     def plot_file_name(self, timed: bool, filename="") -> str:
         """
@@ -328,10 +302,10 @@ class FileManager:
         """
         root_path = str(self.base_path)
         filename = datetime.now().strftime(PLOT_NAME_FORMAT) if filename == "" else filename
-        encoding = ".pdf"
+        encoding = "pdf"
         if timed:
-            return f"{root_path}/{self.TIMED_PLOTS}/{filename}{encoding}"
-        return f"{root_path}/{self.COMMANDED_PLOTS}/{filename}{encoding}"
+            return f"{root_path}/{self.TIMED_PLOTS}/{filename}.{encoding}"
+        return f"{root_path}/{self.COMMANDED_PLOTS}/{filename}.{encoding}"
 
 
 _file_manager: Optional[FileManager] = None
