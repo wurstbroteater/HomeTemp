@@ -141,6 +141,8 @@ class PrometheusManager:
     def _update_system_metrics(self):
         """Update CPU, RAM, and Disk usage metrics."""
         self._get_instance_metric(self.USAGE_CPU).set(psutil.cpu_percent(interval=1))
+        #psutil.sensors_temperatures() -> {'cpu_thermal': [shwtemp(label='', current=50.15, high=None, critical=None)], 'rp1_adc': [shwtemp(label='', current=50.242, high=None, critical=None)]}
+        #TODO: self._get_instance_metric(self.TEMP_CPU).set( )
         self._get_instance_metric(self.USAGE_RAM).set(psutil.virtual_memory().percent)
         self._get_instance_metric(self.USAGE_DISK).set(psutil.disk_usage('/').percent)
 

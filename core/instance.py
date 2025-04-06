@@ -33,6 +33,7 @@ SUPPORTED_INSTANCES = ["HomeTemp", "BaseTemp"]
 # ----------------------------------------------------------------------------------------------------------------
 class CoreSkeleton(ABC):
     def __init__(self, instance_name: str, core_instance_validation: List[str] = SUPPORTED_INSTANCES):
+        #TODO:A homie may only extend but never absent ->core_instance_validation = SUPPORTED_INSTANCES + <USER INPUT> ?
         self.instance_name = {i.lower(): i for i in core_instance_validation}.get(instance_name.lower(), None)
         if self.instance_name is None:
             log.error(f"CoreSkeleton got unsupported initializer {instance_name}")
