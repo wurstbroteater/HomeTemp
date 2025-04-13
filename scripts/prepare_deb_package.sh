@@ -10,6 +10,14 @@ usrLocal="$releaseAppFolder/usr/local/$appName"
 debFolder="$releaseAppFolder/DEBIAN"
 systemFolder="$releaseAppFolder/etc/systemd/system"
 
+echo "| ----------------------------------------------------------------------------------"
+echo "| App name: $appName"
+echo "| Target version: $releaseVersion"
+echo "| Source root: $rootPath"
+echo "| ----------------------------------------------------------------------------------"
+
+echo "| Start preparing $debFileName in $releaseAppFolder"
+echo "| >> Preparing package build folder structure"
 mkdir $releaseAppFolder
 mkdir -p $usrLocal
 mkdir -p $debFolder
@@ -102,6 +110,7 @@ fi
 exit 0
 EOF
 
+echo "| >> Setting file permissions"
 chmod -R 755 "$debFolder"
 
 ###### prepare systemd service file
@@ -123,5 +132,10 @@ Environment="COMPOSE_PROJECT_NAME=$appName"
 WantedBy=multi-user.target
 EOF
 
-#dpkg-deb --build $debFileName
-#rm -rf $releaseAppFolder
+echo "| Done!"
+echo "| Start building $debFileName in $releaseAppFolder"
+dpkg-deb --build $releaseAppFolder
+echo "| >> Removing build folder structure"
+rm -rf $releaseAppFolder
+echo "| ----------------------------------------------------------------------------------"
+echo "| Building $debFileName was successful!"
