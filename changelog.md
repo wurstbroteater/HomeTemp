@@ -6,6 +6,8 @@
 - Introduce Grafana as local frontend
 - Updated python dependencies (e.g. Pillow, requests)
 - Fixed plots are saved in picture folder
+- Moved `bt_crunch_numbers.ipynb` and `ht_crunch_numbers.ipynb` to scripts folder
+- Added script for creating .deb package
 
 ## 0.5
 

@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.5
+# Project: HomeTemp v0.6-DEV
 
 The original idea of `HomeTemp` was to automatically measure the temperature and humidity of a room and create plots
 visualizing the data. Currently supported temperature and humidity sensors are `AM2302`. `DHT11` and `DHT22` sensor,
@@ -32,6 +32,10 @@ picture via commanding.
 ## Installation Instructions
 
 The following steps needs to be performed once to assure correct driver setup.
+
+### NEW WITH 0.6
+
+Use the .dep file to install: `sudo dpkg -i Homie.deb`. This deprecates all other installation instructions!
 
 ### Install Dependencies
 
