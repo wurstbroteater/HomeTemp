@@ -92,6 +92,7 @@ echo "*************************************************************"
 echo "INSTALLATION COMPLETE."
 echo ">>> Please alter the config.ini and reboot your system before"
 echo ">>> startint the app! Otherwise, it may not work."
+echo ">>> path to config: /usr/local/$appName/config.ini"
 echo "*************************************************************"
 exit 0
 
