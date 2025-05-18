@@ -18,27 +18,37 @@ app = FastAPI()
 async def metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
+@app.get("/trigger")
+async def grafana_method_trigger(method: Optional[str] = None) -> None:
+    #param e.g., http://localhost:8800/trigger?method=hello_from_grafana
+    instance: CoreSkeleton = getattr(app.state, "instance", None)
+    if instance is None:
+        print("ERROR:app Instance not initialized")
+        return None
+    elif method is None:
+        print("WARN:app Grafna trigger did not specify method")
+        return None
+    elif str(method).lower()  == 'take_picture':
+        if isinstance(instance, BaseTemp):
+            print("INFO:app Grafana trigger taking new picture")
+            i: BaseTemp = instance
+            i.take_picture_commanded(None)
+        else:
+            print("WARN:app Grafana trigger requested new picture but instance is not BaseTemp")
+        return None
+    elif str(method).lower()  == 'check_commands':
+        print("INFO:app Grafana trigger checking commands")
+        instance.run_received_commands()
+        return None
+    print(f"WARN:app Grafna trigger receceived unknown method trigger: {method}")
+    return None
+
+
 
 def start_fastapi(instance_name: str, port: int) -> None:
     """Start FastAPI server in a separate thread."""
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
 
-@app.get("/trigger")
-async def grafana_picture_trigger(method: Optional[str] = None) -> None:
-    #param e.g., http://localhost:8800/trigger?method=hello_from_grafana
-    instance = getattr(app.state, "instance", None)
-    if instance is None:
-        print("ERROR:app Instance not initialized")
-        return None
-    elif not isinstance(instance, BaseTemp):
-        print("ERROR:app Instance not of BaseTemp")
-        return None
-    
-    i: BaseTemp = instance
-    i.take_picture_commanded(None)
-    print("INFO:app Taking picture via grafana done") 
-    return None
- 
 
 def init(port:int, instance_name: Optional[str] = None):
     # Ensure PrometheusManager singleton is initialized

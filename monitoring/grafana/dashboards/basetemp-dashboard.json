@@ -42,12 +42,17 @@
         "buttons": [
           {
             "datasource": "BaseTemp",
-            "query": "{\"url\": \"http://localhost:8003/trigger\"}",
+            "query": "{\"url\": \"http://localhost:8003/trigger?method=take_picture\"}",
             "text": "Take Picture",
             "variant": "link"
+          },
+          {
+            "datasource": "BaseTemp",
+            "query": "{\"url\": \"http://localhost:8003/trigger?method=check_commands\"}",
+            "text": "Check Commands"
           }
         ],
-        "orientation": "vertical"
+        "orientation": "horizontal"
       },
       "pluginVersion": "0.3.2",
       "targets": [
