@@ -52,7 +52,7 @@
             "text": "Check Commands"
           },
           {
-            "datasource": "",
+            "datasource": "BaseTemp",
             "query": "{\"url\": \"http://localhost:8003/trigger?method=trigger_sensor\"}",
             "text": "Update Sensor Data"
           }
