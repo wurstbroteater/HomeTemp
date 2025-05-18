@@ -231,6 +231,15 @@ class BaseTemp(CoreSkeleton):
         if self.active_schedule == 'common':
             new_scheduler.every().day.at("08:00").do(lambda: self.create_visualization_timed()).tag(
                 self.active_schedule)
+        elif self.active_schedule == 'phase0':
+            new_scheduler.every().day.at("09:45").do(lambda: self.create_visualization_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("08:40").do(lambda: self.take_picture_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("03:00").do(lambda: self.take_picture_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("20:30").do(lambda: self.take_picture_timed()).tag(
+                self.active_schedule)
         elif self.active_schedule == 'phase1':
             new_scheduler.every().day.at("11:45").do(lambda: self.create_visualization_timed()).tag(
                 self.active_schedule)
