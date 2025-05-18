@@ -16,6 +16,8 @@ services:
       - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasource.yaml
       - ./../data/pictures/:/usr/share/grafana/public/img/_hometempuser 
     environment:
+      # yesoreyeram-infinity-datasource is not designed for handling a huge amount of data. When inlining the data, make sure they are small snippets less than 1MB of size.
+      - GF_INSTALL_PLUGINS=speakyourcode-button-panel,yesoreyeram-infinity-datasource
       - GF_SECURITY_ADMIN_PASSWORD=admin  
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - GF_SERVER_HTTP_ADDR=0.0.0.0 

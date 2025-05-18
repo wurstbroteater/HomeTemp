@@ -294,15 +294,16 @@ class BaseTemp(CoreSkeleton):
         else:
             log.info("Timed: Taking picture was not successful")
 
-    def take_picture_commanded(self, commander: str) -> None:
+    def take_picture_commanded(self, commander: Optional[str]) -> None:
         log.info("Command: Taking picture")
         name, encoding = self.fm.picture_file_name(False)
         if take_picture(name, encoding=encoding):
             log.info("Command: Taking picture done")
             self.prometheus_publisher.publish_latest_picture_name(Path(f"{name}.{encoding}").name, False)
-            plots, _ = self._get_visualization_data()
-            sensor_data = plots[0].data
-            send_picture_email(picture_path=f"{name}.{encoding}", df=sensor_data, receiver=commander)
+            if commander is not None:
+                plots, _ = self._get_visualization_data()
+                sensor_data = plots[0].data
+                send_picture_email(picture_path=f"{name}.{encoding}", df=sensor_data, receiver=commander)
             log.info("Command: Done")
         else:
             log.info("Command: Taking picture was not successful")

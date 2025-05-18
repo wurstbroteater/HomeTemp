@@ -6,7 +6,7 @@ from fastapi import FastAPI, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from core.core_configuration import get_instance_name, initialize, FileManager
 from core.core_log import setup_logging
-from core.instance import CoreSkeleton, get_supported_instance_type
+from core.instance import BaseTemp, CoreSkeleton, get_supported_instance_type
 from core.monitoring import PrometheusManager
 from endpoint.instance import SUPPORTED_INSTANCES, FetchTemp
 
@@ -19,9 +19,25 @@ async def metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-def start_fastapi(instance_name: str, port: int):
+def start_fastapi(instance_name: str, port: int) -> None:
     """Start FastAPI server in a separate thread."""
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
+
+@app.get("/trigger")
+async def grafana_picture_trigger(method: Optional[str] = None) -> None:
+    #param e.g., http://localhost:8800/trigger?method=hello_from_grafana
+    instance = getattr(app.state, "instance", None)
+    if instance is None:
+        print("ERROR:app Instance not initialized")
+        return None
+    elif not isinstance(instance, BaseTemp):
+        print("ERROR:app Instance not of BaseTemp")
+        return None
+    
+    i: BaseTemp = instance
+    i.take_picture_commanded(None)
+    print("INFO:app Taking picture via grafana done") 
+    return None
  
 
 def init(port:int, instance_name: Optional[str] = None):
@@ -46,7 +62,12 @@ def init(port:int, instance_name: Optional[str] = None):
 
     if instance_type is not None:
         instance: CoreSkeleton = instance_type(instance_name)
-        instance.start()
+        # Store in FastAPI app state and access with getattr(app.state, "instance", None)
+        app.state.instance = instance
+        try:  
+            instance.start()
+        except KeyboardInterrupt :
+            print("INFO: KeyboardInterrupt, shutting down...")
 
 
 if __name__ == "__main__":

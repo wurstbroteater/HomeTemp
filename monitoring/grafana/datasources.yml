@@ -6,3 +6,12 @@ datasources:
     url: http://localhost:9090
     isDefault: true
     uid: prometheus-ds
+
+  - name: BaseTemp
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    isDefault: false
+    editable: true
+    url: http://localhost:8003
+    jsonData:
+      allowUnsafeHttpMethods: true
