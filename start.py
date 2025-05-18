@@ -40,7 +40,7 @@ async def grafana_method_trigger(method: Optional[str] = None) -> None:
         print("INFO:app Grafana trigger checking commands")
         instance.run_received_commands()
         return None
-    elif str(method).lower == 'trigger_sensor':
+    elif str(method).lower() == 'trigger_sensor':
         print("INFO:app Grafana trigger pulling data from sensor")
         # this data wont be saved to database
         room_temp, humidity = instance.collect_data()
