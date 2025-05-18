@@ -44,6 +44,11 @@
             "datasource": "HomeTemp",
             "query": "{\"url\": \"http://localhost:8002/trigger?method=check_commands\"}",
             "text": "Check Commands"
+          },
+          {
+            "datasource": "HomeTemp",
+            "query": "{\"url\": \"http://localhost:8002/trigger?method=trigger_sensor\"}",
+            "text": "Update Sensor Data"
           }
         ],
         "orientation": "horizontal"
@@ -1003,7 +1008,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1099,7 +1105,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1195,7 +1202,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1291,7 +1299,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1355,6 +1364,6 @@
   "timezone": "browser",
   "title": "HomeTemp Dashboard",
   "uid": "aefb2abs8f56oe",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

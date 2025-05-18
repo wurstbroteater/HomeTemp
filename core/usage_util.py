@@ -80,6 +80,8 @@ def get_data_for_plotting(database_auth: SectionProxy, handler_type: Type[Postgr
     data = handler.read_data_into_dataframe()
     return transformer.prepare_data(data)
 
+def retrieve_temp_data(sensor_pin: int ,is_dht11_sensor: bool) ->  Optional[Tuple]:
+    return get_sensor_data(sensor_pin, is_dht11_sensor)
 
 def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin: int,
                                   is_dht11_sensor: bool) -> Optional[Tuple]:
@@ -89,7 +91,7 @@ def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin: int,
     handler.init_db_connection()
     cpu_temp = get_cpu_temperature()
 
-    room_temp, humidity = get_sensor_data(sensor_pin, is_dht11_sensor)
+    room_temp, humidity = retrieve_temp_data(sensor_pin, is_dht11_sensor)
     timestamp = datetime.now().strftime(TIME_FORMAT)
     if room_temp is not None and humidity is not None:
         log.info("[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,

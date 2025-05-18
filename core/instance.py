@@ -19,7 +19,7 @@ from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, Senso
 
 from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
-from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, take_picture
+from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, retrieve_temp_data, take_picture
 from core.util import require_web_access
 
 log = get_logger(__name__)
@@ -121,6 +121,13 @@ class CoreSkeleton(ABC):
 
     def create_visualization_timed(self) -> None:
         self._create_visualization(mode="Timed")
+
+    def collect_data(self) -> Optional[Tuple]:
+        is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
+        sensor_pin = int(core_config()["sensor_pin"])
+        out = retrieve_temp_data(sensor_pin, is_dht11)
+        log.info("Done")
+        return out
 
     def collect_and_save_to_db(self) -> Optional[Tuple]:
         is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]

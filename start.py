@@ -40,6 +40,15 @@ async def grafana_method_trigger(method: Optional[str] = None) -> None:
         print("INFO:app Grafana trigger checking commands")
         instance.run_received_commands()
         return None
+    elif str(method).lower == 'trigger_sensor':
+        print("INFO:app Grafana trigger pulling data from sensor")
+        # this data wont be saved to database
+        room_temp, humidity = instance.collect_data()
+        if room_temp is not None and humidity is not None:
+            print("INFO:app Grafana trigger pulled data from sensor: Room={0:f}*C, Humidity={1:f}%".format(room_temp, humidity))
+        else:
+            print("WARN:app Grafana trigger pulled NONE data from sensor")
+        return None
     print(f"WARN:app Grafna trigger receceived unknown method trigger: {method}")
     return None
 
