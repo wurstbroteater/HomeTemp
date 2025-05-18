@@ -194,7 +194,7 @@ class BaseTemp(CoreSkeleton):
         self.send_temperature_warning = not (self.max_heat is None and self.min_heat is None)
         self.active_schedule = cfg.get("active_schedule", "common").lower()
         # comparison should always be made lower case
-        self.supported_schedules = ['phase1', 'phase2', 'common']
+        self.supported_schedules = ['phase0','phase1', 'phase2', 'common']
 
     def set_schedule(self, s_name: str) -> None:
         self._set_schedule(s_name)
