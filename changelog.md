@@ -4,6 +4,9 @@
 ## 0.6
 
 - Introduce Grafana as local frontend
+- Added `FastAPI` endpoints to enable communication with local frontend
+  - Added endpoint `metrics` for Grafana metric publishing
+  - Added enpoint `trigger`, e.g. `trigger?method=check_commands`, for triggering method execution
 - Updated python dependencies (e.g. Pillow, requests)
 - Fixed plots are saved in picture folder
 - Moved `bt_crunch_numbers.ipynb` and `ht_crunch_numbers.ipynb` to scripts folder
