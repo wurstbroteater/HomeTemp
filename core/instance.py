@@ -241,7 +241,7 @@ class BaseTemp(CoreSkeleton):
         elif self.active_schedule == 'phase0':
             new_scheduler.every().day.at("09:45").do(lambda: self.create_visualization_timed()).tag(
                 self.active_schedule)
-            new_scheduler.every().day.at("08:40").do(lambda: self.take_picture_timed()).tag(
+            new_scheduler.every().day.at("07:00").do(lambda: self.take_picture_timed()).tag(
                 self.active_schedule)
             new_scheduler.every().day.at("03:00").do(lambda: self.take_picture_timed()).tag(
                 self.active_schedule)
