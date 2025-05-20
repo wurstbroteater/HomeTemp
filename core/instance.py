@@ -44,16 +44,25 @@ class CoreSkeleton(ABC):
         self.prometheus_publisher:PrometheusManager = PrometheusManager()
 
     ## --- Initialization Part ---
-    def start(self) -> None:
+    def init(self) -> None:
         log.info(f"------------------- {self.instance_name} v{core_config()['version']} -------------------")
         self.prometheus_publisher.publish_metdata(self.generate_metadata())
         self._init_components()
         log.info("finished initialization")
+
+    def start(self, with_init=True) -> None:
+        if with_init:
+            self.init()
         self._methods_after_init()
         time.sleep(1)
         self.run_received_commands()
         log.info("entering main loop")
         self.main_loop()
+        return None
+
+    def shutdown(self) -> None:
+        self.scheduler.clear()
+        return None
 
     def generate_metadata(self) -> Optional[dict]:
         cfg = core_config()
@@ -91,9 +100,14 @@ class CoreSkeleton(ABC):
 
     def main_loop(self, check_schedule_delay_s=1) -> None:
         while True:
-            self.scheduler.run_pending()
-            self.prometheus_publisher.update_general_system_metrics()
-            time.sleep(check_schedule_delay_s)
+            try:
+                self.scheduler.run_pending()
+                self.prometheus_publisher.update_general_system_metrics()
+                time.sleep(check_schedule_delay_s)
+            except KeyboardInterrupt:
+                log.info("Aborting due to user interrupt")
+                break
+        return None
 
     ## --- Minimal Supported Features Part ---
 

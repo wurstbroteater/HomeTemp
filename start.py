@@ -83,10 +83,10 @@ def init(port:int, instance_name: Optional[str] = None):
         instance: CoreSkeleton = instance_type(instance_name)
         # Store in FastAPI app state and access with getattr(app.state, "instance", None)
         app.state.instance = instance
-        try:  
-            instance.start()
-        except KeyboardInterrupt :
-            print("INFO: KeyboardInterrupt, shutting down...")
+        instance.start()
+        print("INFO: Shutting down...")
+        instance.shutdown()
+        print("INFO: Goodbye!")
 
 
 if __name__ == "__main__":
