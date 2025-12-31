@@ -3,14 +3,19 @@
 
 ## 0.6
 
-- Introduce Grafana as local frontend
+This release introduce the first version of the local frontend for HomeTemp and BaseTemp.
+
+- Introduced Grafana as local frontend for measuring data and system information on port 3000
+  - Currently only supports storing data of up to 2 weeks
+- Introduced MotionEye as live webcam frontend on port 8765
 - Added `FastAPI` endpoints to enable communication with local frontend
   - Added endpoint `metrics` for Grafana metric publishing
   - Added enpoint `trigger`, e.g. `trigger?method=check_commands`, for triggering method execution
 - Updated python dependencies (e.g. Pillow, requests)
 - Fixed plots are saved in picture folder
 - Moved `bt_crunch_numbers.ipynb` and `ht_crunch_numbers.ipynb` to scripts folder
-- Added script for creating .deb package
+- Added experimental script for creating .deb package (WIP)
+- Distribution section in config.ini is now optional
 
 ## 0.5
 
