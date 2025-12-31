@@ -3,5 +3,8 @@ providers:
   - name: "HomeTemp"
     folder: ""
     type: "file"
+    disableDeletion: true
+    editable: true
+    allowUiUpdates: true
     options:
       path: "/var/lib/grafana/dashboards"
