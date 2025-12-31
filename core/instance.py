@@ -41,7 +41,7 @@ class CoreSkeleton(ABC):
 
         distribution_cfg = distribution_config()
         allowed_commanders: Optional[List[str]] = None
-        if distribution_cfg is None:
+        if distribution_cfg is not None:
             allowed_commanders = eval(distribution_cfg["allowed_commanders"])
         
         self.command_service: Optional[CommandService] = CommandService(allowed_commanders) if allowed_commanders is not None and len(allowed_commanders) > 0 else None
