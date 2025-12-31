@@ -2,7 +2,6 @@ services:
   motioneye:
     image: ghcr.io/motioneye-project/motioneye:edge
     container_name: motioneye
-    restart: unless-stopped
     privileged: true
     devices:
       - /dev/video0:/dev/video0
@@ -10,8 +9,6 @@ services:
       - TZ=Europe/Berlin
     ports:
       - "8765:8765"
-    #  - "9081:9081"
-    #network_mode: host
     volumes:
       - ./config:/etc/motioneye
       - ./media:/var/lib/motioneye
