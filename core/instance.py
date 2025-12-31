@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from core.command import CommandService
 from core.monitoring import PrometheusManager
 from core.sensors.dht import SUPPORTED_SENSORS
-from core.core_configuration import database_config, core_config, get_sensor_type, basetemp_config, \
+from core.core_configuration import database_config, core_config, distribution_config, get_sensor_type, basetemp_config, \
     update_active_schedule, PICTURE_NAME_FORMAT, get_file_manager, FileManager
 
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
@@ -38,7 +38,13 @@ class CoreSkeleton(ABC):
         if self.instance_name is None:
             log.error(f"CoreSkeleton got unsupported initializer {instance_name}")
 
-        self.command_service: CommandService = CommandService()
+
+        distribution_cfg = distribution_config()
+        allowed_commanders: Optional[List[str]] = None
+        if distribution_cfg is None:
+            allowed_commanders = eval(distribution_cfg["allowed_commanders"])
+        
+        self.command_service: Optional[CommandService] = CommandService(allowed_commanders) if allowed_commanders is not None and len(allowed_commanders) > 0 else None
         self.fm: FileManager = get_file_manager()
         self.scheduler = schedule.Scheduler()
         self.prometheus_publisher:PrometheusManager = PrometheusManager()
@@ -94,9 +100,12 @@ class CoreSkeleton(ABC):
 
     @require_web_access
     def run_received_commands(self) -> None:
-        log.info("Checking for commands")
-        self.command_service.receive_and_execute_commands()
-        log.info("Done")
+        if self.command_service:
+            log.info("Checking for commands")
+            self.command_service.receive_and_execute_commands()
+            log.info("Done")
+        else:
+            log.debug("Command service not initialized")
 
     def main_loop(self, check_schedule_delay_s=1) -> None:
         while True:
@@ -159,7 +168,8 @@ class HomeTemp(CoreSkeleton):
     def _add_commands(self) -> None:
         cmd_name = 'plot'
         function_params = ['commander']
-        self.command_service.add_new_command((cmd_name, [], self.create_visualization_commanded, function_params))
+        if self.command_service:
+            self.command_service.add_new_command((cmd_name, [], self.create_visualization_commanded, function_params))
         pass
 
     def _setup_scheduling(self) -> None:
@@ -238,11 +248,12 @@ class BaseTemp(CoreSkeleton):
             log.info(f"Commander {commander} requested to switch to unknown phase {phase}")
 
     def _add_commands(self) -> None:
-        commander_params = ['commander']
-        self.command_service.add_new_command(('pic', [], self.take_picture_commanded, commander_params))
-        self.command_service.add_new_command(('plot', [], self.create_visualization_commanded, commander_params))
-        self.command_service.add_new_command(
-            ('phase', ['phase'], self.switch_schedule_commanded, ['commander', 'phase']))
+        if self.command_service:
+            commander_params = ['commander']
+            self.command_service.add_new_command(('pic', [], self.take_picture_commanded, commander_params))
+            self.command_service.add_new_command(('plot', [], self.create_visualization_commanded, commander_params))
+            self.command_service.add_new_command(
+                ('phase', ['phase'], self.switch_schedule_commanded, ['commander', 'phase']))
         pass
 
     def _get_new_schedule(self) -> schedule.Scheduler:
