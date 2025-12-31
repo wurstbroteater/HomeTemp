@@ -38,6 +38,7 @@ The following list shows the which instance uses which ports as default:
 - HomeTemp: 8002 Prometheus
 - BaseTemp: 8003 Prometheus
 - MotionEye: 8765 Web Frontend
+- Postgres: 5432
 
 ## Installation Instructions
 
