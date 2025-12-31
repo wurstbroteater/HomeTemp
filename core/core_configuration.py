@@ -87,10 +87,20 @@ def database_config() -> SectionProxy:
     return config[used_key]
 
 
-def distribution_config() -> SectionProxy:
+def distribution_config() -> Optional[SectionProxy]:
     used_key = 'distribution'
-    _validate_config(used_key)
-    return config[used_key]
+    if not _validate_config(used_key, False):
+        raise None
+    cfg = config[used_key]
+    reqiured_keys = ['smtp_port','smtp_server','smtp_user','smtp_pw','from_email','to_email','allowed_commanders','imap_port','imap_server','imap_user','imap_pw']
+    keys_present = False
+    try:
+        keys_present = all(key in cfg for key in reqiured_keys)
+    except (KeyError, TypeError):
+       pass
+    if not keys_present:
+        return None
+    return cfg
 
 
 def dwd_config() -> SectionProxy:
@@ -128,11 +138,17 @@ def _validate_config(used_key: str, used_key_present_error: bool = True) -> None
     Raises:
         RuntimeError: If configuration has not been loaded.
         KeyError: If the specified section is not found.
+
+    Returns:
+        bool: True if the section exists, False otherwise.
     """
+
     if config is None:
         raise RuntimeError("Configuration has not been loaded. Call 'load_config()' first.")
-    if used_key_present_error and used_key not in config:
+    key_present = used_key in config
+    if used_key_present_error and not key_present:
         raise KeyError(f"No '{used_key}' section found in the configuration.")
+    return key_present
 
 
 ## ----------------------------------------------------------------------------------------------------------------

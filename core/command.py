@@ -1,7 +1,6 @@
 from email.utils import parseaddr
 from typing import List, Optional, Tuple
 
-from core.core_configuration import distribution_config
 from core.core_configuration import core_config
 from core.core_log import get_logger
 from core.distribute import EmailDistributor
@@ -58,8 +57,8 @@ class CommandRequest:
 
 class CommandService:
 
-    def __init__(self):
-        self.allowed_commanders = eval(distribution_config()["allowed_commanders"])
+    def __init__(self, allowed_commanders:List[str]):
+        self.allowed_commanders = allowed_commanders
         self.parser = CommandParser()
         self.email_service = EmailDistributor()
 
