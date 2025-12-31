@@ -28,14 +28,20 @@ picture via commanding.
 - Taking pictures (timed or commanded) via camera module (only tested on **Raspberry Pi 4 Model B**)
 - Create timelapse video of a set of pictures
 - Grafana Web Frontend
+- MotionEye Live Camera Frontend
+
+## Default Ports
+The following list shows the which instance uses which ports as default:
+
+- HomeTemp/BaseTemp: 3000 Grafana Web Frontend
+- FetchTemp: 8001 Prometheus
+- HomeTemp: 8002 Prometheus
+- BaseTemp: 8003 Prometheus
+- MotionEye: 8765 Web Frontend
 
 ## Installation Instructions
 
 The following steps needs to be performed once to assure correct driver setup.
-
-### NEW WITH 0.6
-
-Use the .dep file to install: `sudo dpkg -i Homie.deb`. This deprecates all other installation instructions!
 
 ### Install Dependencies
 
