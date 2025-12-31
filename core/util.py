@@ -7,6 +7,7 @@ import cv2
 
 from core.core_configuration import PICTURE_NAME_FORMAT
 from core.core_log import get_logger
+from core.monitoring import PrometheusManager
 
 log = get_logger(__name__)
 
@@ -49,12 +50,16 @@ def create_timelapse(input_folder: str, output_video_path: str, image_encoding="
 
 
 def web_access_available(host: str = "8.8.8.8", port: int = 53, timeout_s: float = 3.0) -> bool:
+    available = False
     try:
         socket.setdefaulttimeout(timeout_s)
         with socket.create_connection((host, port)):
-            return True
+            available = True
     except (OSError, socket.timeout, socket.error):
-        return False
+        available = False
+    PrometheusManager().set_web_available(available)
+    return available
+    
 
 
 def require_web_access(f: Callable[..., Any]) -> Callable[..., Any]:

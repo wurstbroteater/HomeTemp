@@ -55,12 +55,12 @@ class PostgresDockerManager(DockerManager):
     """
 
     def __init__(self, db_name, user, password, port_range=["5432:5432"]):
+        super().__init__()
         self.image_name = "postgres:latest"
         self.db_name = db_name
         self.port_range = self._create_port_bindings(port_range)
         self.user = user
         self.password = password
-        super().__init__()
 
     @staticmethod
     def _create_port_bindings(ports=None):

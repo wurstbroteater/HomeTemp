@@ -76,7 +76,7 @@ class RpiCamController:
                 'error': result.stderr.decode()
             }
 
-    def _rotate_image(self, image_path: str, rotation: int) -> bool:
+    def _rotate_and_save(self, image_path: str, rotation: int) -> bool:
         if rotation != 0:
             image = Image.open(image_path)
             # 'expand' to resize for the whole image
@@ -108,7 +108,7 @@ class RpiCamController:
                 log.error(f"Unsupported dimension {dimension}.")
 
         return self._run_command(command,
-                                 on_success=lambda _: self._rotate_image(file_name, rotation),
+                                 on_success=lambda _: self._rotate_and_save(file_name, rotation),
                                  on_failure=lambda error_msg:
                                  (log.error(f"Error while capturing picture: {error_msg}"), False)[1])
 

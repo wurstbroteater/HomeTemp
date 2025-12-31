@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.5
+# Project: HomeTemp v0.6
 
 The original idea of `HomeTemp` was to automatically measure the temperature and humidity of a room and create plots
 visualizing the data. Currently supported temperature and humidity sensors are `AM2302`. `DHT11` and `DHT22` sensor,
@@ -27,6 +27,18 @@ picture via commanding.
 - Commanding via email
 - Taking pictures (timed or commanded) via camera module (only tested on **Raspberry Pi 4 Model B**)
 - Create timelapse video of a set of pictures
+- Grafana Web Frontend
+- MotionEye Live Camera Frontend
+
+## Default Ports
+The following list shows the which instance uses which ports as default:
+
+- HomeTemp/BaseTemp: 3000 Grafana Web Frontend
+- FetchTemp: 8001 Prometheus
+- HomeTemp: 8002 Prometheus
+- BaseTemp: 8003 Prometheus
+- MotionEye: 8765 Web Frontend
+- Postgres: 5432
 
 ## Installation Instructions
 
@@ -86,6 +98,15 @@ sudo chmod -R 755 /usr/lib/chromium-browser
 # or if not existing
 sudo chmod -R 755 /usr/bin/chromedriver
 
+```
+
+### Frontend Accessibility
+
+Once started, it should be accessible via `http://<pi-ip>:3000/`. If not, assure port is allowed in firewall on raspberry pi:
+```sh
+sudo ufw status
+sudo ufw allow 3000/tcp
+sudo ufw reload
 ```
 
 ## Start Instructions

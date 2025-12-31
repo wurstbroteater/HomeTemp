@@ -16,8 +16,9 @@ def foo(commander):
 def main():
     load_config()
     global command_service, auth
-    command_service = CommandService()
     auth = distribution_config()
+    command_service = CommandService(eval(auth["allowed_commanders"]))
+
     # Add command
     cmd_name = 'test'
     cmd_params = []
@@ -26,7 +27,7 @@ def main():
     command_service.add_new_command((cmd_name, cmd_params, function_to_execute, function_params))
 
     # Send email containing command
-    mail_service = EmailDistributor()
+    mail_service = EmailDistributor(auth)
     message = create_message(subject=f"Htcmd {cmd_name}", content="")
     sender = auth["from_email"]
     receiver = auth["to_email"]

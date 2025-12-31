@@ -4,20 +4,22 @@ from core.core_log import get_logger
 import time
 from datetime import datetime
 from typing import List, Optional, Tuple, Type
+from pathlib import Path
 
 import schedule
 
 from abc import ABC, abstractmethod
 from core.command import CommandService
+from core.monitoring import PrometheusManager
 from core.sensors.dht import SUPPORTED_SENSORS
-from core.core_configuration import database_config, core_config, get_sensor_type, basetemp_config, \
+from core.core_configuration import database_config, core_config, distribution_config, get_sensor_type, basetemp_config, \
     update_active_schedule, PICTURE_NAME_FORMAT, get_file_manager, FileManager
 
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 
 from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
-from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, take_picture
+from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, retrieve_temp_data, take_picture
 from core.util import require_web_access
 
 log = get_logger(__name__)
@@ -31,24 +33,51 @@ SUPPORTED_INSTANCES = ["HomeTemp", "BaseTemp"]
 # ----------------------------------------------------------------------------------------------------------------
 class CoreSkeleton(ABC):
     def __init__(self, instance_name: str, core_instance_validation: List[str] = SUPPORTED_INSTANCES):
+        #TODO:A homie may only extend but never absent ->core_instance_validation = SUPPORTED_INSTANCES + <USER INPUT> ?
         self.instance_name = {i.lower(): i for i in core_instance_validation}.get(instance_name.lower(), None)
         if self.instance_name is None:
             log.error(f"CoreSkeleton got unsupported initializer {instance_name}")
 
-        self.command_service: CommandService = CommandService()
+
+        distribution_cfg = distribution_config()
+        allowed_commanders: Optional[List[str]] = None
+        if distribution_cfg is not None:
+            allowed_commanders = eval(distribution_cfg["allowed_commanders"])
+        
+        self.command_service: Optional[CommandService] = CommandService(allowed_commanders) if allowed_commanders is not None and len(allowed_commanders) > 0 else None
         self.fm: FileManager = get_file_manager()
         self.scheduler = schedule.Scheduler()
+        self.prometheus_publisher:PrometheusManager = PrometheusManager()
 
     ## --- Initialization Part ---
-    def start(self) -> None:
+    def init(self) -> None:
         log.info(f"------------------- {self.instance_name} v{core_config()['version']} -------------------")
+        self.prometheus_publisher.publish_metdata(self.generate_metadata())
         self._init_components()
         log.info("finished initialization")
+
+    def start(self, with_init=True) -> None:
+        if with_init:
+            self.init()
         self._methods_after_init()
         time.sleep(1)
         self.run_received_commands()
         log.info("entering main loop")
         self.main_loop()
+        return None
+
+    def shutdown(self) -> None:
+        self.scheduler.clear()
+        return None
+
+    def generate_metadata(self) -> Optional[dict]:
+        cfg = core_config()
+        v = 'version'
+        dp = 'data_path'
+        cmd_prefixes = 'valid_command_prefix'
+        sp = 'sensor_pin'
+        st = 'sensor_type'
+        return {"instance_name": self.instance_name, v:cfg[v], dp: cfg[dp], sp:cfg[sp], st:cfg[st], cmd_prefixes:cfg[cmd_prefixes]}
 
     def _init_components(self) -> None:
         self._init_database()
@@ -71,14 +100,23 @@ class CoreSkeleton(ABC):
 
     @require_web_access
     def run_received_commands(self) -> None:
-        log.info("Checking for commands")
-        self.command_service.receive_and_execute_commands()
-        log.info("Done")
+        if self.command_service:
+            log.info("Checking for commands")
+            self.command_service.receive_and_execute_commands()
+            log.info("Done")
+        else:
+            log.debug("Command service not initialized")
 
     def main_loop(self, check_schedule_delay_s=1) -> None:
         while True:
-            self.scheduler.run_pending()
-            time.sleep(check_schedule_delay_s)
+            try:
+                self.scheduler.run_pending()
+                self.prometheus_publisher.update_general_system_metrics()
+                time.sleep(check_schedule_delay_s)
+            except KeyboardInterrupt:
+                log.info("Aborting due to user interrupt")
+                break
+        return None
 
     ## --- Minimal Supported Features Part ---
 
@@ -107,6 +145,13 @@ class CoreSkeleton(ABC):
     def create_visualization_timed(self) -> None:
         self._create_visualization(mode="Timed")
 
+    def collect_data(self) -> Optional[Tuple]:
+        is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
+        sensor_pin = int(core_config()["sensor_pin"])
+        out = retrieve_temp_data(sensor_pin, is_dht11)
+        log.info("Done")
+        return out
+
     def collect_and_save_to_db(self) -> Optional[Tuple]:
         is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
         auth = database_config()
@@ -123,7 +168,8 @@ class HomeTemp(CoreSkeleton):
     def _add_commands(self) -> None:
         cmd_name = 'plot'
         function_params = ['commander']
-        self.command_service.add_new_command((cmd_name, [], self.create_visualization_commanded, function_params))
+        if self.command_service:
+            self.command_service.add_new_command((cmd_name, [], self.create_visualization_commanded, function_params))
         pass
 
     def _setup_scheduling(self) -> None:
@@ -179,7 +225,7 @@ class BaseTemp(CoreSkeleton):
         self.send_temperature_warning = not (self.max_heat is None and self.min_heat is None)
         self.active_schedule = cfg.get("active_schedule", "common").lower()
         # comparison should always be made lower case
-        self.supported_schedules = ['phase1', 'phase2', 'common']
+        self.supported_schedules = ['phase0','phase1', 'phase2', 'common']
 
     def set_schedule(self, s_name: str) -> None:
         self._set_schedule(s_name)
@@ -202,11 +248,12 @@ class BaseTemp(CoreSkeleton):
             log.info(f"Commander {commander} requested to switch to unknown phase {phase}")
 
     def _add_commands(self) -> None:
-        commander_params = ['commander']
-        self.command_service.add_new_command(('pic', [], self.take_picture_commanded, commander_params))
-        self.command_service.add_new_command(('plot', [], self.create_visualization_commanded, commander_params))
-        self.command_service.add_new_command(
-            ('phase', ['phase'], self.switch_schedule_commanded, ['commander', 'phase']))
+        if self.command_service:
+            commander_params = ['commander']
+            self.command_service.add_new_command(('pic', [], self.take_picture_commanded, commander_params))
+            self.command_service.add_new_command(('plot', [], self.create_visualization_commanded, commander_params))
+            self.command_service.add_new_command(
+                ('phase', ['phase'], self.switch_schedule_commanded, ['commander', 'phase']))
         pass
 
     def _get_new_schedule(self) -> schedule.Scheduler:
@@ -215,6 +262,15 @@ class BaseTemp(CoreSkeleton):
         new_scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db()).tag(self.active_schedule)
         if self.active_schedule == 'common':
             new_scheduler.every().day.at("08:00").do(lambda: self.create_visualization_timed()).tag(
+                self.active_schedule)
+        elif self.active_schedule == 'phase0':
+            new_scheduler.every().day.at("09:45").do(lambda: self.create_visualization_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("07:00").do(lambda: self.take_picture_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("03:00").do(lambda: self.take_picture_timed()).tag(
+                self.active_schedule)
+            new_scheduler.every().day.at("20:30").do(lambda: self.take_picture_timed()).tag(
                 self.active_schedule)
         elif self.active_schedule == 'phase1':
             new_scheduler.every().day.at("11:45").do(lambda: self.create_visualization_timed()).tag(
@@ -275,17 +331,20 @@ class BaseTemp(CoreSkeleton):
         name, encoding = self.fm.picture_file_name(True)
         if take_picture(name, encoding):
             log.info("Timed: Taking picture done")
+            self.prometheus_publisher.publish_latest_picture_name(Path(f"{name}.{encoding}").name, True)
         else:
             log.info("Timed: Taking picture was not successful")
 
-    def take_picture_commanded(self, commander: str) -> None:
+    def take_picture_commanded(self, commander: Optional[str]) -> None:
         log.info("Command: Taking picture")
         name, encoding = self.fm.picture_file_name(False)
         if take_picture(name, encoding=encoding):
             log.info("Command: Taking picture done")
-            plots, _ = self._get_visualization_data()
-            sensor_data = plots[0].data
-            send_picture_email(picture_path=f"{name}.{encoding}", df=sensor_data, receiver=commander)
+            self.prometheus_publisher.publish_latest_picture_name(Path(f"{name}.{encoding}").name, False)
+            if commander is not None:
+                plots, _ = self._get_visualization_data()
+                sensor_data = plots[0].data
+                send_picture_email(picture_path=f"{name}.{encoding}", df=sensor_data, receiver=commander)
             log.info("Command: Done")
         else:
             log.info("Command: Taking picture was not successful")

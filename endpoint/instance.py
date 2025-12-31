@@ -1,4 +1,4 @@
-import schedule
+import time
 from typing import List, Tuple, Optional
 from core.core_log import get_logger
 from core.database import UlmDeHandler
@@ -50,7 +50,9 @@ class FetchTemp(CoreSkeleton):
     @require_web_access
     def collect_and_save_to_db(self) -> Optional[Tuple]:
         db_auth = database_config()
+        start_time = time.time()
         ulmde_fetch_and_save(db_auth)
         dwd_fetch_and_save(db_auth, dwd_config())
         google_fetch_and_save(db_auth, google_config())
         wettercom_fetch_and_save(db_auth, wettercom_config())
+        self.prometheus_publisher.observe_fetch_duration(time.time() - start_time)

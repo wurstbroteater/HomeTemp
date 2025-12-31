@@ -1,3 +1,4 @@
+from configparser import SectionProxy
 import imaplib
 import os
 import smtplib
@@ -11,6 +12,7 @@ from typing import List, Optional, Tuple
 
 from core.core_configuration import distribution_config, core_config, PICTURE_NAME_FORMAT, PLOT_NAME_FORMAT
 from core.core_log import get_logger
+from core.monitoring import PrometheusManager
 
 log = get_logger(__name__)
 
@@ -22,9 +24,9 @@ log = get_logger(__name__)
 
 class EmailDistributor:
 
-    def __init__(self):
-        self.config = distribution_config()
-
+    def __init__(self, distribution_cfg: SectionProxy):
+        self.config = distribution_cfg
+        
     def _get_imap_connection(self) -> Optional[imaplib.IMAP4_SSL]:
         """
         has to be closed after usage!!! -> _handle_connection_close
@@ -109,6 +111,7 @@ class EmailDistributor:
             server.sendmail(from_email, to_email, message.as_string())
             server.quit()
             log.info("Email sent successfully.")
+            PrometheusManager().inc_sent_email()
             return True
         except Exception as e:
             log.error(f"Error sending email: {str(e)}")
@@ -168,21 +171,22 @@ def _send_base_temp_vis(df, path_to_pdf: str, receiver=None):
     and attaches the pdf file created for the current day if the file is present.
     """
 
-    email_config = distribution_config()
-    from_email = email_config["from_email"]
-    receiver = receiver if receiver is not None else email_config["to_email"]
+    email_config:Optional[SectionProxy] = distribution_config()
+    if email_config:
+        from_email = email_config["from_email"]
+        receiver = receiver if receiver is not None else email_config["to_email"]
 
-    log.info(f"Sending Measurement Data Visualization to {receiver}")
+        log.info(f"Sending Measurement Data Visualization to {receiver}")
 
-    subject = f"BaseTemp v{core_config()['version']} Data Report {datetime.now().strftime(PLOT_NAME_FORMAT)}"
-    message = create_sensor_data_message(df)
+        subject = f"BaseTemp v{core_config()['version']} Data Report {datetime.now().strftime(PLOT_NAME_FORMAT)}"
+        message = create_sensor_data_message(df)
 
-    distributor = EmailDistributor()
-    msg = create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
-    msg["From"] = from_email
-    msg["To"] = receiver
+        distributor = EmailDistributor(email_config)
+        msg = create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
+        msg["From"] = from_email
+        msg["To"] = receiver
 
-    _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
+        _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
 
 
 def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, path_to_pdf: str, receiver=None):
@@ -191,62 +195,67 @@ def _send_home_temp_vis_email(df, google_df, dwd_df, ulmde_df, wettercom_df, pat
     and attaches the pdf file created for the current day if the file is present.
     """
 
-    email_config = distribution_config()
-    from_email = email_config["from_email"]
-    receiver = receiver if receiver is not None else email_config["to_email"]
+    email_config:Optional[SectionProxy] = distribution_config()
+    if email_config:
+        from_email = email_config["from_email"]
+        receiver = receiver if receiver is not None else email_config["to_email"]
 
-    log.info(f"Sending Measurement Data Visualization to {receiver}")
+        log.info(f"Sending Measurement Data Visualization to {receiver}")
 
-    subject = f"HomeTemp v{core_config()['version']} Data Report {datetime.now().strftime(PLOT_NAME_FORMAT)}"
-    message = create_sensor_data_message(df)
-    message += "\n\n------------- Google Data -------------\n"
-    message += str(google_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
-    message += str(google_df.tail(6))
-    message += "\n\n------------- DWD Data -------------\n"
-    message += str(dwd_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
-    message += str(dwd_df.tail(6))
-    message += "\n\n------------- Wetter.com Data -------------\n"
-    message += str(wettercom_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
-    message += str(wettercom_df.tail(6))
-    message += "\n\n------------- Ulm.de Data -------------\n"
-    message += str(ulmde_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
-    message += str(ulmde_df.tail(6))
+        subject = f"HomeTemp v{core_config()['version']} Data Report {datetime.now().strftime(PLOT_NAME_FORMAT)}"
+        message = create_sensor_data_message(df)
+        message += "\n\n------------- Google Data -------------\n"
+        message += str(google_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
+        message += str(google_df.tail(6))
+        message += "\n\n------------- DWD Data -------------\n"
+        message += str(dwd_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
+        message += str(dwd_df.tail(6))
+        message += "\n\n------------- Wetter.com Data -------------\n"
+        message += str(wettercom_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
+        message += str(wettercom_df.tail(6))
+        message += "\n\n------------- Ulm.de Data -------------\n"
+        message += str(ulmde_df.drop(['timestamp'], axis=1, errors='ignore').describe()).format("utf8") + "\n\n"
+        message += str(ulmde_df.tail(6))
 
-    distributor = EmailDistributor()
-    msg = create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
-    msg["From"] = from_email
-    msg["To"] = receiver
+        distributor = EmailDistributor(email_config)
+        msg = create_message(subject=subject, content=message, attachment_paths=[path_to_pdf])
+        msg["From"] = from_email
+        msg["To"] = receiver
 
-    _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
+        _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
 
 
-def send_picture_email(picture_path, df, receiver):
+def send_picture_email(picture_path, df, receiver) -> None:
     today = datetime.now().strftime(PICTURE_NAME_FORMAT)
     log.info(f"Sending picture to {receiver}")
     subject = f"BaseTemp v{core_config()['version']} Live Picture of {today}"
     message = create_sensor_data_message(df)
 
-    email_config = distribution_config()
-    from_email = email_config["from_email"]
-    distributor = EmailDistributor()
-    msg = create_message(subject=subject, content=message, attachment_paths=[picture_path])
-    msg["From"] = from_email
-    msg["To"] = receiver
+    email_config:Optional[SectionProxy] = distribution_config()
+    if email_config:
+        from_email = email_config["from_email"]
+        distributor = EmailDistributor(email_config)
+        msg = create_message(subject=subject, content=message, attachment_paths=[picture_path])
+        msg["From"] = from_email
+        msg["To"] = receiver
 
-    _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
-
+        _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
+        pass
+    else:
+        log.warning("No email configuration found, cannot send picture email!")
 
 def send_heat_warning_email(current_temp):
-    distributor = EmailDistributor()
-    msg = create_message(
-        subject=f"BaseTemp v{core_config()['version']} HEAT WARNING OF {current_temp}°C",
-        content="Its the heat of the moment")
-    email_config = distribution_config()
-    from_email = email_config["from_email"]
-    receiver = email_config["to_email"]
-    msg["From"] = from_email
-    msg["To"] = receiver
-    _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
+    email_config:Optional[SectionProxy] = distribution_config()
+    if email_config:
+        distributor = EmailDistributor(email_config)
+        msg = create_message(
+            subject=f"BaseTemp v{core_config()['version']} HEAT WARNING OF {current_temp}°C",
+            content="Its the heat of the moment")
+        from_email = email_config["from_email"]
+        receiver = email_config["to_email"]
+        msg["From"] = from_email
+        msg["To"] = receiver
+        _ = distributor.send_email(from_email=from_email, to_email=receiver, message=msg)
 
 
 def create_sensor_data_message(df):

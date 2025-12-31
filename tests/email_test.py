@@ -9,7 +9,7 @@ test_sender = dis_config["from_email"]
 test_receiver = dis_config["to_email"]
 test_subject = "MEGASUPERDUPERULTATEST"
 
-service = EmailDistributor()
+service = EmailDistributor(dis_config)
 # create message
 message_to_send: MIMEMultipart = create_message(subject=test_subject, content="Test")
 message_to_send["From"] = test_sender
