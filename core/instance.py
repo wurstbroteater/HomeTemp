@@ -17,7 +17,7 @@ from core.core_configuration import database_config, core_config, distribution_c
 
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 
-from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
+from core.distribute import EmailDistributor, send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
 from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, retrieve_temp_data, take_picture
 from core.util import require_web_access
@@ -41,10 +41,14 @@ class CoreSkeleton(ABC):
 
         distribution_cfg = distribution_config()
         allowed_commanders: Optional[List[str]] = None
-        if distribution_cfg is not None:
+        if distribution_cfg is None:
+            self.mail_service:Optional[EmailDistributor] = None
+        else:
             allowed_commanders = eval(distribution_cfg["allowed_commanders"])
+            self.mail_service:Optional[EmailDistributor] = EmailDistributor(distribution_cfg)
         
-        self.command_service: Optional[CommandService] = CommandService(allowed_commanders) if allowed_commanders is not None and len(allowed_commanders) > 0 else None
+        
+        self.command_service: Optional[CommandService] = CommandService(allowed_commanders, self.mail_service) if allowed_commanders is not None and len(allowed_commanders) > 0 else None
         self.fm: FileManager = get_file_manager()
         self.scheduler = schedule.Scheduler()
         self.prometheus_publisher:PrometheusManager = PrometheusManager()
