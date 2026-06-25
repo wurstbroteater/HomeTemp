@@ -101,17 +101,24 @@ class WetterComFetcher:
 
         Fetches the dynamic temperature data from Wetter.com link for a city/region
         """
-        display = Display(visible=False, size=(1600, 1200))
-        display.start()
-        options = Options()
-        options.add_argument('--disable-blink-features=AutomationControlled')
-        service = webdriver.ChromeService(executable_path='/usr/bin/chromedriver')
-        driver = webdriver.Chrome(service=service, options=options)
         timeout_s = 30
-        driver.set_page_load_timeout(timeout_s)
-        driver.implicitly_wait(timeout_s)
         out = None
+        display = Display(visible=False, size=(1600, 1200))
+
         try:
+            service = webdriver.ChromeService(executable_path='/usr/bin/chromedriver')
+            options = Options()
+            options.add_argument('--disable-blink-features=AutomationControlled')
+            driver = webdriver.Chrome(service=service, options=options)
+  
+            driver.set_page_load_timeout(timeout_s)
+            driver.implicitly_wait(timeout_s)
+        except (WebDriverException, Exception) as e:
+            log.error(f"An error occurred initializing the WebDriver: {str(e)}")
+            return None
+        
+        try:
+            display.start()
             driver.get(url)
             found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
             out = int(found_temp.text.replace('°C', ''))
@@ -137,10 +144,11 @@ class GoogleFetcher:
 
         url = "https://www.google.com/search?lr=lang_en&ie=UTF-8&q=weather%20" + location
         display = Display(visible=False, size=(1600, 1200))
-        display.start()
-        options = Options()
-        options.add_argument('--disable-blink-features=AutomationControlled')
+
         try:
+            display.start()
+            options = Options()
+            options.add_argument('--disable-blink-features=AutomationControlled')
             service = Service('/usr/bin/chromedriver')
             driver = webdriver.Chrome(service=service, options=options)
             driver.get(url)
