@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup as bs
 from pyvirtualdisplay import Display
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -104,30 +104,46 @@ class WetterComFetcher:
         timeout_s = 30
         out = None
         display = Display(visible=False, size=(1600, 1200))
+        driver = None
 
         try:
-            service = webdriver.ChromeService(executable_path='/usr/bin/chromedriver')
+            display.start()
+            service = Service('/usr/bin/chromedriver')
             options = Options()
             options.add_argument('--disable-blink-features=AutomationControlled')
+            options.add_argument('--headless=new')
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument('--disable-gpu')
+            # wetter.com now detects "automation browsers", so we need to set a user agent and disable automation flags
+            options.add_argument('--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.155 Safari/537.36')
+            options.add_experimental_option('excludeSwitches', ['enable-automation'])
+            options.add_experimental_option('useAutomationExtension', False)
             driver = webdriver.Chrome(service=service, options=options)
-  
             driver.set_page_load_timeout(timeout_s)
             driver.implicitly_wait(timeout_s)
         except (WebDriverException, Exception) as e:
             log.error(f"An error occurred initializing the WebDriver: {str(e)}")
+            if driver:
+                driver.quit()
+            display.stop()
             return None
         
         try:
-            display.start()
             driver.get(url)
-            found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
+            #found_temp = driver.find_element(By.XPATH, '//div[@class="delta rtw_temp"]')
+            found_temp = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.delta.rtw_temp")))
             out = int(found_temp.text.replace('°C', ''))
+        except TimeoutException:
+            log.error("Wetter.com dynamic temperature did not appear within 15 seconds.")
+            out = None
         except (WebDriverException, Exception) as e:
             log.error(f"An error occurred while dynamically fetching temperature data: {str(e)}")
             out = None
         finally:
+            if driver:
+                driver.quit()
             display.stop()
-            driver.quit()
 
         return out
 
