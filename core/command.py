@@ -57,10 +57,10 @@ class CommandRequest:
 
 class CommandService:
 
-    def __init__(self, allowed_commanders:List[str]):
+    def __init__(self, allowed_commanders:List[str], email_service:EmailDistributor):
         self.allowed_commanders = allowed_commanders
         self.parser = CommandParser()
-        self.email_service = EmailDistributor()
+        self.email_service = email_service
 
     def _get_emails_with_valid_prefix(self):
         found_email_with_command = []

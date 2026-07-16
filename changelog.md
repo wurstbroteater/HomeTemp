@@ -1,5 +1,9 @@
 # Project: HomeTemp
 
+## 0.7
+
+- Added data persistence to prometheus. Default persistence time is 370 days.
+- Fixed Incorrect Commanding creation when no distribution is configured.
 
 ## 0.6
 
