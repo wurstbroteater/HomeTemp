@@ -124,8 +124,11 @@ class WetterComFetcher:
             driver.implicitly_wait(timeout_s)
         except (WebDriverException, Exception) as e:
             log.error(f"An error occurred initializing the WebDriver: {str(e)}")
-            if driver:
-                driver.quit()
+            try:
+                if driver:
+                    driver.quit()
+            except TimeoutError as e:
+                log.error(f"An error occurred while quitting the WebDriver: {str(e)}")
             display.stop()
             return None
         
@@ -141,8 +144,11 @@ class WetterComFetcher:
             log.error(f"An error occurred while dynamically fetching temperature data: {str(e)}")
             out = None
         finally:
-            if driver:
-                driver.quit()
+            try:
+                if driver:
+                    driver.quit()
+            except TimeoutError as e:
+                log.error(f"An error occurred while quitting the WebDriver: {str(e)}")
             display.stop()
 
         return out
