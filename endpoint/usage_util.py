@@ -1,10 +1,10 @@
 from configparser import SectionProxy
 from datetime import datetime, timedelta
 from core.core_log import get_logger
-from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler, TIME_FORMAT
+from core.database import DwDDataHandler, GoogleDataHandler, WetterComHandler, TIME_FORMAT
 from core.monitoring import PrometheusManager
 from core.util import require_web_access
-from endpoint.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
+from endpoint.fetcher import DWDFetcher, GoogleFetcher, WetterComFetcher
 
 log = get_logger(__name__)
 
