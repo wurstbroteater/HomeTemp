@@ -29,6 +29,7 @@ picture via commanding.
 - Create timelapse video of a set of pictures
 - Grafana Web Frontend
 - MotionEye Live Camera Frontend
+- Ecowitt integration
 
 ## Default Ports
 The following list shows the which instance uses which ports as default:
