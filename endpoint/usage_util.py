@@ -108,18 +108,3 @@ def wettercom_fetch_and_save(database_auth: SectionProxy, wettercom_config: Sect
     handler.init_db_connection()
     handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
 
-
-@require_web_access
-def ulmde_fetch_and_save(database_auth: SectionProxy) -> None:
-    auth = database_auth
-    ulm_temp = UlmDeFetcher.get_data()
-    if ulm_temp is None:
-        log.error("[Ulm] Could not receive google data")
-    else:
-        c_time = datetime.now().strftime(TIME_FORMAT)
-        msg = f"[Ulm] Forecast is: {c_time} temp={ulm_temp}°C"
-        log.info(msg)
-        PrometheusManager().measure_outside_temperature(ulm_fetcher_id, ulm_temp)    
-        handler = UlmDeHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'ulmde_data')
-        handler.init_db_connection()
-        handler.insert_ulmde_data(timestamp=c_time, temp=ulm_temp)
