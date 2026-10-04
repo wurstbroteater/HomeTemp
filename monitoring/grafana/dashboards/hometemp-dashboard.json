@@ -5,8 +5,8 @@
     "name": "aefb2abs8f56oe",
     "namespace": "default",
     "uid": "ioTrwpWtNTAc4aVNWAvuXAYSSXX7taLdxtDM897BSwoX",
-    "resourceVersion": "1791130117304000",
-    "generation": 24,
+    "resourceVersion": "1791131839897996",
+    "generation": 26,
     "creationTimestamp": "2025-05-18T13:05:04Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "2"
@@ -17,13 +17,13 @@
       "grafana.app/managedBy": "classic-file-provisioning",
       "grafana.app/managerAllowsEdits": "true",
       "grafana.app/managerId": "HomeTemp",
-      "grafana.app/message": "add fetching log",
+      "grafana.app/message": "fix outside humidity",
       "grafana.app/saved-from-ui": "Grafana v13.0.1 (a100054f)",
       "grafana.app/sourceChecksum": "02e0ffcf5f691ddce10b3aae3b93c505",
       "grafana.app/sourcePath": "/var/lib/grafana/dashboards/hometemp-dashboard.json",
       "grafana.app/sourceTimestamp": "1791129070000",
       "grafana.app/updatedBy": "user:dem9ckb3bcs1sf",
-      "grafana.app/updatedTimestamp": "2026-10-04T16:08:37Z"
+      "grafana.app/updatedTimestamp": "2026-10-04T16:37:19Z"
     }
   },
   "spec": {
@@ -1032,6 +1032,146 @@
               },
               "fieldConfig": {
                 "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-23": {
+        "kind": "Panel",
+        "spec": {
+          "id": 23,
+          "title": "Outside Humidity",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "prometheus-ds"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "current_weather_humidity",
+                        "legendFormat": "{{fetcher_id}}",
+                        "range": true
+                      }
+                    },
+                    "refId": "HomeTemp",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "prometheus-ds"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "ecowitt_outdoor_humidity",
+                        "instant": false,
+                        "legendFormat": "{{__name__}}",
+                        "range": true
+                      }
+                    },
+                    "refId": "Ecowitt",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
                 "overrides": []
               }
             }
@@ -2172,7 +2312,7 @@
               "layout": {
                 "kind": "AutoGridLayout",
                 "spec": {
-                  "maxColumnCount": 3,
+                  "maxColumnCount": 2,
                   "columnWidthMode": "standard",
                   "rowHeightMode": "standard",
                   "items": [
@@ -2190,6 +2330,15 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
+                          "name": "panel-7"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "AutoGridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
                           "name": "panel-9"
                         }
                       }
@@ -2199,7 +2348,7 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-7"
+                          "name": "panel-23"
                         }
                       }
                     }
