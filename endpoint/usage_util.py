@@ -27,10 +27,10 @@ def dwd_fetch_and_save(database_auth: SectionProxy, dwd_config: SectionProxy) ->
         PrometheusManager().measure_outside_temperature(dwd_fetcher_id, c_temp)
         handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
         handler.init_db_connection()
-        if not handler.row_exists_with_timestamp(c_time.strftime(TIME_FORMAT)):
+        if not handler.row_exists_with_timestamp(c_time):
             handler.insert_dwd_data(timestamp=c_time.strftime(TIME_FORMAT), temp=c_temp, temp_dev=dev)
         else:
-            update_detected = handler.update_temp_by_timestamp(c_time.strftime(TIME_FORMAT), c_temp, dev)
+            update_detected = handler.update_temp_by_timestamp(c_time, c_temp, dev)
             log.info(f"[DWD] Temperature for timestamp already exists")
             # process DWD data update for all found temperatures found by timestamp
             if update_detected:

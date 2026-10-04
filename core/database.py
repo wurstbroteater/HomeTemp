@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import LiteralString
+from datetime import datetime
 
 import pandas as pd
 from sqlalchemy import create_engine, text, select, update, insert, inspect, exc, Table, Column, MetaData, Integer, \
@@ -89,7 +90,7 @@ class PostgresHandler(ABC):
         return False
 
     def _init_db(self):
-        db_url = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
+        db_url = f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}"
         try:
             return create_engine(db_url,
                                  pool_pre_ping=True,
@@ -227,7 +228,7 @@ class DwDDataHandler(PostgresHandler):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
 
-    def row_exists_with_timestamp(self, timestamp_value):
+    def row_exists_with_timestamp(self, timestamp_value: datetime) -> bool:
         try:
             table = Table(self.table, MetaData(), autoload_with=self.connection)
             with self.connection.connect() as con:
@@ -237,7 +238,7 @@ class DwDDataHandler(PostgresHandler):
 
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
-            return False
+        return False
 
     def insert_dwd_data(self, timestamp, temp, temp_dev):
         was_successful = self._insert_in_table({
@@ -249,7 +250,7 @@ class DwDDataHandler(PostgresHandler):
         if was_successful:
             log.info("DWD data inserted successfully.")
 
-    def get_temp_for_timestamp(self, timestamp_to_check):
+    def get_temp_for_timestamp(self, timestamp_to_check: datetime):
         """
         For every timestamp there is exactly one temperature value. This method returns the
         temperature value of a row identified by its timestamp or None.
@@ -271,7 +272,7 @@ class DwDDataHandler(PostgresHandler):
 
         return None
 
-    def update_temp_by_timestamp(self, timestamp_to_check, new_temp_value, new_temp_dev):
+    def update_temp_by_timestamp(self, timestamp_to_check:datetime, new_temp_value, new_temp_dev):
         """
         Search row based on timestamp and update their temp and temp_dev value only if 
         the old and new temp values or not equal.
@@ -321,7 +322,7 @@ class GoogleDataHandler(PostgresHandler):
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
 
-    def row_exists_with_timestamp(self, timestamp_value):
+    def row_exists_with_timestamp(self, timestamp_value:datetime):
         try:
             table = Table(self.table, MetaData(), autoload_with=self.connection)
             with self.connection.connect() as con:
@@ -331,7 +332,7 @@ class GoogleDataHandler(PostgresHandler):
 
         except exc.SQLAlchemyError as e:
             log.error("Problem with database " + str(e))
-            return False
+        return False
 
     def insert_google_data(self, timestamp, temp, humidity, precipitation, wind):
         was_successful = self._insert_in_table({
