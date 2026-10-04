@@ -10,6 +10,11 @@ local.file_match "hometemp" {
             "job"      = "hometemp",
             "instance" = "basetemp",
         },
+                {
+            "__path__" = "/var/log/hometemp/fetching.log",
+            "job"      = "hometemp",
+            "instance" = "fetchtemp",
+        },
     ]
 }
 
