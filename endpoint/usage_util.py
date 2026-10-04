@@ -80,6 +80,7 @@ def google_fetch_and_save(database_auth: SectionProxy, google_config: SectionPro
         msg = f"[Google] Forecast for {c_region} is: {c_time} temp={c_temp}°C hum={c_hum}% per={c_per}% wind={c_wind} km/h"
         log.info(msg)
         PrometheusManager().measure_outside_temperature(google_fetcher_id, c_temp)
+        PrometheusManager().measure_outside_humidity(google_fetcher_id, c_hum)
         handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
         handler.init_db_connection()
         handler.insert_google_data(timestamp=c_time, temp=c_temp, humidity=c_hum, precipitation=c_per, wind=c_wind)

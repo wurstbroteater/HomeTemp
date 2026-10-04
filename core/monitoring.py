@@ -51,6 +51,7 @@ class PrometheusManager:
     #Fetcher
     ALL_WEATHER_TIME:str = "weather_fetch_duration_seconds"
     All_OUTSIDE_TEMP:str = "current_weather_data"
+    ALL_OUTSIDE_HUM:str = "current_weather_humidity"
 
 
     # use singleton to avoid metric conflicts as prometheus expects global, singleton-like metrics. do not override __init__ !!
@@ -104,10 +105,11 @@ class PrometheusManager:
             # BaseTemp
             self.LATEST_PICTURE_TIMED: Info(self.LATEST_PICTURE_TIMED, "Filename of latest timed picture", self.label_instance),
             self.LATEST_PICTURE_COMMANDED: Info(self.LATEST_PICTURE_COMMANDED, "Filename of latest commandedf picture", self.label_instance),
-            # Weather
+            # FetchTemp
             # TODO: Summary instead of histogram
             self.ALL_WEATHER_TIME: Histogram(self.ALL_WEATHER_TIME, 'Time to fetch online weather data', self.label_instance),
-            self.All_OUTSIDE_TEMP: Gauge(self.All_OUTSIDE_TEMP, 'Current fetched weather data', self.label_fetcher_for_instance)
+            self.All_OUTSIDE_TEMP: Gauge(self.All_OUTSIDE_TEMP, 'Current fetched weather data', self.label_fetcher_for_instance),
+            self.ALL_OUTSIDE_HUM: Gauge(self.ALL_OUTSIDE_HUM, 'Current fetched weather humidity', self.label_fetcher_for_instance),
         }
 
    
@@ -180,6 +182,15 @@ class PrometheusManager:
                 m_temp.set(temperature)
         else:
             log.warning("Unable to publish measured outside temperature because at least one parameter is None")
+        return None
+
+    def measure_outside_humidity(self, fechter_id:str, humidity:float) -> None:
+        if fechter_id is not None and humidity is not None:
+            m_hum = self._get_fetcher_metric(self.All_OUTSIDE_HUM, fechter_id)
+            if m_hum is not None:
+                m_hum.set(humidity)
+        else:
+            log.warning("Unable to publish measured outside humidity because at least one parameter is None")
         return None
 
     def observe_fetch_duration(self, duration: float) -> None:
