@@ -120,6 +120,11 @@ def wettercom_config() -> SectionProxy:
     _validate_config(used_key)
     return config[used_key]
 
+def ecowitt_config() -> SectionProxy:
+    used_key = 'ecowitt'
+    _validate_config(used_key)
+    return config[used_key]
+
 
 def backend_config() -> SectionProxy:
     used_key = 'backend'

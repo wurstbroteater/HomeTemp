@@ -24,7 +24,6 @@ class PrometheusManager:
 
     #General
     UPTIME:str = "app_uptime_seconds"
-    META:str = "app_metadata"
     WEB_ACCESS:str = "web_accessible"
     USAGE_CPU:str = "cpu_usage_percent"
     USAGE_RAM:str = "ram_usage_percent"
@@ -34,6 +33,18 @@ class PrometheusManager:
     ROOM_TEMP:str = "temperature_room"
     ROOM_TEMP_READ_FAILS:str = "sensor_read_errors_total"
     ROOM_HUM:str ="humidity_room"
+    #Ecowitt
+    ECWOITT_INDOOR_TEMP:str = "ecowitt_indoor_temperature"
+    ECWOITT_INDOOR_HUM:str = "ecowitt_indoor_humidity"
+    ECOWITT_OUTDOOR_TEMP:str = "ecowitt_outdoor_temperature"
+    ECOWITT_OUTDOOR_HUM:str = "ecowitt_outdoor_humidity"
+    ECOWITT_OUTDOOR_FEEL_LIKE:str = "ecowitt_outdoor_feellike"
+    ECOWITT_OUTDOOR_DEW_POINT:str = "ecowitt_outdoor_dewpoint"
+    ECOWITT_OUTDOOR_RAIN_EVENT:str = "ecowitt_outdoor_rainevent"
+    ECOWITT_OUTDOOR_RAIN_RATE:str = "ecowitt_outdoor_rainrate"
+    ECOWITT_OUTDOOR_RAIN_LAST_24H:str = "ecowitt_outdoor_rainlast24h"
+    ECOWITT_RAIN_LAST_HOUR:str = "ecowitt_outdoor_rainlasthour"
+    ECOWITT_RAIN_DAILY:str = "ecowitt_outdoor_raindaily"
     #BaseTemp
     LATEST_PICTURE_TIMED:str = "latest_picture_timed"
     LATEST_PICTURE_COMMANDED:str = "latest_picture_commanded"
@@ -66,7 +77,7 @@ class PrometheusManager:
 
         self.metrics: Dict[str, MetricWrapperBase] = {
             # General
-            self.META: Info(self.META,"Application Metadata", self.label_instance),
+            # uptime should be timer
             self.UPTIME: Gauge(self.UPTIME, "Application uptime in seconds", self.label_instance),
             self.WEB_ACCESS: Gauge(self.WEB_ACCESS, "Web connectivity status (1 = up, 0 = down)", self.label_instance),
             self.USAGE_CPU: Gauge(self.USAGE_CPU, "Current CPU usage in percent", self.label_instance),
@@ -77,6 +88,19 @@ class PrometheusManager:
             self.ROOM_TEMP: Gauge(self.ROOM_TEMP, 'Current room temperature', self.label_instance),
             self.ROOM_TEMP_READ_FAILS: Counter(self.ROOM_TEMP_READ_FAILS, 'Number of failed sensor readings', self.label_instance),
             self.ROOM_HUM: Gauge(self.ROOM_HUM, 'Current room humidity', self.label_instance),
+            #Ecowitt
+            self.ECWOITT_INDOOR_TEMP: Gauge(self.ECWOITT_INDOOR_TEMP, "Ecowitt indoor temperature", self.label_instance),
+            self.ECWOITT_INDOOR_HUM: Gauge(self.ECWOITT_INDOOR_HUM, "Ecowitt indoor humidity", self.label_instance),
+            self.ECOWITT_OUTDOOR_TEMP: Gauge(self.ECOWITT_OUTDOOR_TEMP, "Ecowitt outdoor temperature", self.label_instance),
+            self.ECOWITT_OUTDOOR_HUM: Gauge(self.ECOWITT_OUTDOOR_HUM, "Ecowitt outdoor humidity", self.label_instance),
+            self.ECOWITT_OUTDOOR_FEEL_LIKE: Gauge(self.ECOWITT_OUTDOOR_FEEL_LIKE, "Ecowitt outdoor feel-like temperature", self.label_instance),
+            self.ECOWITT_OUTDOOR_DEW_POINT: Gauge(self.ECOWITT_OUTDOOR_DEW_POINT, "Ecowitt outdoor dew point", self.label_instance),
+            self.ECOWITT_OUTDOOR_RAIN_EVENT: Gauge(self.ECOWITT_OUTDOOR_RAIN_EVENT, "Ecowitt rain event", self.label_instance),
+            self.ECOWITT_OUTDOOR_RAIN_RATE: Gauge(self.ECOWITT_OUTDOOR_RAIN_RATE, "Ecowitt rain rate", self.label_instance),
+            self.ECOWITT_RAIN_DAILY: Gauge(self.ECOWITT_RAIN_DAILY, "Ecowitt rain daily", self.label_instance),
+            self.ECOWITT_OUTDOOR_RAIN_LAST_24H: Gauge(self.ECOWITT_OUTDOOR_RAIN_LAST_24H, "Ecowitt rain last 24h ", self.label_instance),
+            self.ECOWITT_RAIN_LAST_HOUR: Gauge(self.ECOWITT_RAIN_LAST_HOUR, "Ecowitt rain last hour", self.label_instance),
+
             # BaseTemp
             self.LATEST_PICTURE_TIMED: Info(self.LATEST_PICTURE_TIMED, "Filename of latest timed picture", self.label_instance),
             self.LATEST_PICTURE_COMMANDED: Info(self.LATEST_PICTURE_COMMANDED, "Filename of latest commandedf picture", self.label_instance),
@@ -120,14 +144,6 @@ class PrometheusManager:
         metric = self._get_instance_metric(self.LATEST_PICTURE_TIMED if timed else self.LATEST_PICTURE_COMMANDED)
         if metric is not None and latest_picture_name is not None:
             metric.info({"latest_picture_name": latest_picture_name})
-        return None
-
-    def publish_metdata(self, meta_data:dict) -> None:
-        metric = self._get_instance_metric(self.META)
-        if metric is not None and meta_data is not None:
-            #i = Info('my_build', 'Description of info')
-            #i.info({'version': '1.2.3', 'buildhost': 'foo@bar'})
-            metric.info(meta_data)
         return None
 
     def update_general_system_metrics(self) -> None:

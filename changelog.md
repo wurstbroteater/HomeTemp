@@ -4,6 +4,7 @@
 
 - Added data persistence to prometheus. Default persistence time is 370 days.
 - Fixed Incorrect Commanding creation when no distribution is configured.
+- Added Ecowitt support (tested with WS69 + WS3800 Dashboard)
 
 ## 0.6
 
