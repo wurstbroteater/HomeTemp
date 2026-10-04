@@ -5,8 +5,8 @@
     "name": "aefb2abs8f56de",
     "namespace": "default",
     "uid": "XyDyypBD5ZwkqXPfDnDrAm3lq8zuJa6gdycsohRIVV4X",
-    "resourceVersion": "1791104388268983",
-    "generation": 3,
+    "resourceVersion": "1791128112705016",
+    "generation": 4,
     "creationTimestamp": "2025-05-18T13:24:52Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "1"
@@ -17,13 +17,12 @@
       "grafana.app/managedBy": "classic-file-provisioning",
       "grafana.app/managerAllowsEdits": "true",
       "grafana.app/managerId": "HomeTemp",
-      "grafana.app/message": "restructed",
       "grafana.app/saved-from-ui": "Grafana v13.0.1 (a100054f)",
-      "grafana.app/sourceChecksum": "cad1750798db13f909f85e06480a003f",
-      "grafana.app/sourcePath": "basetemp-dashboard.json",
-      "grafana.app/sourceTimestamp": "1748536289",
+      "grafana.app/sourceChecksum": "f8f8cc147b045522f6fda624cd82fa8b",
+      "grafana.app/sourcePath": "/var/lib/grafana/dashboards/basetemp-dashboard.json",
+      "grafana.app/sourceTimestamp": "1791104483000",
       "grafana.app/updatedBy": "user:eem9e6edpzhfke",
-      "grafana.app/updatedTimestamp": "2026-10-04T08:59:48Z"
+      "grafana.app/updatedTimestamp": "2026-10-04T15:35:12Z"
     }
   },
   "spec": {
@@ -598,6 +597,70 @@
             }
           },
           "transparent": true
+        }
+      },
+      "panel-23": {
+        "kind": "Panel",
+        "spec": {
+          "id": 23,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "loki",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "eg082nzyeyakga"
+                      },
+                      "spec": {
+                        "direction": "backward",
+                        "editorMode": "builder",
+                        "expr": "{job=\"hometemp\", instance=\"basetemp\"} |= ``",
+                        "queryType": "range"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "logs",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "dedupStrategy": "none",
+                "enableInfiniteScrolling": false,
+                "enableLogDetails": true,
+                "prettifyLogMessage": true,
+                "showControls": false,
+                "showFieldSelector": false,
+                "showLevel": true,
+                "showTime": false,
+                "sortOrder": "Descending",
+                "timestampResolution": "ms",
+                "unwrappedColumns": false,
+                "wrapLogMessage": false
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
         }
       },
       "panel-3": {
@@ -1486,6 +1549,31 @@
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-6"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "title": "Logging",
+              "layout": {
+                "kind": "AutoGridLayout",
+                "spec": {
+                  "maxColumnCount": 3,
+                  "columnWidthMode": "standard",
+                  "rowHeightMode": "standard",
+                  "items": [
+                    {
+                      "kind": "AutoGridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-23"
                         }
                       }
                     }

@@ -6,6 +6,7 @@
 - Fixed Incorrect Commanding creation when no distribution is configured.
 - Added Ecowitt support (tested with WS69 + WS3800 Dashboard)
 - Updated requirements.txt to latest version
+- Added alloy + loki for logging displaying in Grafana
 
 ## 0.6
 
