@@ -12,12 +12,13 @@ from abc import ABC, abstractmethod
 from core.command import CommandService
 from core.monitoring import PrometheusManager
 from core.sensors.dht import SUPPORTED_SENSORS
+from core.sensors.ecowitt import get_ecowitt_data, EcowittEntry
 from core.core_configuration import database_config, core_config, distribution_config, get_sensor_type, basetemp_config, \
-    update_active_schedule, PICTURE_NAME_FORMAT, get_file_manager, FileManager
+    update_active_schedule, PICTURE_NAME_FORMAT, get_file_manager, FileManager, ecowitt_config
 
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 
-from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
+from core.distribute import EmailDistributor, send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
 from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, retrieve_temp_data, take_picture
 from core.util import require_web_access
@@ -41,10 +42,14 @@ class CoreSkeleton(ABC):
 
         distribution_cfg = distribution_config()
         allowed_commanders: Optional[List[str]] = None
-        if distribution_cfg is not None:
+        if distribution_cfg is None:
+            self.mail_service:Optional[EmailDistributor] = None
+        else:
             allowed_commanders = eval(distribution_cfg["allowed_commanders"])
+            self.mail_service:Optional[EmailDistributor] = EmailDistributor(distribution_cfg)
         
-        self.command_service: Optional[CommandService] = CommandService(allowed_commanders) if allowed_commanders is not None and len(allowed_commanders) > 0 else None
+        
+        self.command_service: Optional[CommandService] = CommandService(allowed_commanders, self.mail_service) if allowed_commanders is not None and len(allowed_commanders) > 0 else None
         self.fm: FileManager = get_file_manager()
         self.scheduler = schedule.Scheduler()
         self.prometheus_publisher:PrometheusManager = PrometheusManager()
@@ -52,7 +57,6 @@ class CoreSkeleton(ABC):
     ## --- Initialization Part ---
     def init(self) -> None:
         log.info(f"------------------- {self.instance_name} v{core_config()['version']} -------------------")
-        self.prometheus_publisher.publish_metdata(self.generate_metadata())
         self._init_components()
         log.info("finished initialization")
 
@@ -176,6 +180,7 @@ class HomeTemp(CoreSkeleton):
         self.scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db())
         self.scheduler.every().day.at("06:00").do(lambda: self.create_visualization_timed())
         self.scheduler.every(10).minutes.do(lambda: self.run_received_commands())
+        self.scheduler.every(1).minutes.do(lambda: self.collect_and_save_ecowitt())
         pass
 
     def _methods_after_init(self) -> None:
@@ -212,6 +217,48 @@ class HomeTemp(CoreSkeleton):
             wettercom_df=data[3].data,
             path_to_pdf=save_path,
             receiver=email_receiver)
+
+    def collect_and_save_ecowitt(self) -> None:
+        log.debug("Ecowitt start collecting data")
+        #[1:-1] cut of trailing and leading ' character
+        data:list[EcowittEntry] = get_ecowitt_data(ecowitt_config()["url"][1:-1])
+        for entry in data:
+            metric_name = self._ecowitt_metric_name(entry)
+            if metric_name:
+                metric = self.prometheus_publisher._get_instance_metric(metric_name)
+                if metric:
+                    log.debug(f"Ecowitt publish metric {metric_name} {entry.value}")
+                    metric.set(entry.value)
+        log.debug("Ecowitt data collection done")
+
+
+
+    def _ecowitt_metric_name(self, e:EcowittEntry) -> Optional[str]:
+        match e.id:
+            case "0x0D":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_RAIN_EVENT
+            case "0x02":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_TEMP
+            case "0x03":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_DEW_POINT
+            case "0x07":
+                return  self.prometheus_publisher.ECOWITT_OUTDOOR_HUM
+            case "0x7C":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_RAIN_LAST_24H
+            case "0x7D":
+                return self.prometheus_publisher.ECOWITT_RAIN_LAST_HOUR
+            case "0x10":
+                return self.prometheus_publisher.ECOWITT_RAIN_DAILY
+            case "0x0E":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_RAIN_RATE
+            case "3":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_FEEL_LIKE
+            case "intemp":
+                return self.prometheus_publisher.ECWOITT_INDOOR_TEMP
+            case "inhumi":
+                return self.prometheus_publisher.ECWOITT_INDOOR_HUM
+            case _ :
+                return None
 
 
 class BaseTemp(CoreSkeleton):

@@ -1,0 +1,49 @@
+local.file_match "hometemp" {
+    path_targets = [
+        {
+            "__path__" = "/var/log/hometemp/hometemp.log",
+            "job"      = "hometemp",
+            "instance" = "hometemp",
+        },
+        {
+            "__path__" = "/var/log/hometemp/basetemp.log",
+            "job"      = "hometemp",
+            "instance" = "basetemp",
+        },
+                {
+            "__path__" = "/var/log/hometemp/fetching.log",
+            "job"      = "hometemp",
+            "instance" = "fetchtemp",
+        },
+    ]
+}
+
+
+loki.source.file "hometemp" {
+    targets       = local.file_match.hometemp.targets
+    forward_to    = [loki.process.hometemp.receiver]
+    tail_from_end = true
+}
+
+
+loki.process "hometemp" {
+
+    stage.regex {
+        expression = "^(?P<level>DEBUG|INFO|WARNING|ERROR|CRITICAL):(?P<logger>[^:]+):(?P<message>.*)$"
+    }
+
+    stage.labels {
+        values = {
+            level = "",
+        }
+    }
+
+    forward_to = [loki.write.local.receiver]
+}
+
+
+loki.write "local" {
+    endpoint {
+        url = "http://loki:3100/loki/api/v1/push"
+    }
+}

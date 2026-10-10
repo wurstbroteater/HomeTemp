@@ -1,10 +1,10 @@
 from configparser import SectionProxy
 from datetime import datetime, timedelta
 from core.core_log import get_logger
-from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, WetterComHandler, TIME_FORMAT
+from core.database import DwDDataHandler, GoogleDataHandler, WetterComHandler, TIME_FORMAT
 from core.monitoring import PrometheusManager
 from core.util import require_web_access
-from endpoint.fetcher import DWDFetcher, GoogleFetcher, UlmDeFetcher, WetterComFetcher
+from endpoint.fetcher import DWDFetcher, GoogleFetcher, WetterComFetcher
 
 log = get_logger(__name__)
 
@@ -27,10 +27,10 @@ def dwd_fetch_and_save(database_auth: SectionProxy, dwd_config: SectionProxy) ->
         PrometheusManager().measure_outside_temperature(dwd_fetcher_id, c_temp)
         handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
         handler.init_db_connection()
-        if not handler.row_exists_with_timestamp(c_time.strftime(TIME_FORMAT)):
+        if not handler.row_exists_with_timestamp(c_time):
             handler.insert_dwd_data(timestamp=c_time.strftime(TIME_FORMAT), temp=c_temp, temp_dev=dev)
         else:
-            update_detected = handler.update_temp_by_timestamp(c_time.strftime(TIME_FORMAT), c_temp, dev)
+            update_detected = handler.update_temp_by_timestamp(c_time, c_temp, dev)
             log.info(f"[DWD] Temperature for timestamp already exists")
             # process DWD data update for all found temperatures found by timestamp
             if update_detected:
@@ -80,6 +80,7 @@ def google_fetch_and_save(database_auth: SectionProxy, google_config: SectionPro
         msg = f"[Google] Forecast for {c_region} is: {c_time} temp={c_temp}°C hum={c_hum}% per={c_per}% wind={c_wind} km/h"
         log.info(msg)
         PrometheusManager().measure_outside_temperature(google_fetcher_id, c_temp)
+        PrometheusManager().measure_outside_humidity(google_fetcher_id, c_hum)
         handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
         handler.init_db_connection()
         handler.insert_google_data(timestamp=c_time, temp=c_temp, humidity=c_hum, precipitation=c_per, wind=c_wind)
@@ -107,18 +108,3 @@ def wettercom_fetch_and_save(database_auth: SectionProxy, wettercom_config: Sect
     handler.init_db_connection()
     handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
 
-
-@require_web_access
-def ulmde_fetch_and_save(database_auth: SectionProxy) -> None:
-    auth = database_auth
-    ulm_temp = UlmDeFetcher.get_data()
-    if ulm_temp is None:
-        log.error("[Ulm] Could not receive google data")
-    else:
-        c_time = datetime.now().strftime(TIME_FORMAT)
-        msg = f"[Ulm] Forecast is: {c_time} temp={ulm_temp}°C"
-        log.info(msg)
-        PrometheusManager().measure_outside_temperature(ulm_fetcher_id, ulm_temp)    
-        handler = UlmDeHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'ulmde_data')
-        handler.init_db_connection()
-        handler.insert_ulmde_data(timestamp=c_time, temp=ulm_temp)

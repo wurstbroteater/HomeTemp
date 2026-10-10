@@ -1,4 +1,4 @@
-# Project: HomeTemp v0.6
+# Project: HomeTemp v0.7-Dev
 
 The original idea of `HomeTemp` was to automatically measure the temperature and humidity of a room and create plots
 visualizing the data. Currently supported temperature and humidity sensors are `AM2302`. `DHT11` and `DHT22` sensor,
@@ -29,6 +29,7 @@ picture via commanding.
 - Create timelapse video of a set of pictures
 - Grafana Web Frontend
 - MotionEye Live Camera Frontend
+- Ecowitt integration
 
 ## Default Ports
 The following list shows the which instance uses which ports as default:
@@ -69,17 +70,10 @@ For venv setup, use `--system-site-package` parameter. The following snippets cr
 python -m venv --system-site-packages .venv
 ```
 
-#### Install Python Dependencies
-
-It is recommended to install the dependencies via `requirements.txt`. Using the latest dependencies via modules names
-might cause problems.
+It is recommended to install the dependencies via `requirements.txt`.
 
 ```sh
-# Recommended
 pip install -r requirements.txt
-# or at own risk Module names
-pip install opencv-python pillow rpi-lgpio RPI.GPIO lgpio psycopg2 gpiozero docker seaborn SQLAlchemy requests selenium schedule pyvirtualdisplay bs4 jupyter_client jupyter_core
-
 ```
 
 ### Create config.ini

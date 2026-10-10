@@ -8,8 +8,7 @@ from core.usage_util import init_database
 from core.util import require_web_access
 from core.core_configuration import database_config, dwd_config, google_config, wettercom_config
 
-from endpoint.usage_util import ulmde_fetch_and_save, wettercom_fetch_and_save, google_fetch_and_save, \
-    dwd_fetch_and_save
+from endpoint.usage_util import wettercom_fetch_and_save, google_fetch_and_save, dwd_fetch_and_save
 
 log = get_logger(__name__)
 
@@ -51,7 +50,6 @@ class FetchTemp(CoreSkeleton):
     def collect_and_save_to_db(self) -> Optional[Tuple]:
         db_auth = database_config()
         start_time = time.time()
-        ulmde_fetch_and_save(db_auth)
         dwd_fetch_and_save(db_auth, dwd_config())
         google_fetch_and_save(db_auth, google_config())
         wettercom_fetch_and_save(db_auth, wettercom_config())
