@@ -1,6 +1,6 @@
 services:
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v3.15.0
     container_name: prometheus
     network_mode: host
     command:
@@ -12,7 +12,7 @@ services:
       - prometheus-data:/prometheus
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:13.2.3
     container_name: grafana
     network_mode: host
     volumes:
@@ -28,6 +28,25 @@ services:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - GF_SERVER_HTTP_ADDR=0.0.0.0 
       - GF_SERVER_HTTP_PORT=3000
+  
+      # Disable telemetry to stats.grafana.org
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      # Don't check GitHub/Grafana for new Grafana versions
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      # Don't check grafana.com for plugin updates
+      - GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
+      # Don't periodically download plugin signature public keys
+      - GF_PLUGINS_PUBLIC_KEY_RETRIEVAL_DISABLED=true
+      # Don't automatically download Grafana's suggested plugins
+      - GF_PLUGINS_PREINSTALL_DISABLED=true
+      # Don't allow plugins to be installed/updated from the Grafana UI
+      - GF_PLUGINS_PLUGIN_ADMIN_ENABLED=false
+      # Don't load the external Grafana news feed
+      - GF_NEWS_NEWS_FEED_ENABLED=false
+      # Don't request user avatars from gravatar.com
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      # Don't offer publishing snapshots to an external Grafana service
+      - GF_SNAPSHOTS_EXTERNAL_ENABLED=false
 
   loki:
     image: grafana/loki:3.7.0
@@ -42,7 +61,7 @@ services:
       - loki-data:/loki
 
   alloy:
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.20.1
     container_name: alloy
     restart: unless-stopped
     command:
