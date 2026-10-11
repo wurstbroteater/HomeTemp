@@ -54,11 +54,14 @@ class CoreSkeleton(ABC):
         self.scheduler = schedule.Scheduler()
         self.prometheus_publisher:PrometheusManager = PrometheusManager()
         self.use_database = database_configured()
+        # visualization and database are coupled by default implementation, therefore disable it when no database is used
+        self.use_visualization = self.use_database
 
     ## --- Initialization Part ---
     def init(self) -> None:
         log.info(f"------------------- {self.instance_name} v{core_config()['version']} -------------------")
         log.info(f"Database usage is {'enabled' if self.use_database else 'disabled'}")
+        log.info(f"Visualization usage is {'enabled' if self.use_visualization else 'disabled'}")
         self._init_components()
         log.info("finished initialization")
 
@@ -139,6 +142,9 @@ class CoreSkeleton(ABC):
         pass
 
     def _create_visualization(self, mode: str, email_receiver: Optional[str] = None) -> None:
+        if not self.use_visualization:
+            log.debug("Visualization skipped because database is disabled")
+            return None
         log.info(f"{mode}: Creating Measurement Data Visualization")
         plots, merge_subplots_for = self._get_visualization_data()
         save_path = self.fm.plot_file_name(mode.lower() == "timed")
