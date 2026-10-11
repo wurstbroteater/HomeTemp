@@ -83,7 +83,8 @@ def get_data_root() -> str:
 
 def database_config() -> Optional[SectionProxy]:
     used_key = 'db'
-    _validate_config(used_key)
+    if not _validate_config(used_key, False):
+            return None
     return config[used_key]
 
 def database_configured() -> bool:
