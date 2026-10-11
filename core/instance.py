@@ -12,14 +12,15 @@ from abc import ABC, abstractmethod
 from core.command import CommandService
 from core.monitoring import PrometheusManager
 from core.sensors.dht import SUPPORTED_SENSORS
+from core.sensors.ecowitt import get_ecowitt_data, EcowittEntry
 from core.core_configuration import database_config, core_config, distribution_config, get_sensor_type, basetemp_config, \
-    update_active_schedule, PICTURE_NAME_FORMAT, get_file_manager, FileManager
+    update_active_schedule, get_file_manager, FileManager, ecowitt_config, database_configured
 
 from core.database import DwDDataHandler, GoogleDataHandler, UlmDeHandler, SensorDataHandler, WetterComHandler
 
-from core.distribute import send_picture_email, send_visualization_email, send_heat_warning_email
+from core.distribute import EmailDistributor, send_picture_email, send_visualization_email, send_heat_warning_email
 from core.plotting import PlotData, SupportedDataFrames, draw_complete_summary
-from core.usage_util import init_database, get_data_for_plotting, retrieve_and_save_sensor_data, retrieve_temp_data, take_picture
+from core.usage_util import init_database, get_data_for_plotting, save_temp_data_to_db, retrieve_temp_data, take_picture
 from core.util import require_web_access
 
 log = get_logger(__name__)
@@ -41,18 +42,26 @@ class CoreSkeleton(ABC):
 
         distribution_cfg = distribution_config()
         allowed_commanders: Optional[List[str]] = None
-        if distribution_cfg is not None:
+        if distribution_cfg is None:
+            self.mail_service:Optional[EmailDistributor] = None
+        else:
             allowed_commanders = eval(distribution_cfg["allowed_commanders"])
+            self.mail_service:Optional[EmailDistributor] = EmailDistributor(distribution_cfg)
         
-        self.command_service: Optional[CommandService] = CommandService(allowed_commanders) if allowed_commanders is not None and len(allowed_commanders) > 0 else None
+        
+        self.command_service: Optional[CommandService] = CommandService(allowed_commanders, self.mail_service) if allowed_commanders is not None and len(allowed_commanders) > 0 else None
         self.fm: FileManager = get_file_manager()
         self.scheduler = schedule.Scheduler()
         self.prometheus_publisher:PrometheusManager = PrometheusManager()
+        self.use_database = database_configured()
+        # visualization and database are coupled by default implementation, therefore disable it when no database is used
+        self.use_visualization = self.use_database
 
     ## --- Initialization Part ---
     def init(self) -> None:
         log.info(f"------------------- {self.instance_name} v{core_config()['version']} -------------------")
-        self.prometheus_publisher.publish_metdata(self.generate_metadata())
+        log.info(f"Database usage is {'enabled' if self.use_database else 'disabled'}")
+        log.info(f"Visualization usage is {'enabled' if self.use_visualization else 'disabled'}")
         self._init_components()
         log.info("finished initialization")
 
@@ -80,7 +89,8 @@ class CoreSkeleton(ABC):
         return {"instance_name": self.instance_name, v:cfg[v], dp: cfg[dp], sp:cfg[sp], st:cfg[st], cmd_prefixes:cfg[cmd_prefixes]}
 
     def _init_components(self) -> None:
-        self._init_database()
+        if self.use_database:
+            self._init_database()
         self._add_commands()
         self._setup_scheduling()
 
@@ -96,7 +106,7 @@ class CoreSkeleton(ABC):
         pass
 
     def _methods_after_init(self) -> None:
-        self.collect_and_save_to_db()
+        self.collect_or_save_to_db()
 
     @require_web_access
     def run_received_commands(self) -> None:
@@ -132,6 +142,9 @@ class CoreSkeleton(ABC):
         pass
 
     def _create_visualization(self, mode: str, email_receiver: Optional[str] = None) -> None:
+        if not self.use_visualization:
+            log.debug("Visualization skipped because database is disabled")
+            return None
         log.info(f"{mode}: Creating Measurement Data Visualization")
         plots, merge_subplots_for = self._get_visualization_data()
         save_path = self.fm.plot_file_name(mode.lower() == "timed")
@@ -149,16 +162,19 @@ class CoreSkeleton(ABC):
         is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
         sensor_pin = int(core_config()["sensor_pin"])
         out = retrieve_temp_data(sensor_pin, is_dht11)
-        log.info("Done")
+
+        if out:
+            timestamp, cpu_temp, room_temp, humidity = out
+            log.info("[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
+                                                                                   humidity))
         return out
 
-    def collect_and_save_to_db(self) -> Optional[Tuple]:
-        is_dht11 = get_sensor_type(SUPPORTED_SENSORS) == SUPPORTED_SENSORS[0]
-        auth = database_config()
-        sensor_pin = int(core_config()["sensor_pin"])
-        out = retrieve_and_save_sensor_data(auth, sensor_pin, is_dht11)
-        log.info("Done")
-        return out
+    def collect_and_save_to_db(self) -> Optional[Tuple]: 
+        return save_temp_data_to_db(database_config(), self.collect_data())
+
+    def collect_or_save_to_db(self) -> Optional[Tuple]:
+        return self.collect_and_save_to_db() if self.use_database else self.collect_data()
+   
 
 
 class HomeTemp(CoreSkeleton):
@@ -173,11 +189,13 @@ class HomeTemp(CoreSkeleton):
         pass
 
     def _setup_scheduling(self) -> None:
-        self.scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db())
+        self.scheduler.every(10).minutes.do(lambda: self.collect_or_save_to_db())
         self.scheduler.every().day.at("06:00").do(lambda: self.create_visualization_timed())
         self.scheduler.every(10).minutes.do(lambda: self.run_received_commands())
+        self.scheduler.every(1).minutes.do(lambda: self.collect_and_save_ecowitt())
         pass
 
+    # overwrite
     def _methods_after_init(self) -> None:
         super()._methods_after_init()
         self.create_visualization_timed()
@@ -212,6 +230,48 @@ class HomeTemp(CoreSkeleton):
             wettercom_df=data[3].data,
             path_to_pdf=save_path,
             receiver=email_receiver)
+
+    def collect_and_save_ecowitt(self) -> None:
+        log.debug("Ecowitt start collecting data")
+        #[1:-1] cut of trailing and leading ' character
+        data:list[EcowittEntry] = get_ecowitt_data(ecowitt_config()["url"][1:-1])
+        for entry in data:
+            metric_name = self._ecowitt_metric_name(entry)
+            if metric_name:
+                metric = self.prometheus_publisher._get_instance_metric(metric_name)
+                if metric:
+                    log.debug(f"Ecowitt publish metric {metric_name} {entry.value}")
+                    metric.set(entry.value)
+        log.debug("Ecowitt data collection done")
+
+
+
+    def _ecowitt_metric_name(self, e:EcowittEntry) -> Optional[str]:
+        match e.id:
+            case "0x0D":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_RAIN_EVENT
+            case "0x02":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_TEMP
+            case "0x03":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_DEW_POINT
+            case "0x07":
+                return  self.prometheus_publisher.ECOWITT_OUTDOOR_HUM
+            case "0x7C":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_RAIN_LAST_24H
+            case "0x7D":
+                return self.prometheus_publisher.ECOWITT_RAIN_LAST_HOUR
+            case "0x10":
+                return self.prometheus_publisher.ECOWITT_RAIN_DAILY
+            case "0x0E":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_RAIN_RATE
+            case "3":
+                return self.prometheus_publisher.ECOWITT_OUTDOOR_FEEL_LIKE
+            case "intemp":
+                return self.prometheus_publisher.ECWOITT_INDOOR_TEMP
+            case "inhumi":
+                return self.prometheus_publisher.ECWOITT_INDOOR_HUM
+            case _ :
+                return None
 
 
 class BaseTemp(CoreSkeleton):
@@ -259,7 +319,7 @@ class BaseTemp(CoreSkeleton):
     def _get_new_schedule(self) -> schedule.Scheduler:
         new_scheduler = schedule.Scheduler()
         new_scheduler.every(10).minutes.do(lambda: self.run_received_commands()).tag(self.active_schedule)
-        new_scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db()).tag(self.active_schedule)
+        new_scheduler.every(10).minutes.do(lambda: self.collect_or_save_to_db()).tag(self.active_schedule)
         if self.active_schedule == 'common':
             new_scheduler.every().day.at("08:00").do(lambda: self.create_visualization_timed()).tag(
                 self.active_schedule)
@@ -308,6 +368,7 @@ class BaseTemp(CoreSkeleton):
         self.set_schedule(new_schedule)
         self._setup_scheduling()
 
+    # overwrite
     def _methods_after_init(self) -> None:
         super()._methods_after_init()
         self.create_visualization_timed()
@@ -341,7 +402,7 @@ class BaseTemp(CoreSkeleton):
         if take_picture(name, encoding=encoding):
             log.info("Command: Taking picture done")
             self.prometheus_publisher.publish_latest_picture_name(Path(f"{name}.{encoding}").name, False)
-            if commander is not None:
+            if commander is not None and self.use_database and self.use_visualization:
                 plots, _ = self._get_visualization_data()
                 sensor_data = plots[0].data
                 send_picture_email(picture_path=f"{name}.{encoding}", df=sensor_data, receiver=commander)
@@ -349,22 +410,31 @@ class BaseTemp(CoreSkeleton):
         else:
             log.info("Command: Taking picture was not successful")
 
-    def collect_and_save_to_db(self) -> Optional[Tuple]:
-        t = super().collect_and_save_to_db()
+    # overwrite
+    def collect_data(self) -> Optional[Tuple]:
+        t = super().collect_data()
         if t is None or not self.send_temperature_warning:
             return t
-
-        room_temp: float = float(t[2])
-        if self.max_heat is not None and room_temp > float(self.max_heat):
-            indicator, extremum = "above", self.max_heat
-        elif self.min_heat is not None and room_temp < float(self.min_heat):
-            indicator, extremum = "below", self.min_heat
-        else:
-            return t
-
-        log.warning(f"Sending heat warning because room temp is {indicator} {extremum}°C")
-        send_heat_warning_email(room_temp)
+        self._send_heat_warning(t[2])
         return t
+
+    def _send_heat_warning(self,room_temp:float) -> None:
+        try:
+            indicator, extremum = None, None
+            if self.max_heat is not None and room_temp >= float(self.max_heat):
+                indicator, extremum = "above", self.max_heat
+            elif self.min_heat is not None and room_temp <= float(self.min_heat):
+                indicator, extremum = "below", self.min_heat
+
+            if indicator is not None and extremum is not None:
+                log.warning(f"Sending heat warning because room temp is {indicator} {extremum}°C")
+                send_heat_warning_email(room_temp)
+        except ValueError:
+            log.warning(f"Invalid heat warning configuration: max_heat={self.max_heat}, min_heat={self.min_heat}")
+        
+        return None
+
+
 
 
 # ----------------------------------------------------------------------------------------------------------------

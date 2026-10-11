@@ -8,7 +8,6 @@ from core.sensors.dht import get_sensor_data
 from core.database import PostgresHandler, SensorDataHandler, TIME_FORMAT
 from core.plotting import SupportedDataFrames
 from core.sensors.camera import RpiCamController
-from core.virtualization import init_postgres_container
 from core.core_log import get_logger
 
 log = get_logger(__name__)
@@ -38,10 +37,6 @@ def init_database(handler_type: Type[PostgresHandler], database_auth: SectionPro
     Raises:
         SystemExit: If the database container fails to start or the database is not ready within the time limit.
     """
-
-    if not init_postgres_container(database_auth):
-        log.error("Postgres container startup error! Shutting down ...")
-        exit(1)
 
     handler: PostgresHandler = handler_type(database_auth['db_port'], database_auth['db_host'],
                                             database_auth['db_user'], database_auth['db_pw'], table_name)
@@ -81,24 +76,24 @@ def get_data_for_plotting(database_auth: SectionProxy, handler_type: Type[Postgr
     return transformer.prepare_data(data)
 
 def retrieve_temp_data(sensor_pin: int ,is_dht11_sensor: bool) ->  Optional[Tuple]:
-    return get_sensor_data(sensor_pin, is_dht11_sensor)
+    room_temp, humidity = get_sensor_data(sensor_pin, is_dht11_sensor)
+    if room_temp is None or humidity is None:
+        return None
+    return datetime.now().strftime(TIME_FORMAT), get_cpu_temperature(), room_temp, humidity
 
-def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin: int,
-                                  is_dht11_sensor: bool) -> Optional[Tuple]:
-    log.info("Start Measurement Data Collection")
+def save_temp_data_to_db(database_auth: SectionProxy,data: Optional[Tuple]) ->  Optional[Tuple]:
+
+    if data is None:
+        log.debug("No temp data to save to database")
+        return None
     handler = SensorDataHandler(database_auth['db_port'], database_auth['db_host'], database_auth['db_user'],
                                 database_auth['db_pw'], SupportedDataFrames.Main.table_name)
     handler.init_db_connection()
-    cpu_temp = get_cpu_temperature()
 
-    room_temp, humidity = retrieve_temp_data(sensor_pin, is_dht11_sensor)
-    timestamp = datetime.now().strftime(TIME_FORMAT)
-    if room_temp is not None and humidity is not None:
-        log.info("[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
-                                                                                       humidity))
+    timestamp, cpu_temp, room_temp, humidity = data
+    if timestamp is not None and cpu_temp is not None and room_temp is not None and humidity is not None:
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp,
                                             cpu_temp=cpu_temp)
         return timestamp, cpu_temp, room_temp, humidity
 
-    log.debug("There was an error in the data to retrieve!")
     return None

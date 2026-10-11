@@ -8,8 +8,7 @@ from core.usage_util import init_database
 from core.util import require_web_access
 from core.core_configuration import database_config, dwd_config, google_config, wettercom_config
 
-from endpoint.usage_util import ulmde_fetch_and_save, wettercom_fetch_and_save, google_fetch_and_save, \
-    dwd_fetch_and_save
+from endpoint.usage_util import wettercom_fetch_or_save, google_fetch_or_save, dwd_fetch_or_save
 
 log = get_logger(__name__)
 
@@ -26,7 +25,7 @@ class FetchTemp(CoreSkeleton):
         super().__init__(instance_name=instance_name, core_instance_validation=core_instance_validation)
         
     def _setup_scheduling(self) -> None:
-        self.scheduler.every(10).minutes.do(lambda: self.collect_and_save_to_db())
+        self.scheduler.every(10).minutes.do(lambda: self.collect_or_save_to_db())
 
     def _add_commands(self) -> None:
         pass
@@ -44,15 +43,23 @@ class FetchTemp(CoreSkeleton):
 
     # overwrite
     def _init_database(self):
-        init_database(UlmDeHandler, database_config(), SupportedDataFrames.ULM_DE.table_name)
+        if self.use_database:
+            init_database(UlmDeHandler, database_config(), SupportedDataFrames.ULM_DE.table_name)
 
     # overwrite
     @require_web_access
     def collect_and_save_to_db(self) -> Optional[Tuple]:
-        db_auth = database_config()
+        return self._collect_or_save()
+    
+    # overwrite
+    @require_web_access
+    def collect_data(self) -> Optional[Tuple]:
+        return self._collect_or_save()
+
+    def _collect_or_save(self) -> Optional[Tuple]:
+        db_auth = database_config() if self.use_database else None
         start_time = time.time()
-        ulmde_fetch_and_save(db_auth)
-        dwd_fetch_and_save(db_auth, dwd_config())
-        google_fetch_and_save(db_auth, google_config())
-        wettercom_fetch_and_save(db_auth, wettercom_config())
+        dwd_fetch_or_save(db_auth, dwd_config())
+        google_fetch_or_save(db_auth, google_config())
+        wettercom_fetch_or_save(db_auth, wettercom_config())
         self.prometheus_publisher.observe_fetch_duration(time.time() - start_time)
