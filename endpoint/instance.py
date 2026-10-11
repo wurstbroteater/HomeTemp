@@ -49,6 +49,14 @@ class FetchTemp(CoreSkeleton):
     # overwrite
     @require_web_access
     def collect_and_save_to_db(self) -> Optional[Tuple]:
+        return self._collect_or_save()
+    
+    # overwrite
+    @require_web_access
+    def collect_data(self) -> Optional[Tuple]:
+        return self._collect_or_save()
+
+    def _collect_or_save(self) -> Optional[Tuple]:
         db_auth = database_config() if self.use_database else None
         start_time = time.time()
         dwd_fetch_or_save(db_auth, dwd_config())
