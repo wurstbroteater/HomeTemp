@@ -6,7 +6,6 @@ import psycopg
 import RPi.GPIO
 import gpiozero
 import PIL
-import docker
 import schedule
 import seaborn
 import selenium
