@@ -207,6 +207,12 @@ def _translate_fields(fields: list[dict], mapping: dict[str, dict[str,str]]) -> 
             continue
 
         field_info = mapping.get(field_id)
+
+        if field_info is None:
+            log.warning("Ecowitt field without mapping: %s", field)
+            unknown.append(field)
+            continue
+        
         name = field_info["name"]
 
         if name is None:
