@@ -405,14 +405,6 @@ class BaseTemp(CoreSkeleton):
             log.info("Command: Taking picture was not successful")
 
     # overwrite
-    def collect_and_save_to_db(self) -> Optional[Tuple]:
-        t = super().collect_and_save_to_db()
-        if t is None or not self.send_temperature_warning:
-            return t
-        self._send_heat_warning(t[2])
-        return t
-
-    # overwrite
     def collect_data(self) -> Optional[Tuple]:
         t = super().collect_data()
         if t is None or not self.send_temperature_warning:
