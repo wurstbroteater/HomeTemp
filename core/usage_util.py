@@ -1,5 +1,4 @@
 from datetime import datetime
-from dataclasses import dataclass
 import time
 import pandas as pd
 from typing import Optional, Tuple, Type
@@ -9,7 +8,6 @@ from core.sensors.dht import get_sensor_data
 from core.database import PostgresHandler, SensorDataHandler, TIME_FORMAT
 from core.plotting import SupportedDataFrames
 from core.sensors.camera import RpiCamController
-from core.virtualization import init_postgres_container
 from core.core_log import get_logger
 
 log = get_logger(__name__)
@@ -39,10 +37,6 @@ def init_database(handler_type: Type[PostgresHandler], database_auth: SectionPro
     Raises:
         SystemExit: If the database container fails to start or the database is not ready within the time limit.
     """
-
-    if not init_postgres_container(database_auth):
-        log.error("Postgres container startup error! Shutting down ...")
-        exit(1)
 
     handler: PostgresHandler = handler_type(database_auth['db_port'], database_auth['db_host'],
                                             database_auth['db_user'], database_auth['db_pw'], table_name)

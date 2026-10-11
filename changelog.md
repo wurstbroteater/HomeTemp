@@ -3,11 +3,16 @@
 ## 0.7
 
 - Added data persistence to prometheus. Default persistence time is 370 days.
+- Added Ecowitt support. Currently tested with WS69 + WS3800 Dashboard.
+- Reworked frontend
+  - Pinned container to specific versions
+  - Restructred and organized all dashboards
+  - Added alloy + loki for logging displaying in Grafana
+- **BREAKING CHANGE**: Updated requirements.txt to latest version and removed unnecessary/unused dependencies.
+- **BREAKING CHANGE**: Database usage is now optional (for disabling: either delete the whole db section from ini or set flag to false)
+- **BREAKING CHANGE**: Visualization depends on the database configuration. No database means no visualization
+- **BREAKING CHANGE**: Removed `virtualization.py` and python docker dependency. Database is now started via `start.sh`.
 - Fixed Incorrect Commanding creation when no distribution is configured.
-- Added Ecowitt support (tested with WS69 + WS3800 Dashboard)
-- Updated requirements.txt to latest version
-- Added alloy + loki for logging displaying in Grafana
-- Database usage is now optional (for disabling: either delete the whole db section from ini or set flag to false)
 
 ## 0.6
 
