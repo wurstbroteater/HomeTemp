@@ -1,4 +1,5 @@
 from datetime import datetime
+from dataclasses import dataclass
 import time
 import pandas as pd
 from typing import Optional, Tuple, Type
@@ -81,24 +82,22 @@ def get_data_for_plotting(database_auth: SectionProxy, handler_type: Type[Postgr
     return transformer.prepare_data(data)
 
 def retrieve_temp_data(sensor_pin: int ,is_dht11_sensor: bool) ->  Optional[Tuple]:
-    return get_sensor_data(sensor_pin, is_dht11_sensor)
+    room_temp, humidity = get_sensor_data(sensor_pin, is_dht11_sensor)
+    return datetime.now().strftime(TIME_FORMAT), get_cpu_temperature(), room_temp, humidity
 
-def retrieve_and_save_sensor_data(database_auth: SectionProxy, sensor_pin: int,
-                                  is_dht11_sensor: bool) -> Optional[Tuple]:
-    log.info("Start Measurement Data Collection")
+def save_temp_data_to_db(database_auth: SectionProxy,data: Optional[Tuple]) ->  Optional[Tuple]:
+
+    if data is None:
+        log.warning("No temp data to save to database")
+        return None
     handler = SensorDataHandler(database_auth['db_port'], database_auth['db_host'], database_auth['db_user'],
                                 database_auth['db_pw'], SupportedDataFrames.Main.table_name)
     handler.init_db_connection()
-    cpu_temp = get_cpu_temperature()
 
-    room_temp, humidity = retrieve_temp_data(sensor_pin, is_dht11_sensor)
-    timestamp = datetime.now().strftime(TIME_FORMAT)
-    if room_temp is not None and humidity is not None:
-        log.info("[Measurement {0}] CPU={1:f}*C, Room={2:f}*C, Humidity={3:f}%".format(timestamp, cpu_temp, room_temp,
-                                                                                       humidity))
+    timestamp, cpu_temp, room_temp, humidity = data
+    if timestamp is not None and cpu_temp is not None and room_temp is not None and humidity is not None:
         handler.insert_measurements_into_db(timestamp=timestamp, humidity=humidity, room_temp=room_temp,
                                             cpu_temp=cpu_temp)
         return timestamp, cpu_temp, room_temp, humidity
 
-    log.debug("There was an error in the data to retrieve!")
     return None

@@ -7,6 +7,7 @@
 - Added Ecowitt support (tested with WS69 + WS3800 Dashboard)
 - Updated requirements.txt to latest version
 - Added alloy + loki for logging displaying in Grafana
+- Database usage is now optional (either delete whole db section from ini or set flag)
 
 ## 0.6
 

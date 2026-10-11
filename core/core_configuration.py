@@ -81,10 +81,18 @@ def get_data_root() -> str:
     return core_config()['data_path'].lower().strip()
 
 
-def database_config() -> SectionProxy:
+def database_config() -> Optional[SectionProxy]:
     used_key = 'db'
     _validate_config(used_key)
     return config[used_key]
+
+def database_configured() -> bool:
+    """
+    Returns true if the database enable flag is set to true or absent.
+    Returns false if enable flag is set to false or the db section in the config.ini is absent.
+    """
+    cfg = database_config()
+    return False if cfg is None else cfg.getboolean('enabled', fallback=True)
 
 
 def distribution_config() -> Optional[SectionProxy]:

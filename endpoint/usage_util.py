@@ -1,5 +1,6 @@
 from configparser import SectionProxy
 from datetime import datetime, timedelta
+from typing import Optional
 from core.core_log import get_logger
 from core.database import DwDDataHandler, GoogleDataHandler, WetterComHandler, TIME_FORMAT
 from core.monitoring import PrometheusManager
@@ -16,15 +17,18 @@ wettercom_dyn_fetcher_id = "wettercom_dyn_fetcher"
 ulm_fetcher_id = "ulm_fetcher"
 
 @require_web_access
-def dwd_fetch_and_save(database_auth: SectionProxy, dwd_config: SectionProxy) -> None:
-    auth = database_auth
+def dwd_fetch_or_save(database_auth: Optional[SectionProxy], dwd_config: SectionProxy) -> None:
     fetcher = DWDFetcher(dwd_config["station"])
     c_time, c_temp, dev = fetcher.get_dwd_data()
     if c_time is None or c_temp is None or dev is None:
         log.error(f"[DWD] Could not receive DWD data")
-    else:
-        log.info(f"[DWD] Forecast for Ulm is: {c_time.strftime(TIME_FORMAT)} temp={c_temp}°C dev={dev}")
-        PrometheusManager().measure_outside_temperature(dwd_fetcher_id, c_temp)
+        return None
+    
+    log.info(f"[DWD] Forecast for Ulm is: {c_time.strftime(TIME_FORMAT)} temp={c_temp}°C dev={dev}")
+    PrometheusManager().measure_outside_temperature(dwd_fetcher_id, c_temp)
+
+    if database_auth is not None:
+        auth = database_auth
         handler = DwDDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'dwd_data')
         handler.init_db_connection()
         if not handler.row_exists_with_timestamp(c_time):
@@ -53,41 +57,44 @@ def dwd_fetch_and_save(database_auth: SectionProxy, dwd_config: SectionProxy) ->
                                                     new_dev)
                         elif old_temp != new_temp:
                             handler.update_temp_by_timestamp(timestamp_to_update.strftime(TIME_FORMAT),
-                                                             new_temp,
-                                                             new_dev)
+                                                            new_temp,
+                                                            new_dev)
                     else:
                         log.warning(
                             "[DWD] Reached sanity threshold for temp updates at " + timestamp_to_update.strftime(
                                 TIME_FORMAT) + f" new: {new_temp} {new_dev}")
                         break
                     timestamp_to_update -= time_diff
+    return None
 
 
 @require_web_access
-def google_fetch_and_save(database_auth: SectionProxy, google_config: SectionProxy) -> None:
-    auth = database_auth
+def google_fetch_or_save(database_auth: Optional[SectionProxy], google_config: SectionProxy) -> None:
     fetcher = GoogleFetcher()
     google_data = fetcher.get_weather_data(google_config["location"])
     if google_data is None:
         log.error("[Google] Could not receive google data")
-    else:
-        c_time = datetime.now().strftime(TIME_FORMAT)
-        c_temp = google_data["temp_now"]
-        c_per = google_data["precipitation"]
-        c_hum = google_data["humidity"]
-        c_wind = google_data["wind"]
-        c_region = google_data["region"]
-        msg = f"[Google] Forecast for {c_region} is: {c_time} temp={c_temp}°C hum={c_hum}% per={c_per}% wind={c_wind} km/h"
-        log.info(msg)
-        PrometheusManager().measure_outside_temperature(google_fetcher_id, c_temp)
-        PrometheusManager().measure_outside_humidity(google_fetcher_id, c_hum)
+        return None
+
+    c_time = datetime.now().strftime(TIME_FORMAT)
+    c_temp = google_data["temp_now"]
+    c_per = google_data["precipitation"]
+    c_hum = google_data["humidity"]
+    c_wind = google_data["wind"]
+    c_region = google_data["region"]
+    msg = f"[Google] Forecast for {c_region} is: {c_time} temp={c_temp}°C hum={c_hum}% per={c_per}% wind={c_wind} km/h"
+    log.info(msg)
+    PrometheusManager().measure_outside_temperature(google_fetcher_id, c_temp)
+    PrometheusManager().measure_outside_humidity(google_fetcher_id, c_hum)
+    if database_auth is not None:
+        auth = database_auth
         handler = GoogleDataHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'google_data')
         handler.init_db_connection()
         handler.insert_google_data(timestamp=c_time, temp=c_temp, humidity=c_hum, precipitation=c_per, wind=c_wind)
 
 
 @require_web_access
-def wettercom_fetch_and_save(database_auth: SectionProxy, wettercom_config: SectionProxy) -> None:
+def wettercom_fetch_or_save(database_auth: Optional[SectionProxy], wettercom_config: SectionProxy) -> None:
     # dyn is allowed to be null in database
     wettercom_temp_static = WetterComFetcher().get_data_static(wettercom_config["url"][1:-1])
     if wettercom_temp_static is None:
@@ -103,8 +110,8 @@ def wettercom_fetch_and_save(database_auth: SectionProxy, wettercom_config: Sect
     metric_publisher.measure_outside_temperature(wettercom_stat_fetcher_id, wettercom_temp_static)    
     if wettercom_temp_dyn is not None:
         metric_publisher.measure_outside_temperature(wettercom_dyn_fetcher_id, wettercom_temp_dyn)  
-    auth = database_auth
-    handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
-    handler.init_db_connection()
-    handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
-
+    if database_auth is not None:
+        auth = database_auth
+        handler = WetterComHandler(auth['db_port'], auth['db_host'], auth['db_user'], auth['db_pw'], 'wettercom_data')
+        handler.init_db_connection()
+        handler.insert_wettercom_data(timestamp=c_time, temp_stat=wettercom_temp_static, temp_dyn=wettercom_temp_dyn)
