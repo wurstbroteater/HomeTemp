@@ -83,6 +83,8 @@ def get_data_for_plotting(database_auth: SectionProxy, handler_type: Type[Postgr
 
 def retrieve_temp_data(sensor_pin: int ,is_dht11_sensor: bool) ->  Optional[Tuple]:
     room_temp, humidity = get_sensor_data(sensor_pin, is_dht11_sensor)
+    if room_temp is None or humidity is None:
+        return None
     return datetime.now().strftime(TIME_FORMAT), get_cpu_temperature(), room_temp, humidity
 
 def save_temp_data_to_db(database_auth: SectionProxy,data: Optional[Tuple]) ->  Optional[Tuple]:
