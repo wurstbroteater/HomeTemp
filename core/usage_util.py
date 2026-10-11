@@ -84,7 +84,7 @@ def retrieve_temp_data(sensor_pin: int ,is_dht11_sensor: bool) ->  Optional[Tupl
 def save_temp_data_to_db(database_auth: SectionProxy,data: Optional[Tuple]) ->  Optional[Tuple]:
 
     if data is None:
-        log.warning("No temp data to save to database")
+        log.debug("No temp data to save to database")
         return None
     handler = SensorDataHandler(database_auth['db_port'], database_auth['db_host'], database_auth['db_user'],
                                 database_auth['db_pw'], SupportedDataFrames.Main.table_name)
