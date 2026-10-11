@@ -402,7 +402,7 @@ class BaseTemp(CoreSkeleton):
         if take_picture(name, encoding=encoding):
             log.info("Command: Taking picture done")
             self.prometheus_publisher.publish_latest_picture_name(Path(f"{name}.{encoding}").name, False)
-            if commander is not None:
+            if commander is not None and self.use_database and self.use_visualization:
                 plots, _ = self._get_visualization_data()
                 sensor_data = plots[0].data
                 send_picture_email(picture_path=f"{name}.{encoding}", df=sensor_data, receiver=commander)
