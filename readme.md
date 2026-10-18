@@ -7,15 +7,6 @@ The fork `BaseTemp` was created to periodically measure and save the temperature
 takes pictures using a `5MP Raspberry Pi camera module` with an OV5647 sensor and is able to take and send a live
 picture via commanding.
 
-## Requirements
-
-- screen
-- Docker
-- libpq-dev
-- xvfb
-- Python >= 3.9
-- Everything in `requirements.txt` for pip
-
 ## Current Features
 
 - Initializing Docker container for Postgres database or reuse existing
@@ -31,10 +22,20 @@ picture via commanding.
 - MotionEye Live Camera Frontend
 - Ecowitt integration
 
-## Default Ports
-The following list shows the which instance uses which ports as default:
+## Requirements
 
-- HomeTemp/BaseTemp: 3000 Grafana Web Frontend
+- screen
+- Docker
+- libpq-dev
+- xvfb
+- Python >= 3.9
+- Everything in `requirements.txt` for pip
+
+## Default Ports
+
+The following list shows which instance uses which ports as default:
+
+- General Grafana Web Frontend: 3000
 - FetchTemp: 8001 Prometheus
 - HomeTemp: 8002 Prometheus
 - BaseTemp: 8003 Prometheus
@@ -49,11 +50,11 @@ The following steps needs to be performed once to assure correct driver setup.
 
 ### Install Dependencies
 
-First install teh system dependencies, then create the virtual environment for python.
+First install the system dependencies, then create the virtual environment for python.
 
 #### Install System Dependencies
 
-Install **docker**, e.g., as described [here for raspberry-pi](https://docs.docker.com/engine/install/raspberry-pi-os/).
+Install **docker**, e.g., as described [here for raspberry-pi](https://docs.docker.com/engine/install/debian/), tested with raspberry pi 5 and full 64bit pi OS.
 
 ```sh
 sudo apt update
@@ -101,10 +102,7 @@ On a raspberry pi, install chromium driver with the following command and set pe
 
 ```sh
 sudo apt-get install chromium-chromedriver
-sudo chmod -R 755 /usr/lib/chromium-browser
-# or if not existing
 sudo chmod -R 755 /usr/bin/chromedriver
-
 ```
 
 ### Firewall Configuration
