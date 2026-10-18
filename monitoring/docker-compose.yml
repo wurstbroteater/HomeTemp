@@ -68,13 +68,13 @@ services:
       - run
       - --storage.path=/var/lib/alloy/data
       - --server.http.listen-addr=0.0.0.0:32000
+      - --disable-reporting
       - /etc/alloy/config.alloy
     ports:
       - "32000:32000"
     volumes:
-      # Alloy configuration
       - ./config.alloy:/etc/alloy/config.alloy:ro
-      # mount project as read-only to allow Alloy to read logs from it
+      # Read log files from
       - ./../.:/var/log/hometemp:ro
       # Remember log positions
       - alloy-data:/var/lib/alloy/data
