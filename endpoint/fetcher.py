@@ -261,6 +261,9 @@ class DWDFetcher(Fetcher):
 
     def _handle_ok_status_code(self, response):
         json_res = super()._handle_ok_status_code(response)
+        if len(json_res) == 0 or str(self.station_id) not in json_res:
+            log.warning(f"DWD station {self.station_id} not found in response.")
+            return {}
         self.data = json_res[str(self.station_id)]["forecast1"]
         return self.data
 
@@ -292,12 +295,16 @@ class DWDFetcher(Fetcher):
         if trigger_new_fetch:
             self.clear_cached_data()
 
-        if self.data is None:
+        if self.data is None or len(self.data) == 0:
             log.info("Fetching new data")
             self.data = self._fetch_data()
             if self.data is None:
                 # fetching data was not possible, abort
                 return None, None, None
+
+        if "temperature" not in self.data:
+            log.error("Error: 'temperature' key not found in fetched data")
+            return None, None, None
 
         temp_values = self.data["temperature"]
         # observation: temperatureStd is 0 for unlikely temperatures such as 3241.6 °C
