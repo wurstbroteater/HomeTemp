@@ -270,6 +270,16 @@ class HomeTemp(CoreSkeleton):
                 return self.prometheus_publisher.ECWOITT_INDOOR_TEMP
             case "inhumi":
                 return self.prometheus_publisher.ECWOITT_INDOOR_HUM
+            case "0x04":
+                return self.prometheus_publisher.ECOWITT_WIND_CHILL
+            case "0x0B":
+                return self.prometheus_publisher.ECOWITT_WIND_SPEED
+            case "0x0A":
+                return self.prometheus_publisher.ECOWITT_WIND_DIRECTION
+            case "0x0C":
+                return self.prometheus_publisher.ECOWITT_WIND_GUST_SPEED
+            case "0x19":
+                return self.prometheus_publisher.ECOWITT_WIND_DAY_MAX_WIND
             case _ :
                 return None
 

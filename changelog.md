@@ -1,5 +1,9 @@
 # Project: HomeTemp
 
+## 0.8
+
+- Added publishing of Ecowitt wind data
+
 ## 0.7
 
 - Added data persistence to prometheus. Default persistence time is 370 days.

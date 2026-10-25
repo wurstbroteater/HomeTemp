@@ -45,6 +45,11 @@ class PrometheusManager:
     ECOWITT_OUTDOOR_RAIN_LAST_24H:str = "ecowitt_outdoor_rainlast24h"
     ECOWITT_RAIN_LAST_HOUR:str = "ecowitt_outdoor_rainlasthour"
     ECOWITT_RAIN_DAILY:str = "ecowitt_outdoor_raindaily"
+    ECOWITT_WIND_SPEED:str = "ecowitt_outdoor_windspeed"
+    ECOWITT_WIND_CHILL:str = "ecowitt_outdoor_windchill"
+    ECOWITT_WIND_DIRECTION:str = "ecowitt_outdoor_winddirection"
+    ECOWITT_WIND_GUST_SPEED:str = "ecowitt_outdoor_windgustspeed"
+    ECOWITT_WIND_DAY_MAX_WIND:str = "ecowitt_outdoor_winddaymax"
     #BaseTemp
     LATEST_PICTURE_TIMED:str = "latest_picture_timed"
     LATEST_PICTURE_COMMANDED:str = "latest_picture_commanded"
@@ -89,7 +94,7 @@ class PrometheusManager:
             self.ROOM_TEMP: Gauge(self.ROOM_TEMP, 'Current room temperature', self.label_instance),
             self.ROOM_TEMP_READ_FAILS: Counter(self.ROOM_TEMP_READ_FAILS, 'Number of failed sensor readings', self.label_instance),
             self.ROOM_HUM: Gauge(self.ROOM_HUM, 'Current room humidity', self.label_instance),
-            #Ecowitt
+            # Ecowitt
             self.ECWOITT_INDOOR_TEMP: Gauge(self.ECWOITT_INDOOR_TEMP, "Ecowitt indoor temperature", self.label_instance),
             self.ECWOITT_INDOOR_HUM: Gauge(self.ECWOITT_INDOOR_HUM, "Ecowitt indoor humidity", self.label_instance),
             self.ECOWITT_OUTDOOR_TEMP: Gauge(self.ECOWITT_OUTDOOR_TEMP, "Ecowitt outdoor temperature", self.label_instance),
@@ -101,7 +106,11 @@ class PrometheusManager:
             self.ECOWITT_RAIN_DAILY: Gauge(self.ECOWITT_RAIN_DAILY, "Ecowitt rain daily", self.label_instance),
             self.ECOWITT_OUTDOOR_RAIN_LAST_24H: Gauge(self.ECOWITT_OUTDOOR_RAIN_LAST_24H, "Ecowitt rain last 24h ", self.label_instance),
             self.ECOWITT_RAIN_LAST_HOUR: Gauge(self.ECOWITT_RAIN_LAST_HOUR, "Ecowitt rain last hour", self.label_instance),
-
+            self.ECOWITT_WIND_SPEED: Gauge(self.ECOWITT_WIND_SPEED, "Ecowitt wind speed", self.label_instance),
+            self.ECOWITT_WIND_CHILL: Gauge(self.ECOWITT_WIND_CHILL, "Ecowitt wind chill", self.label_instance),
+            self.ECOWITT_WIND_DIRECTION: Gauge(self.ECOWITT_WIND_DIRECTION, "Ecowitt wind direction", self.label_instance),
+            self.ECOWITT_WIND_GUST_SPEED: Gauge(self.ECOWITT_WIND_GUST_SPEED, "Ecowitt wind gust speed", self.label_instance),
+            self.ECOWITT_WIND_DAY_MAX_WIND: Gauge(self.ECOWITT_WIND_DAY_MAX_WIND, "Ecowitt daily max wind speed", self.label_instance),
             # BaseTemp
             self.LATEST_PICTURE_TIMED: Info(self.LATEST_PICTURE_TIMED, "Filename of latest timed picture", self.label_instance),
             self.LATEST_PICTURE_COMMANDED: Info(self.LATEST_PICTURE_COMMANDED, "Filename of latest commandedf picture", self.label_instance),

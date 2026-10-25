@@ -131,8 +131,6 @@ docker exec -it postgres-db bash -c "PGPASSWORD='<DB_PASSWORD>' psql -U <DB_USER
 docker exec -t postgres-db sh -c 'PGPASSWORD=<DB_PASSWORD> pg_dump -U <DB_USER> <DB_NAME>' > backup.sql
 
 # Import
-# start container
-docker cp backup.sql postgres-db:/backup.sql
 docker exec -i postgres-db sh -c 'PGPASSWORD=<DB_PASSWORD> psql -U <DB_USER> -d <DB_NAME>' < backup.sql
 ```
 
