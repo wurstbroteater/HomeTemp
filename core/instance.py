@@ -267,9 +267,9 @@ class HomeTemp(CoreSkeleton):
             case "3":
                 return self.prometheus_publisher.ECOWITT_OUTDOOR_FEEL_LIKE
             case "intemp":
-                return self.prometheus_publisher.ECWOITT_INDOOR_TEMP
+                return self.prometheus_publisher.ECOWITT_INDOOR_TEMP
             case "inhumi":
-                return self.prometheus_publisher.ECWOITT_INDOOR_HUM
+                return self.prometheus_publisher.ECOWITT_INDOOR_HUM
             case "0x04":
                 return self.prometheus_publisher.ECOWITT_WIND_CHILL
             case "0x0B":

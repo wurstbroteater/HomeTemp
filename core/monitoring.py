@@ -34,8 +34,8 @@ class PrometheusManager:
     ROOM_TEMP_READ_FAILS:str = "sensor_read_errors_total"
     ROOM_HUM:str ="humidity_room"
     #Ecowitt
-    ECWOITT_INDOOR_TEMP:str = "ecowitt_indoor_temperature"
-    ECWOITT_INDOOR_HUM:str = "ecowitt_indoor_humidity"
+    ECOWITT_INDOOR_TEMP:str = "ecowitt_indoor_temperature"
+    ECOWITT_INDOOR_HUM:str = "ecowitt_indoor_humidity"
     ECOWITT_OUTDOOR_TEMP:str = "ecowitt_outdoor_temperature"
     ECOWITT_OUTDOOR_HUM:str = "ecowitt_outdoor_humidity"
     ECOWITT_OUTDOOR_FEEL_LIKE:str = "ecowitt_outdoor_feellike"
@@ -50,6 +50,7 @@ class PrometheusManager:
     ECOWITT_WIND_DIRECTION:str = "ecowitt_outdoor_winddirection"
     ECOWITT_WIND_GUST_SPEED:str = "ecowitt_outdoor_windgustspeed"
     ECOWITT_WIND_DAY_MAX_WIND:str = "ecowitt_outdoor_winddaymax"
+    ECOWITT_WIND_10_MIN_AVG_WIND_DIR:str = "ecowitt_outdoor_wind10minavgdir"
     #BaseTemp
     LATEST_PICTURE_TIMED:str = "latest_picture_timed"
     LATEST_PICTURE_COMMANDED:str = "latest_picture_commanded"
@@ -95,8 +96,8 @@ class PrometheusManager:
             self.ROOM_TEMP_READ_FAILS: Counter(self.ROOM_TEMP_READ_FAILS, 'Number of failed sensor readings', self.label_instance),
             self.ROOM_HUM: Gauge(self.ROOM_HUM, 'Current room humidity', self.label_instance),
             # Ecowitt
-            self.ECWOITT_INDOOR_TEMP: Gauge(self.ECWOITT_INDOOR_TEMP, "Ecowitt indoor temperature", self.label_instance),
-            self.ECWOITT_INDOOR_HUM: Gauge(self.ECWOITT_INDOOR_HUM, "Ecowitt indoor humidity", self.label_instance),
+            self.ECOWITT_INDOOR_TEMP: Gauge(self.ECOWITT_INDOOR_TEMP, "Ecowitt indoor temperature", self.label_instance),
+            self.ECOWITT_INDOOR_HUM: Gauge(self.ECOWITT_INDOOR_HUM, "Ecowitt indoor humidity", self.label_instance),
             self.ECOWITT_OUTDOOR_TEMP: Gauge(self.ECOWITT_OUTDOOR_TEMP, "Ecowitt outdoor temperature", self.label_instance),
             self.ECOWITT_OUTDOOR_HUM: Gauge(self.ECOWITT_OUTDOOR_HUM, "Ecowitt outdoor humidity", self.label_instance),
             self.ECOWITT_OUTDOOR_FEEL_LIKE: Gauge(self.ECOWITT_OUTDOOR_FEEL_LIKE, "Ecowitt outdoor feel-like temperature", self.label_instance),
@@ -111,6 +112,7 @@ class PrometheusManager:
             self.ECOWITT_WIND_DIRECTION: Gauge(self.ECOWITT_WIND_DIRECTION, "Ecowitt wind direction", self.label_instance),
             self.ECOWITT_WIND_GUST_SPEED: Gauge(self.ECOWITT_WIND_GUST_SPEED, "Ecowitt wind gust speed", self.label_instance),
             self.ECOWITT_WIND_DAY_MAX_WIND: Gauge(self.ECOWITT_WIND_DAY_MAX_WIND, "Ecowitt daily max wind speed", self.label_instance),
+            self.ECOWITT_WIND_10_MIN_AVG_WIND_DIR: Gauge(self.ECOWITT_WIND_10_MIN_AVG_WIND_DIR, "Ecowitt 10 min average wind direction", self.label_instance),
             # BaseTemp
             self.LATEST_PICTURE_TIMED: Info(self.LATEST_PICTURE_TIMED, "Filename of latest timed picture", self.label_instance),
             self.LATEST_PICTURE_COMMANDED: Info(self.LATEST_PICTURE_COMMANDED, "Filename of latest commandedf picture", self.label_instance),
