@@ -101,6 +101,7 @@ PY
 
         if ! docker run -d \
             --name "$container_name" \
+            --restart unless-stopped \
             -e POSTGRES_USER \
             -e POSTGRES_PASSWORD \
             -e POSTGRES_DB \
